@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VC Incident Watch</title>
 
-  <!-- Leaflet -->
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -16,6 +15,8 @@
     :root{
       --bg:#000;
       --ink:#f4f4f5;
+      --muted:rgba(255,255,255,.7);
+      --muted2:rgba(255,255,255,.45);
       --link:#60a5fa;
 
       --hdr:#8c1111;   /* red header */
@@ -41,69 +42,6 @@
     a{ color:var(--link); text-decoration:none; }
     a:hover{ text-decoration:underline; }
 
-    /* ===== Password Gate ===== */
-    #lockScreen{
-      position:fixed; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      background:#000;
-      z-index:9999;
-      padding:18px;
-    }
-    #lockBox{
-      background:#0f1116;
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:14px;
-      box-shadow:0 18px 60px rgba(0,0,0,.75);
-      max-width:360px; width:100%;
-      padding:22px;
-    }
-    #lockBox h2{
-      margin:0 0 6px 0;
-      font-size:18px;
-      font-weight:800;
-      letter-spacing:.2px;
-    }
-    #lockBox .sub{
-      font-size:13px;
-      color:rgba(255,255,255,.70);
-      margin-bottom:12px;
-    }
-    #lockBox input{
-      width:100%;
-      padding:11px 12px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,.14);
-      background:#000;
-      color:#fff;
-      outline:none;
-    }
-    #lockBox input:focus{
-      border-color: rgba(248,113,113,.6);
-      box-shadow: 0 0 0 3px rgba(248,113,113,.15);
-    }
-    #lockBox button{
-      margin-top:12px;
-      width:100%;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid rgba(0,0,0,.6);
-      background:#b91c1c;
-      color:#fff;
-      font-weight:800;
-      cursor:pointer;
-    }
-    #lockBox button:hover{ background:#991b1b; }
-    #errorMsg{
-      display:none;
-      margin-top:10px;
-      color:#fb7185;
-      font-size:13px;
-    }
-
-    /* hide app until unlocked (prevents flash) */
-    #app{ display:none; }
-
-    /* ===== App Layout ===== */
     header{ position:sticky; top:0; z-index:50; background:var(--bg); }
     header .bar{
       background:var(--hdr);
@@ -115,7 +53,7 @@
       display:flex; align-items:center; justify-content:space-between; gap:12px;
     }
     .title{ display:flex; flex-direction:column; gap:2px; }
-    .title h1{ margin:0; font-size:18px; font-weight:800; letter-spacing:.2px; }
+    .title h1{ margin:0; font-size:18px; font-weight:750; letter-spacing:.2px; }
     .title p{ margin:0; font-size:12px; color:rgba(255,255,255,.82); }
 
     .statusBox{ display:flex; align-items:center; gap:10px; white-space:nowrap; font-size:12px; }
@@ -134,6 +72,7 @@
       box-shadow: 0 10px 30px rgba(0,0,0,.5);
     }
 
+    /* Active Calls bar */
     .sectionBar{
       background:#0d1c2f;
       border-bottom:1px solid rgba(255,255,255,.10);
@@ -141,10 +80,11 @@
       display:flex; justify-content:space-between; align-items:center; gap:12px;
     }
     .sectionBar .left{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
-    .sectionBar .label{ font-weight:900; font-size:16px; }
+    .sectionBar .label{ font-weight:800; font-size:16px; }
     .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
     .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; }
 
+    /* table headings (desktop) */
     .tblHead{
       background:#060607;
       border-top:1px solid rgba(255,255,255,.08);
@@ -156,6 +96,7 @@
       text-transform:uppercase;
     }
 
+    /* grid */
     .tbl{
       display:grid;
       grid-template-columns: 140px 64px 1fr 240px 140px; /* date | icon | address | units | status */
@@ -179,7 +120,7 @@
       white-space:nowrap;
     }
     .icon{ font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; }
-    .addr a{ display:block; font-size:14px; font-weight:800; color:var(--link); }
+    .addr a{ display:block; font-size:14px; font-weight:700; color:var(--link); }
     .addr .typeText{
       margin-top:3px;
       font-size:12px;
@@ -198,7 +139,7 @@
     .chip{
       display:inline-flex; align-items:center; justify-content:center;
       padding:6px 10px; border-radius:999px;
-      font-size:12px; font-weight:900;
+      font-size:12px; font-weight:750;
       border:1px solid rgba(255,255,255,.12);
       background:rgba(255,255,255,.04);
       color:rgba(255,255,255,.92);
@@ -210,6 +151,7 @@
 
     .helper{ padding:10px 16px; color:rgba(255,255,255,.4); font-size:11px; }
 
+    /* Map */
     .mapCard{ margin-top:18px; }
     .mapTop{
       display:flex; align-items:center; justify-content:space-between;
@@ -217,7 +159,7 @@
       background:rgba(255,255,255,.04);
       border-bottom:1px solid rgba(255,255,255,.10);
     }
-    .mapTop .label{ font-weight:900; font-size:16px; }
+    .mapTop .label{ font-weight:800; font-size:16px; }
     .btn{
       appearance:none;
       border:1px solid rgba(255,255,255,.14);
@@ -226,13 +168,13 @@
       border-radius:10px;
       padding:8px 12px;
       font-size:12px;
-      font-weight:900;
+      font-weight:750;
       cursor:pointer;
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
     #map{ height:360px; background:#111; }
 
-    /* Mobile: show everything (units+status under address) */
+    /* ===== MOBILE: show everything (units + status under address) ===== */
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
       .tblHead{ display:none; }
@@ -253,100 +195,58 @@
 </head>
 
 <body>
-
-  <!-- Password Screen -->
-  <div id="lockScreen">
-    <div id="lockBox">
-      <h2>VC Incident Watch</h2>
-      <div class="sub">Enter access password</div>
-      <input type="password" id="pw" placeholder="Password" autocomplete="current-password" />
-      <button id="unlockBtn" type="button">Unlock</button>
-      <div id="errorMsg">Incorrect password</div>
-    </div>
-  </div>
-
-  <!-- App -->
-  <div id="app">
-    <header>
-      <div class="bar">
-        <div class="wrap">
-          <div class="title">
-            <h1>VC Incident Watch</h1>
-            <p>Live Ventura County incidents</p>
-          </div>
-          <div class="statusBox">
-            <span class="dot" id="dot"></span>
-            <span id="statusText">Idle</span>
-          </div>
+  <header>
+    <div class="bar">
+      <div class="wrap">
+        <div class="title">
+          <h1>VC Incident Watch</h1>
+          <p>Live Ventura County incidents</p>
+        </div>
+        <div class="statusBox">
+          <span class="dot" id="dot"></span>
+          <span id="statusText">Idle</span>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main>
-      <section class="card" aria-label="Active Calls">
-        <div class="sectionBar">
-          <div class="left">
-            <div class="label">Active Calls</div>
-            <div class="sub" id="updatedAt">Updated —</div>
-          </div>
-          <div class="right" id="activeCount">— active</div>
+  <main>
+    <section class="card" aria-label="Active Calls">
+      <div class="sectionBar">
+        <div class="left">
+          <div class="label">Active Calls</div>
+          <div class="sub" id="updatedAt">Updated —</div>
         </div>
+        <div class="right" id="activeCount">— active</div>
+      </div>
 
-        <div class="tblHead">
-          <div class="tbl" style="padding:0;">
-            <div>DATE/TIME</div>
-            <div>TYPE</div>
-            <div>ADDRESS</div>
-            <div>UNITS</div>
-            <div>STATUS</div>
-          </div>
+      <div class="tblHead">
+        <div class="tbl" style="padding:0;">
+          <div>DATE/TIME</div>
+          <div>TYPE</div>
+          <div>ADDRESS</div>
+          <div>UNITS</div>
+          <div>STATUS</div>
         </div>
+      </div>
 
-        <div id="rows"></div>
-        <div class="helper">Row tap jumps to map. Address tap opens Google Maps.</div>
-      </section>
+      <div id="rows"></div>
+      <div class="helper">Row tap jumps to map. Address tap opens Google Maps.</div>
+    </section>
 
-      <section class="card mapCard" aria-label="Map">
-        <div class="mapTop">
-          <div class="label">Map</div>
-          <button class="btn" id="fitBtn" type="button">Fit Map</button>
-        </div>
-        <div id="map"></div>
-      </section>
-    </main>
-  </div>
+    <section class="card mapCard" aria-label="Map">
+      <div class="mapTop">
+        <div class="label">Map</div>
+        <button class="btn" id="fitBtn" type="button">Fit Map</button>
+      </div>
+      <div id="map"></div>
+    </section>
+  </main>
 
 <script>
-  // ===== Password Gate =====
-  const CORRECT_PASSWORD = "VC2025";
-
-  const lockScreen = document.getElementById("lockScreen");
-  const app = document.getElementById("app");
-  const pwInput = document.getElementById("pw");
-  const errMsg = document.getElementById("errorMsg");
-  const unlockBtn = document.getElementById("unlockBtn");
-
-  function unlock(){
-    if (pwInput.value === CORRECT_PASSWORD){
-      errMsg.style.display = "none";
-      lockScreen.style.display = "none";
-      app.style.display = "block";
-      // kick map sizing after showing
-      setTimeout(() => { try { map?.invalidateSize?.(); } catch(e){} }, 150);
-    } else {
-      errMsg.style.display = "block";
-      pwInput.focus();
-      pwInput.select();
-    }
-  }
-  unlockBtn.addEventListener("click", unlock);
-  pwInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") unlock();
-  });
-
-  // ===== App Logic (Ventura County Firefeeds fields) =====
   const API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 
+  // state
   let map, markersLayer;
   let lastIncidents = [];
 
@@ -370,10 +270,12 @@
     }[m]));
   }
 
+  // this matches the REAL API fields:
+  // address, block, city, incidentType, responseDate, status, units, latitude, longitude
   function normalize(raw){
     const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
 
-    const dateStr = raw?.responseDate || raw?.ResponseDate || "—";
+    const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || "—";
 
     const block = raw?.block ? String(raw.block).trim() : "";
     const addr = raw?.address ? String(raw.address).trim() : "";
@@ -453,15 +355,19 @@
       row.innerHTML = `
         <div class="tbl">
           <div class="date">${escapeHtml(x.dateStr)}</div>
+
           <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+
           <div class="addr">
             <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
             <div class="typeText">${escapeHtml(x.type || "")}</div>
+
             <div class="mobileMeta">
               <div class="mobileUnits">${unitsText}</div>
               <div>${statusChip}</div>
             </div>
           </div>
+
           <div class="desktopUnits mono">${unitsText}</div>
           <div class="desktopStatus">${statusChip}</div>
         </div>
@@ -536,7 +442,6 @@
         .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
       updatedAtEl.textContent = lastIncidents[0]?.dateStr ? `Updated ${lastIncidents[0].dateStr}` : "Updated —";
-
       render();
       updateMarkers();
       setStatus("ok","Updated");
@@ -548,12 +453,9 @@
     }
   }
 
-  // Initialize app in background; it will be visible after unlock
   initMap();
   fetchIncidents();
   setInterval(fetchIncidents, 60000);
 </script>
-
 </body>
 </html>
-
