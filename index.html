@@ -2,458 +2,594 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VC Incident Watch</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <style>
-    body { background:#000; }
+    :root{
+      --bg:#000;
+      --panel:#0a0b0f;
+      --panel2:#0f1116;
+      --rowA:#101010;
+      --rowB:#171717;
+      --ink:#f4f4f5;
+      --muted:rgba(255,255,255,.68);
+      --muted2:rgba(255,255,255,.45);
+      --link:#60a5fa;
 
-    .card { border: 1px solid rgba(255,255,255,.08); }
-    .mono { font-variant-numeric: tabular-nums; }
-    .truncate { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+      --hdr:#8c1111;
+      --hdrOutline:#000;
 
+      --line:rgba(255,255,255,.09);
+      --greenLine:rgba(16,185,129,.35);
+      --shadow:rgba(0,0,0,.55);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:var(--bg);
+      color:var(--ink);
+    }
+
+    a{ color:var(--link); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+
+    header{
+      position:sticky; top:0; z-index:50;
+      background:var(--bg);
+    }
+    header .bar{
+      background:var(--hdr);
+      outline:2px solid var(--hdrOutline);
+      box-shadow: 0 6px 18px var(--shadow);
+    }
+    .wrap{
+      max-width:1120px;
+      margin:0 auto;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .title h1{
+      margin:0;
+      font-size:18px;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .title p{
+      margin:0;
+      font-size:12px;
+      color:rgba(255,255,255,.8);
+    }
+    .statusBox{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      white-space:nowrap;
+      color:rgba(255,255,255,.9);
+      font-size:12px;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background:rgba(255,255,255,.35);
+      box-shadow:0 0 0 2px rgba(0,0,0,.25) inset;
+    }
+    .dot.ok{ background:#34d399; }
+    .dot.wait{ background:#fbbf24; }
+    .dot.err{ background:#fb7185; }
+
+    main{
+      max-width:1120px;
+      margin:16px auto 28px;
+      padding:0 16px;
+    }
+
+    .card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    }
+
+    /* Section header bars (Active Calls / Map) */
+    .sectionBar{
+      background:#0d1c2f;
+      border-bottom:1px solid rgba(255,255,255,.1);
+      padding:14px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+    .sectionBar .left{
+      display:flex;
+      align-items:baseline;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .sectionBar .label{
+      font-weight:700;
+      font-size:16px;
+    }
+    .sectionBar .sub{
+      color:rgba(255,255,255,.7);
+      font-size:12px;
+    }
+    .sectionBar .right{
+      color:rgba(255,255,255,.8);
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    /* Table header */
+    .tblHead{
+      background:#060607;
+      border-top:1px solid rgba(255,255,255,.08);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:10px 16px;
+      color:rgba(255,255,255,.72);
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+
+    /* Grid table */
     .tbl{
       display:grid;
-      grid-template-columns: 130px 54px 1fr 240px 140px; /* Date | Type | Address | Units | Status */
-      gap: 12px;
+      grid-template-columns: 140px 64px 1fr 220px 140px; /* date | icon | address | units | status */
+      gap:12px;
       align-items:center;
+      padding:0 16px;
     }
 
-    .row-a { background:#0b0b0b; }
-    .row-b { background:#141414; }
-    .row-a:hover, .row-b:hover { background:#1b1b1b; }
-
-    /* New-call highlight (pulse once) */
-    .new-call {
-      animation: newCallPulse 2.0s ease-out 1;
-      outline: 1px solid rgba(16,185,129,.35); /* subtle emerald */
-      outline-offset: -1px;
+    .row{
+      border-bottom:1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 -1px 0 var(--greenLine);
+      padding:14px 0;
     }
-    @keyframes newCallPulse {
-      0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.35); }
-      40%  { box-shadow: 0 0 0 10px rgba(16,185,129,0); }
-      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    .row:nth-child(odd){ background:rgba(255,255,255,.02); }
+    .row:nth-child(even){ background:rgba(255,255,255,.04); }
+
+    .date{
+      font-variant-numeric: tabular-nums;
+      color:rgba(255,255,255,.86);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .icon{
+      font-size:20px;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .addr a{
+      display:block;
+      font-size:14px;
+      font-weight:650;
+      color:var(--link);
+    }
+    .addr .typeText{
+      margin-top:3px;
+      font-size:12px;
+      color:rgba(255,255,255,.55);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      color:rgba(255,255,255,.85);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    @media (max-width: 900px){
-      .tbl{ grid-template-columns: 130px 54px 1fr; }
-      .col-units, .col-status { display:none; }
-    }
-
-    #map { border-top: 1px solid rgba(255,255,255,.08); }
-
-    /* Status chip */
     .chip{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      line-height: 1;
-      border: 1px solid rgba(255,255,255,.10);
-      white-space: nowrap;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:650;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.9);
+      white-space:nowrap;
+    }
+    .chip.green{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); }
+    .chip.amber{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.10); }
+    .chip.slate{ border-color:rgba(148,163,184,.30); background:rgba(148,163,184,.10); }
+
+    .helper{
+      padding:10px 16px;
+      color:rgba(255,255,255,.4);
+      font-size:11px;
+    }
+
+    /* Map card */
+    .mapCard{ margin-top:18px; }
+    #map{
+      height:360px;
+      background:#111;
+    }
+    .mapTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 16px;
+      background:var(--panel2);
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .mapTop .label{
+      font-weight:700;
+      font-size:16px;
+    }
+    .btn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.92);
+      border-radius:10px;
+      padding:8px 12px;
+      font-size:12px;
+      font-weight:650;
+      cursor:pointer;
+    }
+    .btn:hover{ background:rgba(255,255,255,.10); }
+
+    /* ===== MOBILE ===== */
+    .mobileMeta{ display:none; }
+
+    @media (max-width: 760px){
+      .wrap{ padding:12px 14px; }
+      .title h1{ font-size:16px; }
+      .title p{ font-size:11px; }
+
+      /* Hide table column header on mobile */
+      .tblHead{ display:none; }
+
+      /* Collapse grid so nothing goes off-screen */
+      .tbl{
+        grid-template-columns: 118px 44px 1fr; /* date | icon | main */
+        gap:10px;
+      }
+
+      /* Show address wrapping on mobile */
+      .addr a{
+        white-space:normal;
+        overflow:visible;
+        text-overflow:unset;
+        line-height:1.15;
+      }
+
+      /* Put Units + Status under the address */
+      .desktopUnits, .desktopStatus{ display:none; }
+      .mobileMeta{
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+        margin-top:6px;
+        align-items:center;
+      }
+      .mobileUnits{
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+        font-size:12px;
+        color:rgba(255,255,255,.80);
+        white-space:normal;
+        overflow:visible;
+      }
+
+      #map{ height:420px; }
     }
   </style>
 </head>
 
-<body class="text-zinc-100">
-  <header class="sticky top-0 z-10 bg-black">
-  <div class="bg-[#8c1111] outline outline-2 outline-black shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-
-
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div>
-          <h1 class="text-white text-lg sm:text-xl font-semibold tracking-tight">VC Incident Watch</h1>
-          <p class="text-white/80 text-xs sm:text-sm">Live Ventura County incidents</p>
+<body>
+  <header>
+    <div class="bar">
+      <div class="wrap">
+        <div class="title">
+          <h1>VC Incident Watch</h1>
+          <p>Live Ventura County incidents</p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <span id="statusDot" class="inline-block w-2.5 h-2.5 rounded-full bg-white/40"></span>
-          <span id="statusText" class="text-white/90 text-xs sm:text-sm mono">Idle</span>
+        <div class="statusBox">
+          <span class="dot" id="dot"></span>
+          <span id="statusText">Idle</span>
         </div>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-
-    <section class="rounded-2xl overflow-hidden card">
-<div class="px-4 sm:px-5 py-4 bg-[#0f243d] border-b border-white/10 flex items-center justify-between">
-
-        <div class="flex items-center gap-3">
-          <h2 class="font-semibold text-zinc-100">Active Calls</h2>
-          <span id="lastUpdated" class="text-xs text-zinc-400 mono"></span>
+  <main>
+    <section class="card" aria-label="Active Calls">
+      <div class="sectionBar">
+        <div class="left">
+          <div class="label">Active Calls</div>
+          <div class="sub" id="updatedAt">Updated —</div>
         </div>
-        <div id="countText" class="text-sm text-zinc-300 mono">0 active</div>
+        <div class="right" id="activeCount">— active</div>
       </div>
 
-      <div class="px-4 sm:px-5 py-2 bg-black border-y border-white/10">
-        <div class="tbl text-[11px] tracking-[.18em] uppercase text-zinc-300">
-          <div>Date/Time</div>
-          <div>Type</div>
-          <div>Address</div>
-          <div class="col-units">Units</div>
-          <div class="col-status">Status</div>
+      <div class="tblHead">
+        <div class="tbl" style="padding:0;">
+          <div>DATE/TIME</div>
+          <div>TYPE</div>
+          <div>ADDRESS</div>
+          <div>UNITS</div>
+          <div>STATUS</div>
         </div>
       </div>
 
-      <div id="list"></div>
+      <div id="rows"></div>
 
-      <div id="empty" class="px-6 py-10 text-center text-zinc-400 hidden">
-        No incidents available.
-      </div>
-
-      <div class="px-4 sm:px-5 py-3 bg-black text-xs text-zinc-500 border-t border-white/10">
-        Row click jumps to map. Address click opens Google Maps.
-      </div>
+      <div class="helper">Row tap jumps to map. Address tap opens Google Maps.</div>
     </section>
 
-    <section class="rounded-2xl overflow-hidden card">
-      <div class="px-4 sm:px-5 py-4 bg-black flex items-center justify-between">
-        <h2 class="font-semibold text-zinc-100">Map</h2>
-        <button id="fitBtn" class="text-sm rounded-xl px-3 py-2 bg-zinc-900 border border-white/10 hover:bg-zinc-800">
-          Fit Map
-        </button>
+    <section class="card mapCard" aria-label="Map">
+      <div class="mapTop">
+        <div class="label">Map</div>
+        <button class="btn" id="fitBtn" type="button">Fit Map</button>
       </div>
-      <div id="map" style="height: 340px;"></div>
+      <div id="map"></div>
     </section>
-
   </main>
 
 <script>
-/** CONFIG */
-const FIRE_API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
-const REFRESH_MS = 60_000;
-const DEFAULT_VIEW = { lat: 34.280, lng: -119.295, zoom: 10 };
+  const API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 
-/** EMOJIS */
-const TYPE_EMOJI = {
-  "Medical": "🚑",
-  "Medical High": "🚑",
-  "Medical High Plus": "🚑",
-  "Medical No Code": "🚑",
-  "EMS": "🚑",
-  "Rescue": "🛟",
-  "Water Rescue": "🌊🛟",
-  "Fire": "🔥",
-  "Structure Fire": "🏠🔥",
-  "Structure": "🏠🔥",
-  "Brush": "🌿🔥",
-  "Vegetation": "🌿🔥",
-  "Alarm": "🔔",
-  "Traffic Collision": "🚗💥",
-  "TC": "🚗💥",
-  "Hazard Investigation": "☣️",
-  "Hazmat": "☣️",
-  "Investigation": "🔎",
-  "Public Assist": "🧰",
-  "Info Log": "📍",
-  "Other": "📍"
-};
-const DEFAULT_EMOJI = "📍";
+  // --- State
+  let map, markersLayer;
+  let lastIncidents = [];
+  const dot = document.getElementById("dot");
+  const statusText = document.getElementById("statusText");
+  const rowsEl = document.getElementById("rows");
+  const updatedAtEl = document.getElementById("updatedAt");
+  const activeCountEl = document.getElementById("activeCount");
 
-const $ = (id) => document.getElementById(id);
-let allIncidents = [];
-let map, markersLayer;
-let markerById = new Map();
-
-/** NEW CALL TRACKING */
-let prevIds = new Set();         // previous incident IDs
-let newIds = new Set();          // newly detected IDs (for highlight)
-let lastUpdatedLabel = "";       // display string
-
-init();
-
-function init() {
-  initMap();
-  $("fitBtn").addEventListener("click", fitMapToMarkers);
-  refreshAll();
-  setInterval(refreshAll, REFRESH_MS);
-}
-
-function initMap() {
-  map = L.map("map", { zoomControl: true }).setView([DEFAULT_VIEW.lat, DEFAULT_VIEW.lng], DEFAULT_VIEW.zoom);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
-  markersLayer = L.layerGroup().addTo(map);
-}
-
-async function refreshAll() {
-  setStatus("loading", "Refreshing…");
-  try {
-    const res = await fetch(FIRE_API_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Feed failed: ${res.status}`);
-    const json = await res.json();
-
-    const normalized = normalizeFireFeeds(json);
-    normalized.sort((a,b) => (b.sortTime ?? 0) - (a.sortTime ?? 0));
-
-    // detect new IDs
-    const currentIds = new Set(normalized.map(x => x.id));
-    newIds = new Set();
-    for (const id of currentIds) {
-      if (!prevIds.has(id)) newIds.add(id);
-    }
-    prevIds = currentIds;
-
-    allIncidents = normalized;
-
-    // "Last Updated" label — use newest call time if available
-    lastUpdatedLabel = computeLastUpdatedLabel(allIncidents);
-    $("lastUpdated").textContent = lastUpdatedLabel ? `Updated ${lastUpdatedLabel}` : "";
-
-    render(allIncidents);
-
-    // clear highlight after 2.2s so rows don't keep pulsing
-    if (newIds.size) {
-      setTimeout(() => { newIds = new Set(); }, 2200);
-    }
-
-    setStatus("ok", "Updated");
-  } catch (e) {
-    console.error(e);
-    allIncidents = [];
-    render(allIncidents);
-    setStatus("error", "Feed error");
+  function setStatus(state, text){
+    dot.classList.remove("ok","wait","err");
+    if(state === "ok") dot.classList.add("ok");
+    if(state === "wait") dot.classList.add("wait");
+    if(state === "err") dot.classList.add("err");
+    statusText.textContent = text;
   }
-}
 
-/** FireFeeds normalization (correct fields) */
-function normalizeFireFeeds(items) {
-  const arr = Array.isArray(items) ? items : [];
-  return arr.map((x, i) => {
-    const dateStr = (x.responseDate ?? "").toString().trim();
-    const type = (x.incidentType ?? "Other").toString().trim();
-    const units = (x.units ?? "").toString().trim();
-    const status = (x.status ?? "").toString().trim();
-
-    const block = (x.block ?? "").toString().trim();
-    const street = (x.address ?? "").toString().trim();
-    const city = (x.city ?? "").toString().trim();
-
-    const streetFull = [block, street].filter(Boolean).join(" ").trim();
-    const locationText = [streetFull, city].filter(Boolean).join(", ").trim() || "View location";
-
-    const lat = numOrNull(x.latitude);
-    const lng = numOrNull(x.longitude);
-
-    // stable id (incidentNumber exists in this feed)
-    const id = String(x.incidentNumber ?? `${type}-${locationText}-${i}`);
-
-    return {
-      id,
-      dateStr,
-      sortTime: tryParseTime(dateStr),
-      type,
-      emoji: emojiForType(type),
-      locationText,
-      units,
-      status,
-      lat,
-      lng,
-      raw: x
-    };
-  });
-}
-
-function emojiForType(type) {
-  if (TYPE_EMOJI[type]) return TYPE_EMOJI[type];
-  const t = String(type).toLowerCase();
-  if (t.includes("medical") || t.includes("ems")) return "🚑";
-  if (t.includes("rescue")) return "🛟";
-  if (t.includes("structure")) return "🏠🔥";
-  if (t.includes("brush") || t.includes("veg")) return "🌿🔥";
-  if (t.includes("fire")) return "🔥";
-  if (t.includes("haz")) return "☣️";
-  if (t.includes("alarm")) return "🔔";
-  if (t.includes("traffic") || t.includes("collision") || t === "tc") return "🚗💥";
-  return DEFAULT_EMOJI;
-}
-
-/** Render */
-function render(items) {
-  const list = $("list");
-  const empty = $("empty");
-  list.innerHTML = "";
-  markersLayer.clearLayers();
-  markerById.clear();
-
-  $("countText").textContent = `${items.length} active`;
-
-  if (!items.length) {
-    empty.classList.remove("hidden");
-    return;
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
   }
-  empty.classList.add("hidden");
 
-  const frag = document.createDocumentFragment();
+  function normalizeIncident(raw){
+    // API fields can vary; we normalize to what we need.
+    const id = raw?.IncidentId ?? raw?.id ?? raw?.IncidentNumber ?? raw?.IncidentNo ?? raw?.IncidentID ?? crypto.randomUUID();
 
-  items.forEach((x, idx) => {
-    const row = document.createElement("div");
-    const base = (idx % 2 === 0 ? "row-a" : "row-b");
-    row.className = base + " px-4 sm:px-5 py-3 cursor-pointer" + (newIds.has(x.id) ? " new-call" : "");
+    const dt = raw?.DateTime ?? raw?.dateTime ?? raw?.Date ?? raw?.date ?? raw?.Created ?? raw?.created;
+    const dateStr = raw?.DisplayDateTime ?? raw?.displayDateTime ?? raw?.Timestamp ?? raw?.timestamp ?? dt;
 
-    const statusChip = statusToChip(x.status);
+    const address = raw?.Address ?? raw?.address ?? raw?.Location ?? raw?.location ?? "";
+    const city = raw?.City ?? raw?.city ?? "";
+    const fullAddress = [address, city].filter(Boolean).join(", ").trim();
 
-    row.innerHTML = `
-      <div class="tbl">
-        <div class="mono text-xs sm:text-sm text-zinc-200 truncate" title="${escapeAttr(x.dateStr)}">
-          ${x.dateStr ? escapeHtml(x.dateStr) : "<span style='color:rgba(255,255,255,.45)'>—</span>"}
+    const status = raw?.Status ?? raw?.status ?? raw?.UnitStatus ?? raw?.unitStatus ?? "";
+    const units = raw?.Units ?? raw?.units ?? raw?.Unit ?? raw?.unit ?? "";
+
+    const type = raw?.Type ?? raw?.type ?? raw?.IncidentType ?? raw?.incidentType ?? raw?.CallType ?? raw?.callType ?? "";
+    const subtype = raw?.SubType ?? raw?.subType ?? raw?.Description ?? raw?.description ?? "";
+
+    const lat = raw?.Latitude ?? raw?.latitude ?? raw?.Lat ?? raw?.lat ?? null;
+    const lon = raw?.Longitude ?? raw?.longitude ?? raw?.Lon ?? raw?.lon ?? raw?.Lng ?? raw?.lng ?? null;
+
+    return { id, dateStr, type, subtype, fullAddress, address, city, status, units, lat, lon, raw };
+  }
+
+  function emojiFor(typeText){
+    const t = (typeText || "").toLowerCase();
+
+    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
+    if(t.includes("rescue")) return "🛟";
+    if(t.includes("water")) return "🌊";
+    if(t.includes("structure")) return "🏠🔥";
+    if(t.includes("fire")) return "🔥";
+    if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
+    if(t.includes("haz") || t.includes("hazmat")) return "☣️";
+    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
+    if(t.includes("alarm")) return "🔔";
+    if(t.includes("investig")) return "🔎";
+    if(t.includes("public")) return "🧰";
+    return "📍";
+  }
+
+  function chipFor(statusText){
+    const s = (statusText || "").toLowerCase();
+    if(s.includes("on scene") || s.includes("onscene")) return `<span class="chip green">On scene</span>`;
+    if(s.includes("en route") || s.includes("enroute")) return `<span class="chip amber">En Route</span>`;
+    if(!s) return `<span class="chip slate">—</span>`;
+    return `<span class="chip slate">${escapeHtml(statusText)}</span>`;
+  }
+
+  function googleMapsLink(fullAddress){
+    const q = encodeURIComponent(fullAddress || "");
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
+
+  function render(){
+    rowsEl.innerHTML = "";
+    const incidents = lastIncidents;
+
+    activeCountEl.textContent = `${incidents.length} active`;
+
+    incidents.forEach((x, idx) => {
+      const e = emojiFor(x.type || x.subtype);
+      const mapsHref = googleMapsLink(x.fullAddress || x.address || "");
+
+      const statusChip = chipFor(x.status);
+      const unitsText = x.units ? escapeHtml(String(x.units)) : `<span style="color:rgba(255,255,255,.35)">—</span>`;
+
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="tbl">
+          <div class="date">${escapeHtml(x.dateStr || "—")}</div>
+
+          <div class="icon" title="${escapeHtml(x.type || "")}">${e}</div>
+
+          <div class="addr">
+            <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || x.address || "—")}</a>
+            <div class="typeText">${escapeHtml(x.subtype || x.type || "")}</div>
+
+            <div class="mobileMeta">
+              <div class="mobileUnits">${unitsText}</div>
+              <div>${statusChip}</div>
+            </div>
+          </div>
+
+          <div class="desktopUnits mono">${unitsText}</div>
+          <div class="desktopStatus">${statusChip}</div>
         </div>
+      `;
 
-        <div class="text-lg leading-none" title="${escapeAttr(x.type)}">
-          ${escapeHtml(x.emoji)}
-        </div>
+      // Row click: pan map (but don't hijack link clicks)
+      row.addEventListener("click", (ev) => {
+        const tag = (ev.target && ev.target.tagName) ? ev.target.tagName.toLowerCase() : "";
+        if(tag === "a" || tag === "button") return;
 
-        <div class="min-w-0">
-          <a href="${escapeAttr(googleMapsUrl(x))}" target="_blank" rel="noopener"
-             class="text-blue-400 hover:underline text-sm sm:text-[15px] truncate block"
-             title="Open in Google Maps">
-            ${escapeHtml(x.locationText)}
-          </a>
-          <div class="text-xs text-zinc-400 truncate">${escapeHtml(x.type)}</div>
-        </div>
+        if(x.lat != null && x.lon != null && map){
+          map.setView([x.lat, x.lon], Math.max(map.getZoom(), 12), { animate:true });
+          // find marker and open popup
+          markersLayer.eachLayer((m) => {
+            if(m?.options?.incidentId === x.id) m.openPopup();
+          });
+          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+        }else{
+          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
 
-        <div class="col-units mono text-xs sm:text-sm text-zinc-200 truncate" title="${escapeAttr(x.units)}">
-          ${x.units ? escapeHtml(x.units) : "<span style='color:rgba(255,255,255,.35)'>—</span>"}
-        </div>
-
-        <div class="col-status">
-          ${statusChip}
-        </div>
-      </div>
-    `;
-
-    row.addEventListener("click", (e) => {
-      if (e.target && e.target.closest && e.target.closest("a")) return;
-      focusIncident(x.id, x.lat, x.lng);
+      rowsEl.appendChild(row);
     });
+  }
 
-    frag.appendChild(row);
+  function initMap(){
+    map = L.map("map", { zoomControl:true }).setView([34.278, -119.293], 10);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    if (x.lat != null && x.lng != null) {
+    markersLayer = L.layerGroup().addTo(map);
+
+    document.getElementById("fitBtn").addEventListener("click", fitMap);
+  }
+
+  function fitMap(){
+    if(!map || !markersLayer) return;
+    const bounds = [];
+    markersLayer.eachLayer((m) => {
+      if(m.getLatLng) bounds.push(m.getLatLng());
+    });
+    if(bounds.length){
+      map.fitBounds(L.latLngBounds(bounds), { padding:[20,20] });
+    }
+  }
+
+  function updateMarkers(){
+    markersLayer.clearLayers();
+    lastIncidents.forEach((x) => {
+      if(x.lat == null || x.lon == null) return;
+      const marker = L.marker([x.lat, x.lon], { incidentId: x.id });
       const popup = `
-        <div style="min-width:220px">
-          <div style="font-size:18px">${escapeHtml(x.emoji)} <b>${escapeHtml(x.type)}</b></div>
-          <div style="margin-top:6px">${escapeHtml(x.locationText)}</div>
-          ${x.units ? `<div style="margin-top:6px"><b>Units:</b> ${escapeHtml(x.units)}</div>` : ""}
-          ${x.status ? `<div style="margin-top:4px"><b>Status:</b> ${escapeHtml(x.status)}</div>` : ""}
-          ${x.dateStr ? `<div style="margin-top:6px; color:#777; font-size:12px">${escapeHtml(x.dateStr)}</div>` : ""}
-          <div style="margin-top:6px">
-            <a href="${escapeAttr(googleMapsUrl(x))}" target="_blank" rel="noopener"
-               style="color:#2563eb;text-decoration:underline;">Open in Google Maps</a>
+        <div style="font-family:system-ui; font-size:13px; line-height:1.25">
+          <div style="font-weight:700; margin-bottom:4px">${escapeHtml(x.subtype || x.type || "Incident")}</div>
+          <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
+          <div style="margin-top:6px; font-size:12px; color:rgba(0,0,0,.75)">
+            <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
+            <div><b>Units:</b> ${escapeHtml(String(x.units || "—"))}</div>
+            <div><b>Status:</b> ${escapeHtml(String(x.status || "—"))}</div>
           </div>
         </div>
       `;
-      const marker = L.marker([x.lat, x.lng]).bindPopup(popup);
+      marker.bindPopup(popup);
       marker.addTo(markersLayer);
-      markerById.set(x.id, marker);
+    });
+  }
+
+  function computeUpdatedAt(list){
+    // If API provides a single updated time, use it; else use max of dateStr.
+    // We'll just display the first item time if sorted desc.
+    const first = list[0];
+    if(first?.dateStr) return first.dateStr;
+    return "—";
+  }
+
+  function sortDescByDateStr(list){
+    // Date strings look like "1/4/26 3:42". We'll parse loosely.
+    const parse = (s) => {
+      if(!s) return 0;
+      // Try MM/DD/YY HH:MM
+      const m = String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
+      if(!m) return 0;
+      const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
+      const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
+      const year = yy < 100 ? (2000+yy) : yy;
+      return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
+    };
+    return list.slice().sort((a,b) => parse(b.dateStr) - parse(a.dateStr));
+  }
+
+  async function fetchIncidents(){
+    setStatus("wait","Refreshing…");
+    try{
+      const res = await fetch(API_URL, { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const rawList = Array.isArray(data) ? data : (data?.Incidents || data?.incidents || []);
+      const normalized = rawList.map(normalizeIncident);
+
+      // Sort newest first (best effort)
+      lastIncidents = sortDescByDateStr(normalized);
+
+      const updated = computeUpdatedAt(lastIncidents);
+      updatedAtEl.textContent = `Updated ${updated}`;
+
+      render();
+      updateMarkers();
+      setStatus("ok","Updated");
+    }catch(err){
+      console.error(err);
+      setStatus("err","Error");
+      updatedAtEl.textContent = "Updated —";
+      rowsEl.innerHTML = `<div style="padding:16px; color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
     }
-  });
-
-  list.appendChild(frag);
-}
-
-/** Status chip (color coded) */
-function statusToChip(statusRaw){
-  const s = String(statusRaw || "").trim();
-  const lower = s.toLowerCase();
-
-  let bg = "rgba(255,255,255,.08)";
-  let bd = "rgba(255,255,255,.14)";
-  let tx = "rgba(255,255,255,.92)";
-
-  if (!s) {
-    tx = "rgba(255,255,255,.55)";
-    return `<span class="chip" style="background:${bg};border-color:${bd};color:${tx}">—</span>`;
   }
 
-  if (lower.includes("en route") || lower.includes("responding")) {
-    bg = "rgba(245,158,11,.16)";   // amber
-    bd = "rgba(245,158,11,.35)";
-  } else if (lower.includes("on scene") || lower.includes("onscene") || lower.includes("arrived")) {
-    bg = "rgba(16,185,129,.16)";   // emerald
-    bd = "rgba(16,185,129,.35)";
-  } else if (lower.includes("staged") || lower.includes("stand by") || lower.includes("standby")) {
-    bg = "rgba(59,130,246,.16)";   // blue
-    bd = "rgba(59,130,246,.35)";
-  } else if (lower.includes("clear") || lower.includes("closed") || lower.includes("complete") || lower.includes("cleared")) {
-    bg = "rgba(148,163,184,.14)";  // slate
-    bd = "rgba(148,163,184,.30)";
-    tx = "rgba(255,255,255,.80)";
-  }
-
-  return `<span class="chip mono" style="background:${bg};border-color:${bd};color:${tx}">${escapeHtml(s)}</span>`;
-}
-
-/** "Updated ..." label */
-function computeLastUpdatedLabel(items){
-  if (!items || !items.length) return "";
-  // Use most recent responseDate, already sorted newest first
-  const s = String(items[0].dateStr || "").trim();
-  return s;
-}
-
-/** Map helpers */
-function focusIncident(id, lat, lng) {
-  if (lat == null || lng == null) return;
-  const m = markerById.get(id);
-  map.setView([lat, lng], Math.max(map.getZoom(), 14));
-  if (m) m.openPopup();
-}
-
-function fitMapToMarkers() {
-  const bounds = markersLayer.getBounds();
-  if (bounds.isValid()) map.fitBounds(bounds.pad(0.15));
-  else map.setView([DEFAULT_VIEW.lat, DEFAULT_VIEW.lng], DEFAULT_VIEW.zoom);
-}
-
-/** URL */
-function googleMapsUrl(x) {
-  if (x.lat != null && x.lng != null) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${x.lat},${x.lng}`)}`;
-  }
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(x.locationText || "")}`;
-}
-
-/** Status dot */
-function setStatus(level, text) {
-  $("statusText").textContent = text;
-  const dot = $("statusDot");
-  dot.classList.remove("bg-white/40","bg-emerald-400","bg-amber-400","bg-rose-400");
-  if (level === "ok") dot.classList.add("bg-emerald-400");
-  else if (level === "loading") dot.classList.add("bg-amber-400");
-  else if (level === "error") dot.classList.add("bg-rose-400");
-  else dot.classList.add("bg-white/40");
-}
-
-/** helpers */
-function numOrNull(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-function tryParseTime(s) {
-  const m = String(s || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
-  if (!m) return 0;
-  const mm = Number(m[1]), dd = Number(m[2]);
-  let yy = Number(m[3]); if (yy < 100) yy = 2000 + yy;
-  const hh = Number(m[4]), min = Number(m[5]);
-  return new Date(yy, mm-1, dd, hh, min, 0).getTime();
-}
-function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  })[c]);
-}
-function escapeAttr(s) { return escapeHtml(s).replace(/"/g, "&quot;"); }
+  // Init
+  initMap();
+  fetchIncidents();
+  // refresh every 60s
+  setInterval(fetchIncidents, 60000);
 </script>
 </body>
 </html>
