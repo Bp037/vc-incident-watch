@@ -62,6 +62,32 @@
     .dot.wait{ background:#fbbf24; }
     .dot.err{ background:#fb7185; }
 
+    /* Tabs */
+    .tabs{
+      max-width:1120px;
+      margin:0 auto;
+      padding:0 16px 12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .tab{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(0,0,0,.18);
+      color:rgba(255,255,255,.92);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .tab:hover{ background:rgba(255,255,255,.08); }
+    .tab.active{
+      border-color:rgba(255,255,255,.30);
+      background:rgba(255,255,255,.10);
+    }
+
     main{ max-width:1120px; margin:16px auto 28px; padding:0 16px; }
 
     .card{
@@ -199,13 +225,19 @@
     <div class="bar">
       <div class="wrap">
         <div class="title">
-          <h1>VC Incident Watch</h1>
-          <p>Live Ventura County incidents</p>
+          <h1 id="pageTitle">VC Incident Watch</h1>
+          <p id="pageSubtitle">Live Ventura County incidents</p>
         </div>
         <div class="statusBox">
           <span class="dot" id="dot"></span>
           <span id="statusText">Idle</span>
         </div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Feed tabs">
+        <button class="tab active" id="tab-vc" type="button" role="tab" aria-selected="true">Ventura County</button>
+        <button class="tab" id="tab-chp" type="button" role="tab" aria-selected="false">CHP (VC)</button>
+        <button class="tab" id="tab-calfire" type="button" role="tab" aria-selected="false">CAL FIRE</button>
       </div>
     </div>
   </header>
@@ -244,9 +276,61 @@
   </main>
 
 <script>
-  const API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
+  /* =========================
+     FEEDS
+     ========================= */
 
-  // state
+  // Ventura County (your existing)
+  const VC_API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
+
+  // CHP bounding box (Ventura County-ish bounds)
+  // (SW corner) lat1, lon1  |  (NE corner) lat2, lon2
+  const VC_BBOX = {
+    lat1: 33.90,
+    lon1: -119.85,
+    lat2: 34.92,
+    lon2: -118.60
+  };
+
+  const CHP_BASE_URL = "https://api.alpha.ca.gov/CHPIncidents";
+
+  // CAL FIRE GeoJSON (active-ish incidents)
+  const CALFIRE_GEOJSON_URL = "https://incidents.fire.ca.gov/umbraco/api/IncidentApi/GeoJsonList?inactive=false";
+
+  // refresh intervals
+  const REFRESH = {
+    vc: 60 * 1000,
+    chp: 5 * 60 * 1000,
+    calfire: 5 * 60 * 1000
+  };
+
+  const FEEDS = {
+    vc: {
+      key: "vc",
+      title: "VC Incident Watch",
+      subtitle: "Live Ventura County incidents",
+      fetcher: fetchVc
+    },
+    chp: {
+      key: "chp",
+      title: "VC Incident Watch",
+      subtitle: "CHP incidents within Ventura County bounds",
+      fetcher: fetchChpVcBBox
+    },
+    calfire: {
+      key: "calfire",
+      title: "VC Incident Watch",
+      subtitle: "CAL FIRE incidents (filtered to Ventura when possible)",
+      fetcher: fetchCalFire
+    }
+  };
+
+  let activeFeedKey = "vc";
+  let timer = null;
+
+  /* =========================
+     STATE
+     ========================= */
   let map, markersLayer;
   let lastIncidents = [];
 
@@ -255,6 +339,8 @@
   const rowsEl = document.getElementById("rows");
   const updatedAtEl = document.getElementById("updatedAt");
   const activeCountEl = document.getElementById("activeCount");
+  const pageTitleEl = document.getElementById("pageTitle");
+  const pageSubtitleEl = document.getElementById("pageSubtitle");
 
   function setStatus(state, text){
     dot.classList.remove("ok","wait","err");
@@ -270,11 +356,60 @@
     }[m]));
   }
 
-  // this matches the REAL API fields:
-  // address, block, city, incidentType, responseDate, status, units, latitude, longitude
-  function normalize(raw){
-    const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
+  function emojiFor(typeText){
+    const t = (typeText || "").toLowerCase();
+    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
+    if(t.includes("rescue")) return "🛟";
+    if(t.includes("water")) return "🌊";
+    if(t.includes("structure")) return "🏠🔥";
+    if(t.includes("fire")) return "🔥";
+    if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
+    if(t.includes("haz") || t.includes("hazmat")) return "☣️";
+    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
+    if(t.includes("alarm")) return "🔔";
+    if(t.includes("investig")) return "🔎";
+    if(t.includes("public")) return "🧰";
+    if(t.includes("assist")) return "🤝";
+    if(t.includes("service")) return "🧰";
+    if(t.includes("tow")) return "🪝";
+    return "📍";
+  }
 
+  function chipFor(statusText){
+    const s = (statusText || "").toLowerCase();
+    if(s.includes("on scene") || s.includes("onscene")) return `<span class="chip green">On scene</span>`;
+    if(s.includes("en route") || s.includes("enroute")) return `<span class="chip amber">En Route</span>`;
+    if(s.includes("active")) return `<span class="chip amber">Active</span>`;
+    if(s.includes("contained") || s.includes("%")) return `<span class="chip green">${escapeHtml(statusText)}</span>`;
+    if(!s) return `<span class="chip slate">—</span>`;
+    return `<span class="chip slate">${escapeHtml(statusText)}</span>`;
+  }
+
+  function googleMapsLink(fullAddress){
+    const q = encodeURIComponent(fullAddress || "");
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
+
+  function parseResponseDate(s){
+    // VC style: "1/4/26 3:21"
+    const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
+    if(!m) {
+      const t = Date.parse(String(s||""));
+      return Number.isFinite(t) ? t : 0;
+    }
+    const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
+    const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
+    const year = yy < 100 ? (2000+yy) : yy;
+    return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
+  }
+
+  /* =========================
+     NORMALIZERS
+     ========================= */
+
+  // Ventura County: matches your existing API fields
+  function normalizeVc(raw){
+    const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
     const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || "—";
 
     const block = raw?.block ? String(raw.block).trim() : "";
@@ -291,56 +426,94 @@
     const lon = raw?.longitude ?? raw?.Longitude ?? null;
 
     return {
-      id,
-      dateStr,
-      type,
-      status,
-      units,
-      fullAddress,
+      id, dateStr, type, status, units, fullAddress,
       lat: lat != null ? Number(lat) : null,
       lon: lon != null ? Number(lon) : null
     };
   }
 
-  function emojiFor(typeText){
-    const t = (typeText || "").toLowerCase();
-    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
-    if(t.includes("rescue")) return "🛟";
-    if(t.includes("water")) return "🌊";
-    if(t.includes("structure")) return "🏠🔥";
-    if(t.includes("fire")) return "🔥";
-    if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
-    if(t.includes("haz") || t.includes("hazmat")) return "☣️";
-    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
-    if(t.includes("alarm")) return "🔔";
-    if(t.includes("investig")) return "🔎";
-    if(t.includes("public")) return "🧰";
-    return "📍";
+  // CHP: normalize common fields into your UI format
+  function normalizeChp(raw){
+    const id =
+      raw?.Id || raw?.ID || raw?.IncidentId || raw?.incidentId || raw?.incident_id ||
+      raw?.logNumber || raw?.LogNumber || crypto.randomUUID();
+
+    const dateStr =
+      raw?.TimeStamp || raw?.timestamp || raw?.Updated || raw?.updated ||
+      raw?.DateTime || raw?.datetime || raw?.time || raw?.Time || "—";
+
+    const type =
+      raw?.IncidentType || raw?.incidentType || raw?.Type || raw?.type ||
+      raw?.Category || raw?.category || "CHP Incident";
+
+    const status =
+      raw?.Status || raw?.status || raw?.IncidentStatus || raw?.incidentStatus ||
+      raw?.State || raw?.state || "";
+
+    const route =
+      raw?.Route || raw?.route || raw?.Highway || raw?.highway || "";
+
+    const loc =
+      raw?.Location || raw?.location || raw?.Description || raw?.description ||
+      raw?.Area || raw?.area || raw?.CrossStreet || raw?.crossStreet || "—";
+
+    const fullAddress = [route, loc].filter(Boolean).join(" - ").trim() || "—";
+
+    // Units aren't consistent in CHP; use whatever exists
+    const units =
+      raw?.Units || raw?.units || raw?.Unit || raw?.unit || raw?.Agency || raw?.agency || "";
+
+    const lat = raw?.Lat ?? raw?.lat ?? raw?.Latitude ?? raw?.latitude ?? null;
+    const lon = raw?.Lon ?? raw?.lon ?? raw?.Lng ?? raw?.lng ?? raw?.Longitude ?? raw?.longitude ?? null;
+
+    return {
+      id, dateStr, type, status, units, fullAddress,
+      lat: lat != null ? Number(lat) : null,
+      lon: lon != null ? Number(lon) : null
+    };
   }
 
-  function chipFor(statusText){
-    const s = (statusText || "").toLowerCase();
-    if(s.includes("on scene") || s.includes("onscene")) return `<span class="chip green">On scene</span>`;
-    if(s.includes("en route") || s.includes("enroute")) return `<span class="chip amber">En Route</span>`;
-    if(!s) return `<span class="chip slate">—</span>`;
-    return `<span class="chip slate">${escapeHtml(statusText)}</span>`;
+  // CAL FIRE GeoJSON: FeatureCollection
+  function normalizeCalFireFeature(f){
+    const p = f?.properties || {};
+    const id = p?.UniqueId || p?.Name || p?.IncidentId || crypto.randomUUID();
+
+    const name = p?.Name || "";
+    const type = p?.Type || "Wildfire";
+
+    const county = p?.County || "";
+    const location = p?.Location || "";
+    const fullAddress = [location, county].filter(Boolean).join(", ").trim() || name || "—";
+
+    const updated = p?.Updated || p?.Started || p?.StartedDateOnly || "—";
+    const dateStr = updated;
+
+    const acres = (p?.AcresBurned != null && p?.AcresBurned !== "") ? `Acres: ${p.AcresBurned}` : "";
+    const pct = (p?.PercentContained != null && p?.PercentContained !== "") ? `Containment: ${p.PercentContained}%` : "";
+    const units = [acres, pct].filter(Boolean).join(" • ");
+
+    const status = (p?.PercentContained != null && p?.PercentContained !== "")
+      ? `${p.PercentContained}% Contained`
+      : (p?.IsActive === true ? "Active" : (p?.Final === true ? "Final" : ""));
+
+    let lat = null, lon = null;
+    if (f?.geometry?.type === "Point" && Array.isArray(f.geometry.coordinates)) {
+      lon = Number(f.geometry.coordinates[0]);
+      lat = Number(f.geometry.coordinates[1]);
+    } else {
+      lat = p?.Latitude != null ? Number(p.Latitude) : null;
+      lon = p?.Longitude != null ? Number(p.Longitude) : null;
+    }
+
+    return {
+      id, dateStr, type, status, units, fullAddress, lat, lon,
+      county: county
+    };
   }
 
-  function googleMapsLink(fullAddress){
-    const q = encodeURIComponent(fullAddress || "");
-    return `https://www.google.com/maps/search/?api=1&query=${q}`;
-  }
-
-  function parseResponseDate(s){
-    // "1/4/26 3:21"
-    const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
-    if(!m) return 0;
-    const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
-    const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
-    const year = yy < 100 ? (2000+yy) : yy;
-    return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
-  }
-
+  /* =========================
+     RENDERING
+     ========================= */
   function render(){
     rowsEl.innerHTML = "";
     activeCountEl.textContent = `${lastIncidents.length} active`;
@@ -378,7 +551,7 @@
         if(tag === "a" || tag === "button") return;
 
         if(x.lat != null && x.lon != null && map){
-          map.setView([x.lat, x.lon], Math.max(map.getZoom(), 12), { animate:true });
+          map.setView([x.lat, x.lon], Math.max(map.getZoom(), 11), { animate:true });
           markersLayer.eachLayer((m) => {
             if(m?.options?.incidentId === x.id) m.openPopup();
           });
@@ -393,7 +566,7 @@
   }
 
   function initMap(){
-    map = L.map("map", { zoomControl:true }).setView([34.278, -119.293], 10);
+    map = L.map("map", { zoomControl:true }).setView([34.35, -119.15], 9);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
@@ -430,16 +603,96 @@
     if(pts.length) map.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
+  /* =========================
+     FETCHERS
+     ========================= */
+  async function fetchVc(){
+    const res = await fetch(VC_API_URL, { cache:"no-store" });
+    if(!res.ok) throw new Error(`VC HTTP ${res.status}`);
+    const data = await res.json();
+
+    return (Array.isArray(data) ? data : [])
+      .map(normalizeVc)
+      .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
+  }
+
+  async function fetchChpVcBBox(){
+    const url = `${CHP_BASE_URL}?lat1=${encodeURIComponent(VC_BBOX.lat1)}&lat2=${encodeURIComponent(VC_BBOX.lat2)}&lon1=${encodeURIComponent(VC_BBOX.lon1)}&lon2=${encodeURIComponent(VC_BBOX.lon2)}`;
+
+    const res = await fetch(url, { cache:"no-store" });
+    if(!res.ok) throw new Error(`CHP HTTP ${res.status}`);
+    const data = await res.json();
+
+    return (Array.isArray(data) ? data : [])
+      .map(normalizeChp)
+      .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
+  }
+
+  async function fetchCalFire(){
+    const res = await fetch(CALFIRE_GEOJSON_URL, { cache:"no-store" });
+    if(!res.ok) throw new Error(`CAL FIRE HTTP ${res.status}`);
+    const gj = await res.json();
+
+    const feats = Array.isArray(gj?.features) ? gj.features : [];
+    let items = feats.map(normalizeCalFireFeature);
+
+    // Filter to Ventura County if the County field exists; otherwise leave statewide
+    const hasCounty = items.some(x => typeof x.county === "string" && x.county.trim() !== "");
+    if(hasCounty){
+      items = items.filter(x => (x.county || "").toLowerCase().includes("ventura"));
+    }
+
+    return items.sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
+  }
+
+  /* =========================
+     TAB / FEED SWITCHING
+     ========================= */
+  const tabs = {
+    vc: document.getElementById("tab-vc"),
+    chp: document.getElementById("tab-chp"),
+    calfire: document.getElementById("tab-calfire"),
+  };
+
+  function setActiveTab(key){
+    activeFeedKey = key;
+
+    Object.keys(tabs).forEach(k => {
+      const isOn = k === key;
+      tabs[k].classList.toggle("active", isOn);
+      tabs[k].setAttribute("aria-selected", isOn ? "true" : "false");
+    });
+
+    const meta = FEEDS[key];
+    pageTitleEl.textContent = meta.title;
+    pageSubtitleEl.textContent = meta.subtitle;
+
+    // Adjust map view defaults per tab
+    if(key === "vc" || key === "chp"){
+      map.setView([34.35, -119.15], 9, { animate:true });
+    } else if (key === "calfire"){
+      map.setView([36.5, -119.5], 6, { animate:true });
+    }
+
+    restartTimer();
+    fetchIncidents();
+  }
+
+  Object.keys(tabs).forEach(k => tabs[k].addEventListener("click", () => setActiveTab(k)));
+
+  function restartTimer(){
+    if(timer) clearInterval(timer);
+    timer = setInterval(fetchIncidents, REFRESH[activeFeedKey] || 60000);
+  }
+
+  /* =========================
+     MAIN REFRESH LOOP
+     ========================= */
   async function fetchIncidents(){
     setStatus("wait","Refreshing…");
     try{
-      const res = await fetch(API_URL, { cache:"no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      lastIncidents = (Array.isArray(data) ? data : [])
-        .map(normalize)
-        .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
+      const items = await FEEDS[activeFeedKey].fetcher();
+      lastIncidents = Array.isArray(items) ? items : [];
 
       updatedAtEl.textContent = lastIncidents[0]?.dateStr ? `Updated ${lastIncidents[0].dateStr}` : "Updated —";
       render();
@@ -450,13 +703,14 @@
       setStatus("err","Error");
       updatedAtEl.textContent = "Updated —";
       rowsEl.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
+      lastIncidents = [];
+      updateMarkers();
     }
   }
 
   initMap();
+  restartTimer();
   fetchIncidents();
-  setInterval(fetchIncidents, 60000);
 </script>
 </body>
 </html>
-
