@@ -14,19 +14,20 @@
   <style>
     :root{
       --bg:#000;
-      --panel:#0a0b0f;
-      --panel2:#0f1116;
-      --rowA:#101010;
-      --rowB:#171717;
       --ink:#f4f4f5;
-      --muted:rgba(255,255,255,.68);
+      --muted:rgba(255,255,255,.7);
       --muted2:rgba(255,255,255,.45);
       --link:#60a5fa;
 
-      --hdr:#8c1111;
+      --hdr:#8c1111;   /* red header */
       --hdrOutline:#000;
 
-      --line:rgba(255,255,255,.09);
+      --card:rgba(255,255,255,.03);
+      --cardBorder:rgba(255,255,255,.08);
+
+      --rowA:rgba(255,255,255,.02);
+      --rowB:rgba(255,255,255,.04);
+
       --greenLine:rgba(16,185,129,.35);
       --shadow:rgba(0,0,0,.55);
     }
@@ -38,106 +39,52 @@
       background:var(--bg);
       color:var(--ink);
     }
-
     a{ color:var(--link); text-decoration:none; }
     a:hover{ text-decoration:underline; }
 
-    header{
-      position:sticky; top:0; z-index:50;
-      background:var(--bg);
-    }
+    header{ position:sticky; top:0; z-index:50; background:var(--bg); }
     header .bar{
       background:var(--hdr);
       outline:2px solid var(--hdrOutline);
       box-shadow: 0 6px 18px var(--shadow);
     }
     .wrap{
-      max-width:1120px;
-      margin:0 auto;
-      padding:14px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+      max-width:1120px; margin:0 auto; padding:14px 16px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
     }
-    .title{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-    }
-    .title h1{
-      margin:0;
-      font-size:18px;
-      font-weight:700;
-      letter-spacing:.2px;
-    }
-    .title p{
-      margin:0;
-      font-size:12px;
-      color:rgba(255,255,255,.8);
-    }
-    .statusBox{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      white-space:nowrap;
-      color:rgba(255,255,255,.9);
-      font-size:12px;
-    }
-    .dot{
-      width:10px;height:10px;border-radius:999px;
-      background:rgba(255,255,255,.35);
-      box-shadow:0 0 0 2px rgba(0,0,0,.25) inset;
-    }
+    .title{ display:flex; flex-direction:column; gap:2px; }
+    .title h1{ margin:0; font-size:18px; font-weight:750; letter-spacing:.2px; }
+    .title p{ margin:0; font-size:12px; color:rgba(255,255,255,.82); }
+
+    .statusBox{ display:flex; align-items:center; gap:10px; white-space:nowrap; font-size:12px; }
+    .dot{ width:10px;height:10px;border-radius:999px; background:rgba(255,255,255,.35); box-shadow:0 0 0 2px rgba(0,0,0,.25) inset; }
     .dot.ok{ background:#34d399; }
     .dot.wait{ background:#fbbf24; }
     .dot.err{ background:#fb7185; }
 
-    main{
-      max-width:1120px;
-      margin:16px auto 28px;
-      padding:0 16px;
-    }
+    main{ max-width:1120px; margin:16px auto 28px; padding:0 16px; }
 
     .card{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.08);
+      background:var(--card);
+      border:1px solid var(--cardBorder);
       border-radius:14px;
       overflow:hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,.5);
     }
 
-    /* Section header bars (Active Calls / Map) */
+    /* Active Calls bar */
     .sectionBar{
       background:#0d1c2f;
-      border-bottom:1px solid rgba(255,255,255,.1);
+      border-bottom:1px solid rgba(255,255,255,.10);
       padding:14px 16px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
     }
-    .sectionBar .left{
-      display:flex;
-      align-items:baseline;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .sectionBar .label{
-      font-weight:700;
-      font-size:16px;
-    }
-    .sectionBar .sub{
-      color:rgba(255,255,255,.7);
-      font-size:12px;
-    }
-    .sectionBar .right{
-      color:rgba(255,255,255,.8);
-      font-size:12px;
-      white-space:nowrap;
-    }
+    .sectionBar .left{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+    .sectionBar .label{ font-weight:800; font-size:16px; }
+    .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
+    .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; }
 
-    /* Table header */
+    /* table headings (desktop) */
     .tblHead{
       background:#060607;
       border-top:1px solid rgba(255,255,255,.08);
@@ -149,10 +96,10 @@
       text-transform:uppercase;
     }
 
-    /* Grid table */
+    /* grid */
     .tbl{
       display:grid;
-      grid-template-columns: 140px 64px 1fr 220px 140px; /* date | icon | address | units | status */
+      grid-template-columns: 140px 64px 1fr 240px 140px; /* date | icon | address | units | status */
       gap:12px;
       align-items:center;
       padding:0 16px;
@@ -163,87 +110,56 @@
       box-shadow: inset 0 -1px 0 var(--greenLine);
       padding:14px 0;
     }
-    .row:nth-child(odd){ background:rgba(255,255,255,.02); }
-    .row:nth-child(even){ background:rgba(255,255,255,.04); }
+    .row:nth-child(odd){ background:var(--rowA); }
+    .row:nth-child(even){ background:var(--rowB); }
 
     .date{
       font-variant-numeric: tabular-nums;
-      color:rgba(255,255,255,.86);
+      color:rgba(255,255,255,.88);
       font-size:13px;
       white-space:nowrap;
     }
-    .icon{
-      font-size:20px;
-      line-height:1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .addr a{
-      display:block;
-      font-size:14px;
-      font-weight:650;
-      color:var(--link);
-    }
+    .icon{ font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; }
+    .addr a{ display:block; font-size:14px; font-weight:700; color:var(--link); }
     .addr .typeText{
       margin-top:3px;
       font-size:12px;
       color:rgba(255,255,255,.55);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       max-width:100%;
     }
+
     .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
       font-size:12px;
       color:rgba(255,255,255,.85);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
     .chip{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:650;
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:750;
       border:1px solid rgba(255,255,255,.12);
       background:rgba(255,255,255,.04);
-      color:rgba(255,255,255,.9);
+      color:rgba(255,255,255,.92);
       white-space:nowrap;
     }
     .chip.green{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); }
     .chip.amber{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.10); }
     .chip.slate{ border-color:rgba(148,163,184,.30); background:rgba(148,163,184,.10); }
 
-    .helper{
-      padding:10px 16px;
-      color:rgba(255,255,255,.4);
-      font-size:11px;
-    }
+    .helper{ padding:10px 16px; color:rgba(255,255,255,.4); font-size:11px; }
 
-    /* Map card */
+    /* Map */
     .mapCard{ margin-top:18px; }
-    #map{
-      height:360px;
-      background:#111;
-    }
     .mapTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
+      display:flex; align-items:center; justify-content:space-between;
       padding:14px 16px;
-      background:var(--panel2);
+      background:rgba(255,255,255,.04);
       border-bottom:1px solid rgba(255,255,255,.10);
     }
-    .mapTop .label{
-      font-weight:700;
-      font-size:16px;
-    }
+    .mapTop .label{ font-weight:800; font-size:16px; }
     .btn{
       appearance:none;
       border:1px solid rgba(255,255,255,.14);
@@ -252,53 +168,27 @@
       border-radius:10px;
       padding:8px 12px;
       font-size:12px;
-      font-weight:650;
+      font-weight:750;
       cursor:pointer;
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
+    #map{ height:360px; background:#111; }
 
-    /* ===== MOBILE ===== */
+    /* ===== MOBILE: show everything (units + status under address) ===== */
     .mobileMeta{ display:none; }
-
     @media (max-width: 760px){
-      .wrap{ padding:12px 14px; }
-      .title h1{ font-size:16px; }
-      .title p{ font-size:11px; }
-
-      /* Hide table column header on mobile */
       .tblHead{ display:none; }
-
-      /* Collapse grid so nothing goes off-screen */
-      .tbl{
-        grid-template-columns: 118px 44px 1fr; /* date | icon | main */
-        gap:10px;
-      }
-
-      /* Show address wrapping on mobile */
-      .addr a{
-        white-space:normal;
-        overflow:visible;
-        text-overflow:unset;
-        line-height:1.15;
-      }
-
-      /* Put Units + Status under the address */
+      .tbl{ grid-template-columns: 118px 44px 1fr; gap:10px; }
+      .addr a{ white-space:normal; overflow:visible; text-overflow:unset; line-height:1.15; }
       .desktopUnits, .desktopStatus{ display:none; }
       .mobileMeta{
-        display:flex;
-        flex-wrap:wrap;
-        gap:8px;
-        margin-top:6px;
-        align-items:center;
+        display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; align-items:center;
       }
       .mobileUnits{
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-        font-size:12px;
-        color:rgba(255,255,255,.80);
+        font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
-        overflow:visible;
       }
-
       #map{ height:420px; }
     }
   </style>
@@ -312,7 +202,6 @@
           <h1>VC Incident Watch</h1>
           <p>Live Ventura County incidents</p>
         </div>
-
         <div class="statusBox">
           <span class="dot" id="dot"></span>
           <span id="statusText">Idle</span>
@@ -342,7 +231,6 @@
       </div>
 
       <div id="rows"></div>
-
       <div class="helper">Row tap jumps to map. Address tap opens Google Maps.</div>
     </section>
 
@@ -358,9 +246,10 @@
 <script>
   const API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 
-  // --- State
+  // state
   let map, markersLayer;
   let lastIncidents = [];
+
   const dot = document.getElementById("dot");
   const statusText = document.getElementById("statusText");
   const rowsEl = document.getElementById("rows");
@@ -381,32 +270,40 @@
     }[m]));
   }
 
-  function normalizeIncident(raw){
-    // API fields can vary; we normalize to what we need.
-    const id = raw?.IncidentId ?? raw?.id ?? raw?.IncidentNumber ?? raw?.IncidentNo ?? raw?.IncidentID ?? crypto.randomUUID();
+  // this matches the REAL API fields:
+  // address, block, city, incidentType, responseDate, status, units, latitude, longitude
+  function normalize(raw){
+    const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
 
-    const dt = raw?.DateTime ?? raw?.dateTime ?? raw?.Date ?? raw?.date ?? raw?.Created ?? raw?.created;
-    const dateStr = raw?.DisplayDateTime ?? raw?.displayDateTime ?? raw?.Timestamp ?? raw?.timestamp ?? dt;
+    const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || "—";
 
-    const address = raw?.Address ?? raw?.address ?? raw?.Location ?? raw?.location ?? "";
-    const city = raw?.City ?? raw?.city ?? "";
-    const fullAddress = [address, city].filter(Boolean).join(", ").trim();
+    const block = raw?.block ? String(raw.block).trim() : "";
+    const addr = raw?.address ? String(raw.address).trim() : "";
+    const city = raw?.city ? String(raw.city).trim() : "";
+    const street = [block, addr].filter(Boolean).join(" ").trim();
+    const fullAddress = [street, city].filter(Boolean).join(", ").trim();
 
-    const status = raw?.Status ?? raw?.status ?? raw?.UnitStatus ?? raw?.unitStatus ?? "";
-    const units = raw?.Units ?? raw?.units ?? raw?.Unit ?? raw?.unit ?? "";
+    const type = raw?.incidentType || raw?.IncidentType || "";
+    const status = raw?.status || raw?.Status || "";
+    const units = raw?.units || raw?.Units || "";
 
-    const type = raw?.Type ?? raw?.type ?? raw?.IncidentType ?? raw?.incidentType ?? raw?.CallType ?? raw?.callType ?? "";
-    const subtype = raw?.SubType ?? raw?.subType ?? raw?.Description ?? raw?.description ?? "";
+    const lat = raw?.latitude ?? raw?.Latitude ?? null;
+    const lon = raw?.longitude ?? raw?.Longitude ?? null;
 
-    const lat = raw?.Latitude ?? raw?.latitude ?? raw?.Lat ?? raw?.lat ?? null;
-    const lon = raw?.Longitude ?? raw?.longitude ?? raw?.Lon ?? raw?.lon ?? raw?.Lng ?? raw?.lng ?? null;
-
-    return { id, dateStr, type, subtype, fullAddress, address, city, status, units, lat, lon, raw };
+    return {
+      id,
+      dateStr,
+      type,
+      status,
+      units,
+      fullAddress,
+      lat: lat != null ? Number(lat) : null,
+      lon: lon != null ? Number(lon) : null
+    };
   }
 
   function emojiFor(typeText){
     const t = (typeText || "").toLowerCase();
-
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
     if(t.includes("rescue")) return "🛟";
     if(t.includes("water")) return "🌊";
@@ -434,30 +331,36 @@
     return `https://www.google.com/maps/search/?api=1&query=${q}`;
   }
 
+  function parseResponseDate(s){
+    // "1/4/26 3:21"
+    const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
+    if(!m) return 0;
+    const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
+    const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
+    const year = yy < 100 ? (2000+yy) : yy;
+    return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
+  }
+
   function render(){
     rowsEl.innerHTML = "";
-    const incidents = lastIncidents;
+    activeCountEl.textContent = `${lastIncidents.length} active`;
 
-    activeCountEl.textContent = `${incidents.length} active`;
-
-    incidents.forEach((x, idx) => {
-      const e = emojiFor(x.type || x.subtype);
-      const mapsHref = googleMapsLink(x.fullAddress || x.address || "");
-
+    lastIncidents.forEach((x) => {
+      const mapsHref = googleMapsLink(x.fullAddress);
       const statusChip = chipFor(x.status);
-      const unitsText = x.units ? escapeHtml(String(x.units)) : `<span style="color:rgba(255,255,255,.35)">—</span>`;
+      const unitsText = x.units ? escapeHtml(x.units) : `<span style="color:rgba(255,255,255,.35)">—</span>`;
 
       const row = document.createElement("div");
       row.className = "row";
       row.innerHTML = `
         <div class="tbl">
-          <div class="date">${escapeHtml(x.dateStr || "—")}</div>
+          <div class="date">${escapeHtml(x.dateStr)}</div>
 
-          <div class="icon" title="${escapeHtml(x.type || "")}">${e}</div>
+          <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
 
           <div class="addr">
-            <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || x.address || "—")}</a>
-            <div class="typeText">${escapeHtml(x.subtype || x.type || "")}</div>
+            <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
+            <div class="typeText">${escapeHtml(x.type || "")}</div>
 
             <div class="mobileMeta">
               <div class="mobileUnits">${unitsText}</div>
@@ -470,14 +373,12 @@
         </div>
       `;
 
-      // Row click: pan map (but don't hijack link clicks)
       row.addEventListener("click", (ev) => {
-        const tag = (ev.target && ev.target.tagName) ? ev.target.tagName.toLowerCase() : "";
+        const tag = ev.target?.tagName?.toLowerCase?.() || "";
         if(tag === "a" || tag === "button") return;
 
         if(x.lat != null && x.lon != null && map){
           map.setView([x.lat, x.lon], Math.max(map.getZoom(), 12), { animate:true });
-          // find marker and open popup
           markersLayer.eachLayer((m) => {
             if(m?.options?.incidentId === x.id) m.openPopup();
           });
@@ -499,63 +400,34 @@
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
-
     document.getElementById("fitBtn").addEventListener("click", fitMap);
-  }
-
-  function fitMap(){
-    if(!map || !markersLayer) return;
-    const bounds = [];
-    markersLayer.eachLayer((m) => {
-      if(m.getLatLng) bounds.push(m.getLatLng());
-    });
-    if(bounds.length){
-      map.fitBounds(L.latLngBounds(bounds), { padding:[20,20] });
-    }
   }
 
   function updateMarkers(){
     markersLayer.clearLayers();
     lastIncidents.forEach((x) => {
       if(x.lat == null || x.lon == null) return;
+
       const marker = L.marker([x.lat, x.lon], { incidentId: x.id });
-      const popup = `
-        <div style="font-family:system-ui; font-size:13px; line-height:1.25">
-          <div style="font-weight:700; margin-bottom:4px">${escapeHtml(x.subtype || x.type || "Incident")}</div>
+      marker.bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "Incident")}</div>
           <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
-          <div style="margin-top:6px; font-size:12px; color:rgba(0,0,0,.75)">
+          <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
             <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
-            <div><b>Units:</b> ${escapeHtml(String(x.units || "—"))}</div>
-            <div><b>Status:</b> ${escapeHtml(String(x.status || "—"))}</div>
+            <div><b>Units:</b> ${escapeHtml(x.units || "—")}</div>
+            <div><b>Status:</b> ${escapeHtml(x.status || "—")}</div>
           </div>
         </div>
-      `;
-      marker.bindPopup(popup);
+      `);
       marker.addTo(markersLayer);
     });
   }
 
-  function computeUpdatedAt(list){
-    // If API provides a single updated time, use it; else use max of dateStr.
-    // We'll just display the first item time if sorted desc.
-    const first = list[0];
-    if(first?.dateStr) return first.dateStr;
-    return "—";
-  }
-
-  function sortDescByDateStr(list){
-    // Date strings look like "1/4/26 3:42". We'll parse loosely.
-    const parse = (s) => {
-      if(!s) return 0;
-      // Try MM/DD/YY HH:MM
-      const m = String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
-      if(!m) return 0;
-      const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
-      const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
-      const year = yy < 100 ? (2000+yy) : yy;
-      return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
-    };
-    return list.slice().sort((a,b) => parse(b.dateStr) - parse(a.dateStr));
+  function fitMap(){
+    const pts = [];
+    markersLayer.eachLayer((m) => pts.push(m.getLatLng()));
+    if(pts.length) map.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
   async function fetchIncidents(){
@@ -565,30 +437,24 @@
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      const rawList = Array.isArray(data) ? data : (data?.Incidents || data?.incidents || []);
-      const normalized = rawList.map(normalizeIncident);
+      lastIncidents = (Array.isArray(data) ? data : [])
+        .map(normalize)
+        .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
-      // Sort newest first (best effort)
-      lastIncidents = sortDescByDateStr(normalized);
-
-      const updated = computeUpdatedAt(lastIncidents);
-      updatedAtEl.textContent = `Updated ${updated}`;
-
+      updatedAtEl.textContent = lastIncidents[0]?.dateStr ? `Updated ${lastIncidents[0].dateStr}` : "Updated —";
       render();
       updateMarkers();
       setStatus("ok","Updated");
-    }catch(err){
-      console.error(err);
+    }catch(e){
+      console.error(e);
       setStatus("err","Error");
       updatedAtEl.textContent = "Updated —";
-      rowsEl.innerHTML = `<div style="padding:16px; color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
+      rowsEl.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
     }
   }
 
-  // Init
   initMap();
   fetchIncidents();
-  // refresh every 60s
   setInterval(fetchIncidents, 60000);
 </script>
 </body>
