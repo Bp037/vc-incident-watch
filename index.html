@@ -19,7 +19,7 @@
       --muted2:rgba(255,255,255,.45);
       --link:#60a5fa;
 
-      --hdr:#8c1111;
+      --hdr:#8c1111;   /* red header */
       --hdrOutline:#000;
 
       --card:rgba(255,255,255,.03);
@@ -62,6 +62,33 @@
     .dot.wait{ background:#fbbf24; }
     .dot.err{ background:#fb7185; }
 
+    /* Tabs */
+    .tabsWrap{
+      max-width:1120px;
+      margin:0 auto;
+      padding:10px 16px 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .tabBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.25);
+      color:rgba(255,255,255,.92);
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .tabBtn.active{
+      background:rgba(255,255,255,.10);
+      border-color:rgba(255,255,255,.28);
+      box-shadow: 0 0 0 2px rgba(0,0,0,.25) inset;
+    }
+
     main{ max-width:1120px; margin:16px auto 28px; padding:0 16px; }
 
     .card{
@@ -72,17 +99,20 @@
       box-shadow: 0 10px 30px rgba(0,0,0,.5);
     }
 
+    /* Active Calls bar */
     .sectionBar{
       background:#0d1c2f;
       border-bottom:1px solid rgba(255,255,255,.10);
       padding:14px 16px;
       display:flex; justify-content:space-between; align-items:center; gap:12px;
+      flex-wrap:wrap;
     }
     .sectionBar .left{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
     .sectionBar .label{ font-weight:800; font-size:16px; }
     .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
-    .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; }
+    .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
+    /* table headings (desktop) */
     .tblHead{
       background:#060607;
       border-top:1px solid rgba(255,255,255,.08);
@@ -94,9 +124,10 @@
       text-transform:uppercase;
     }
 
+    /* grid */
     .tbl{
       display:grid;
-      grid-template-columns: 140px 64px 1fr 240px 140px;
+      grid-template-columns: 140px 64px 1fr 240px 140px; /* date | icon | address | units | status */
       gap:12px;
       align-items:center;
       padding:0 16px;
@@ -148,6 +179,7 @@
 
     .helper{ padding:10px 16px; color:rgba(255,255,255,.4); font-size:11px; }
 
+    /* Map */
     .mapCard{ margin-top:18px; }
     .mapTop{
       display:flex; align-items:center; justify-content:space-between;
@@ -168,8 +200,10 @@
       cursor:pointer;
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
-    #map{ height:360px; background:#111; }
 
+    #map_fire, #map_chp, #map_eq, #map_weather{ height:360px; background:#111; }
+
+    /* ===== MOBILE: Fire/Medical show everything (units + status under address) ===== */
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
       .tblHead{ display:none; }
@@ -184,115 +218,927 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
-      #map{ height:420px; }
+      #map_fire, #map_chp, #map_eq, #map_weather{ height:420px; }
+    }
+
+    /* Tab panels */
+    .tabPanel{ display:none; }
+    .tabPanel.active{ display:block; }
+
+    /* Emoji marker */
+    .emojiPin{
+      width:34px;height:34px;
+      border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      border:2px solid rgba(255,255,255,.85);
+      box-shadow: 0 10px 18px rgba(0,0,0,.5);
+      font-size:18px;
+      background:#1f2937;
+    }
+
+    /* CHP compact table */
+    .chpGridHead{
+      display:grid;
+      grid-template-columns: 160px 220px 1fr 90px 90px;
+      gap:10px;
+      align-items:center;
+      padding:10px 16px;
+      color:rgba(255,255,255,.72);
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      border-top:1px solid rgba(255,255,255,.08);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background:#060607;
+    }
+    .chpRow{
+      display:grid;
+      grid-template-columns: 160px 220px 1fr 90px 90px;
+      gap:10px;
+      align-items:start;
+      padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 -1px 0 var(--greenLine);
+    }
+    .chpRow:nth-child(odd){ background:var(--rowA); }
+    .chpRow:nth-child(even){ background:var(--rowB); }
+    .chpTime{ font-variant-numeric: tabular-nums; font-size:13px; color:rgba(255,255,255,.88); }
+    .chpType{ font-weight:800; font-size:13px; }
+    .chpLoc{ font-size:13px; color:rgba(255,255,255,.86); white-space:pre-wrap; word-break:break-word; }
+    .chpMono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; font-size:12px; color:rgba(255,255,255,.80); }
+
+    /* Mobile CHP cards */
+    @media (max-width: 760px){
+      .chpGridHead{ display:none; }
+      .chpRow{
+        display:block;
+        border-radius:14px;
+        margin:12px 16px;
+        border:1px solid rgba(255,255,255,.10);
+        padding:12px;
+      }
+      .chpKV{ display:grid; grid-template-columns: 92px 1fr; gap:10px 12px; padding:6px 0; }
+      .k{ color:rgba(255,255,255,.55); font-weight:800; letter-spacing:.08em; font-size:11px; text-transform:uppercase; }
+      .v{ font-size:13px; color:rgba(255,255,255,.9); }
+    }
+
+    /* Earthquake magnitude chip */
+    .magChip{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:6px 10px;border-radius:999px;
+      font-size:12px;font-weight:900;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.95);
+      white-space:nowrap;
+    }
+
+    .segBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.92);
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:12px;
+      font-weight:850;
+      cursor:pointer;
+    }
+    .segBtn.active{
+      background:rgba(255,255,255,.12);
+      border-color:rgba(255,255,255,.28);
     }
   </style>
 </head>
 
 <body>
-<header>
-  <div class="bar">
-    <div class="wrap">
-      <div class="title">
-        <h1>VC Incident Watch</h1>
-        <p>Live Ventura County incidents</p>
+  <header>
+    <div class="bar">
+      <div class="wrap">
+        <div class="title">
+          <h1>VC Incident Watch</h1>
+          <p>Live Ventura County situational awareness</p>
+        </div>
+        <div class="statusBox">
+          <span class="dot" id="dot"></span>
+          <span id="statusText">Idle</span>
+        </div>
       </div>
-      <div class="statusBox">
-        <span class="dot" id="dot"></span>
-        <span id="statusText">Idle</span>
-      </div>
-    </div>
-  </div>
-</header>
 
-<main>
-  <section class="card">
-    <div class="sectionBar">
-      <div class="left">
-        <div class="label">Active Calls</div>
-        <div class="sub" id="updatedAt">Updated —</div>
+      <div class="tabsWrap">
+        <button class="tabBtn active" data-tab="fire">Fire/Medical</button>
+        <button class="tabBtn" data-tab="chp">CHP</button>
+        <button class="tabBtn" data-tab="eq">Earthquakes</button>
+        <button class="tabBtn" data-tab="weather">Weather Alerts</button>
       </div>
-      <div class="right" id="activeCount">— active</div>
     </div>
-    <div id="rows"></div>
-  </section>
+  </header>
 
-  <section class="card mapCard">
-    <div class="mapTop">
-      <div class="label">Map</div>
-      <button class="btn" id="fitBtn">Fit Map</button>
+  <main>
+    <!-- ================= FIRE / MEDICAL ================= -->
+    <div class="tabPanel active" id="tab_fire">
+      <section class="card" aria-label="Active Calls">
+        <div class="sectionBar">
+          <div class="left">
+            <div class="label">Active Calls</div>
+            <div class="sub" id="updatedAt_fire">Updated —</div>
+          </div>
+          <div class="right" id="activeCount_fire">— active</div>
+        </div>
+
+        <div class="tblHead">
+          <div class="tbl" style="padding:0;">
+            <div>DATE/TIME</div>
+            <div>TYPE</div>
+            <div>ADDRESS</div>
+            <div>UNITS</div>
+            <div>STATUS</div>
+          </div>
+        </div>
+
+        <div id="rows_fire"></div>
+        <div class="helper">Row tap jumps to map. Address tap opens Google Maps.</div>
+      </section>
+
+      <section class="card mapCard" aria-label="Map">
+        <div class="mapTop">
+          <div class="label">Map</div>
+          <button class="btn" id="fitBtn_fire" type="button">Fit Map</button>
+        </div>
+        <div id="map_fire"></div>
+      </section>
     </div>
-    <div id="map"></div>
-  </section>
-</main>
+
+    <!-- ================= CHP ================= -->
+    <div class="tabPanel" id="tab_chp">
+      <section class="card" aria-label="CHP Incidents">
+        <div class="sectionBar">
+          <div class="left">
+            <div class="label">CHP (Ventura County)</div>
+            <div class="sub" id="updatedAt_chp">Updated —</div>
+          </div>
+          <div class="right" id="activeCount_chp">— incidents</div>
+        </div>
+
+        <div class="chpGridHead">
+          <div>TIME</div><div>TYPE</div><div>LOCATION</div><div>LAT</div><div>LON</div>
+        </div>
+
+        <div id="rows_chp"></div>
+        <div class="helper">Tap a row to zoom on the map.</div>
+      </section>
+
+      <section class="card mapCard" aria-label="CHP Map">
+        <div class="mapTop">
+          <div class="label">Map</div>
+          <button class="btn" id="fitBtn_chp" type="button">Fit Map</button>
+        </div>
+        <div id="map_chp"></div>
+      </section>
+    </div>
+
+    <!-- ================= EARTHQUAKES ================= -->
+    <div class="tabPanel" id="tab_eq">
+      <section class="card" aria-label="Earthquakes">
+        <div class="sectionBar">
+          <div class="left">
+            <div class="label">Earthquakes (SoCal • M3.0+)</div>
+            <div class="sub" id="updatedAt_eq">Updated —</div>
+          </div>
+          <div class="right">
+            <button class="segBtn active" id="eqBtn_hour" type="button">Past Hour</button>
+            <button class="segBtn" id="eqBtn_day" type="button">Past 24h</button>
+            <button class="segBtn" id="eqBtn_week" type="button">Past 7d</button>
+            <span id="activeCount_eq">— events</span>
+          </div>
+        </div>
+
+        <div id="rows_eq"></div>
+        <div class="helper">Tap an event to zoom on the map.</div>
+      </section>
+
+      <section class="card mapCard" aria-label="Earthquake Map">
+        <div class="mapTop">
+          <div class="label">Map</div>
+          <button class="btn" id="fitBtn_eq" type="button">Fit Map</button>
+        </div>
+        <div id="map_eq"></div>
+      </section>
+    </div>
+
+    <!-- ================= WEATHER ALERTS ================= -->
+    <div class="tabPanel" id="tab_weather">
+      <section class="card" aria-label="Weather Alerts">
+        <div class="sectionBar">
+          <div class="left">
+            <div class="label">Weather Alerts (NWS)</div>
+            <div class="sub" id="updatedAt_weather">Updated —</div>
+          </div>
+          <div class="right" id="activeCount_weather">— alerts</div>
+        </div>
+
+        <div id="rows_weather"></div>
+        <div class="helper">Tap an alert to zoom to its polygon.</div>
+      </section>
+
+      <section class="card mapCard" aria-label="Weather Map">
+        <div class="mapTop">
+          <div class="label">Map</div>
+          <button class="btn" id="fitBtn_weather" type="button">Fit Map</button>
+        </div>
+        <div id="map_weather"></div>
+      </section>
+    </div>
+  </main>
 
 <script>
-const API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
-let map, markersLayer;
-let lastIncidents = [];
+  function formatUpdatedLikeVCFD(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return "—";
 
-const dot = document.getElementById("dot");
-const statusText = document.getElementById("statusText");
-const rowsEl = document.getElementById("rows");
-const updatedAtEl = document.getElementById("updatedAt");
-const activeCountEl = document.getElementById("activeCount");
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const yr = String(d.getFullYear()).slice(-2);
 
-function setStatus(state, text){
-  dot.classList.remove("ok","wait","err");
-  if(state === "ok") dot.classList.add("ok");
-  if(state === "wait") dot.classList.add("wait");
-  if(state === "err") dot.classList.add("err");
-  statusText.textContent = text;
+  let h = d.getHours();
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ampm = h >= 12 ? "pm" : "am";
+  h = h % 12 || 12;
+
+  return `${m}/${day}/${yr} ${h}:${min}${ampm}`;
 }
 
-function emojiFor(typeText){
-  const t = (typeText || "").toLowerCase();
-  if (t === "1e" || t.includes("gas")) return "⚠️";
-  if (t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
-  if (t.includes("rescue")) return "🛟";
-  if (t.includes("water")) return "🌊";
-  if (t.includes("structure")) return "🏠🔥";
-  if (t.includes("fire")) return "🔥";
-  if (t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
-  if (t.includes("haz") || t.includes("hazmat")) return "☣️";
-  if (t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
-  return "📍";
-}
+  // ===== GLOBAL STATUS DOT =====
+  const dot = document.getElementById("dot");
+  const statusText = document.getElementById("statusText");
 
-function render(){
-  rowsEl.innerHTML = "";
-  activeCountEl.textContent = `${lastIncidents.length} active`;
-  lastIncidents.forEach(x=>{
-    const typeLabel = x.type === "1E" ? "Gas Leak" : x.type;
-    rowsEl.innerHTML += `
-      <div class="row">
-        <div class="tbl">
-          <div class="date">${x.dateStr}</div>
-          <div class="icon">${emojiFor(typeLabel)}</div>
-          <div class="addr">
-            <a target="_blank" href="https://maps.google.com/?q=${encodeURIComponent(x.fullAddress)}">${x.fullAddress}</a>
-            <div class="typeText">${typeLabel}</div>
-          </div>
-          <div class="mono">${x.units || "—"}</div>
-          <div>${x.status || "—"}</div>
-        </div>
-      </div>`;
+  function setStatus(state, text){
+    dot.classList.remove("ok","wait","err");
+    if(state === "ok") dot.classList.add("ok");
+    if(state === "wait") dot.classList.add("wait");
+    if(state === "err") dot.classList.add("err");
+    statusText.textContent = text;
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  // ===== TABS =====
+  const tabBtns = document.querySelectorAll(".tabBtn");
+  const panels = {
+    fire: document.getElementById("tab_fire"),
+    chp: document.getElementById("tab_chp"),
+    eq: document.getElementById("tab_eq"),
+    weather: document.getElementById("tab_weather"),
+  };
+
+  tabBtns.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      tabBtns.forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      const key = btn.dataset.tab;
+      Object.keys(panels).forEach(k=>panels[k].classList.toggle("active", k===key));
+
+      setTimeout(()=>{
+        if(key==="fire" && map_fire) map_fire.invalidateSize();
+        if(key==="chp" && map_chp) map_chp.invalidateSize();
+        if(key==="eq" && map_eq) map_eq.invalidateSize();
+        if(key==="weather" && map_weather) map_weather.invalidateSize();
+      }, 50);
+    });
   });
+
+  // =====================================================
+  // =============== MARKER ICONS (EMOJI) ================
+  // =====================================================
+  function emojiFor(typeText){
+    const t = (typeText || "").toLowerCase();
+    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
+    if(t.includes("rescue")) return "🛟";
+    if(t.includes("water")) return "🌊";
+    if(t.includes("structure")) return "🏠🔥";
+    if(t.includes("fire")) return "🔥";
+    if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
+    if(t.includes("haz") || t.includes("hazmat")) return "☣️";
+    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
+    if(t.includes("alarm")) return "🔔";
+    if(t.includes("investig")) return "🔎";
+    if(t.includes("public")) return "🧰";
+    return "📍";
+  }
+
+  // YOU REQUESTED: Fire=RED, Traffic=ORANGE
+  function colorForFireMedical(typeText){
+    const t = (typeText || "").toLowerCase();
+    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "#2563eb"; // blue
+    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "#f97316"; // ORANGE (traffic)
+    if(t.includes("fire") || t.includes("structure") || t.includes("vegetation") || t.includes("brush")) return "#ef4444"; // RED (fire)
+    if(t.includes("haz") || t.includes("hazmat")) return "#a855f7"; // purple
+    if(t.includes("rescue")) return "#22c55e"; // green
+    return "#64748b"; // gray
+  }
+
+  function markerIcon(typeText, colorHex){
+    const emo = emojiFor(typeText);
+    const bg = colorHex || "#64748b";
+    return L.divIcon({
+      className: "",
+      iconSize: [34,34],
+      iconAnchor: [17,17],
+      popupAnchor: [0,-14],
+      html: `<div class="emojiPin" style="background:${bg}">${emo}</div>`
+    });
+  }
+
+  // =====================================================
+  // ================= FIRE / MEDICAL ====================
+  // =====================================================
+  const FIRE_API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
+
+  let map_fire, layer_fire;
+  let fireIncidents = [];
+
+  const rows_fire = document.getElementById("rows_fire");
+  const updatedAt_fire = document.getElementById("updatedAt_fire");
+  const activeCount_fire = document.getElementById("activeCount_fire");
+
+  function chipFor(statusText){
+    const s = (statusText || "").toLowerCase();
+    if(s.includes("on scene") || s.includes("onscene")) return `<span class="chip green">On scene</span>`;
+    if(s.includes("en route") || s.includes("enroute")) return `<span class="chip amber">En Route</span>`;
+    if(!s) return `<span class="chip slate">—</span>`;
+    return `<span class="chip slate">${escapeHtml(statusText)}</span>`;
+  }
+
+  function googleMapsLink(fullAddress){
+    const q = encodeURIComponent(fullAddress || "");
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
+
+  function parseResponseDate(s){
+    const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
+    if(!m) return 0;
+    const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
+    const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
+    const year = yy < 100 ? (2000+yy) : yy;
+    return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
+  }
+
+  function normalizeFire(raw){
+    const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
+    const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || "—";
+
+    const block = raw?.block ? String(raw.block).trim() : "";
+    const addr = raw?.address ? String(raw.address).trim() : "";
+    const city = raw?.city ? String(raw.city).trim() : "";
+    const street = [block, addr].filter(Boolean).join(" ").trim();
+    const fullAddress = [street, city].filter(Boolean).join(", ").trim();
+
+    const type = raw?.incidentType || raw?.IncidentType || "";
+    const status = raw?.status || raw?.Status || "";
+    const units = raw?.units || raw?.Units || "";
+
+    const lat = raw?.latitude ?? raw?.Latitude ?? null;
+    const lon = raw?.longitude ?? raw?.Longitude ?? null;
+
+    return {
+      id, dateStr, type, status, units, fullAddress,
+      lat: lat != null ? Number(lat) : null,
+      lon: lon != null ? Number(lon) : null
+    };
+  }
+
+  function renderFire(){
+    rows_fire.innerHTML = "";
+    activeCount_fire.textContent = `${fireIncidents.length} active`;
+
+    fireIncidents.forEach((x) => {
+      const mapsHref = googleMapsLink(x.fullAddress);
+      const statusChip = chipFor(x.status);
+      const unitsText = x.units ? escapeHtml(x.units) : `<span style="color:rgba(255,255,255,.35)">—</span>`;
+
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="tbl">
+          <div class="date">${escapeHtml(x.dateStr)}</div>
+
+          <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+
+          <div class="addr">
+            <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
+            <div class="typeText">${escapeHtml(x.type || "")}</div>
+
+            <div class="mobileMeta">
+              <div class="mobileUnits">${unitsText}</div>
+              <div>${statusChip}</div>
+            </div>
+          </div>
+
+          <div class="desktopUnits mono">${unitsText}</div>
+          <div class="desktopStatus">${statusChip}</div>
+        </div>
+      `;
+
+      row.addEventListener("click", (ev) => {
+        const tag = ev.target?.tagName?.toLowerCase?.() || "";
+        if(tag === "a" || tag === "button") return;
+
+        if(x.lat != null && x.lon != null && map_fire){
+          map_fire.setView([x.lat, x.lon], Math.max(map_fire.getZoom(), 12), { animate:true });
+          layer_fire.eachLayer((m) => {
+            if(m?.options?.incidentId === x.id) m.openPopup();
+          });
+          document.getElementById("map_fire").scrollIntoView({ behavior:"smooth", block:"start" });
+        }else{
+          document.getElementById("map_fire").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
+
+      rows_fire.appendChild(row);
+    });
+  }
+
+  function initFireMap(){
+    map_fire = L.map("map_fire", { zoomControl:true }).setView([34.278, -119.293], 10);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map_fire);
+
+    layer_fire = L.layerGroup().addTo(map_fire);
+    document.getElementById("fitBtn_fire").addEventListener("click", fitFireMap);
+  }
+
+  function updateFireMarkers(){
+    layer_fire.clearLayers();
+    fireIncidents.forEach((x) => {
+      if(x.lat == null || x.lon == null) return;
+
+      const marker = L.marker([x.lat, x.lon], {
+        incidentId: x.id,
+        icon: markerIcon(x.type, colorForFireMedical(x.type))
+      });
+
+      marker.bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "Incident")}</div>
+          <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
+          <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
+            <div><b>Units:</b> ${escapeHtml(x.units || "—")}</div>
+            <div><b>Status:</b> ${escapeHtml(x.status || "—")}</div>
+          </div>
+        </div>
+      `);
+
+      marker.addTo(layer_fire);
+    });
+  }
+
+  function fitFireMap(){
+    const pts = [];
+    layer_fire.eachLayer((m) => pts.push(m.getLatLng()));
+    if(pts.length) map_fire.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  async function fetchFire(){
+    setStatus("wait","Refreshing…");
+    try{
+      const res = await fetch(FIRE_API_URL, { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      fireIncidents = (Array.isArray(data) ? data : [])
+        .map(normalizeFire)
+        .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
+
+      updatedAt_fire.textContent = fireIncidents[0]?.dateStr ? `Updated ${fireIncidents[0].dateStr}` : "Updated —";
+      renderFire();
+      updateFireMarkers();
+      setStatus("ok","Updated");
+    }catch(e){
+      console.error(e);
+      setStatus("err","Error");
+      updatedAt_fire.textContent = "Updated —";
+      rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
+    }
+  }
+
+  // =====================================================
+  // ======================= CHP =========================
+  // =====================================================
+  let map_chp, layer_chp;
+  let chpIncidents = [];
+
+  const rows_chp = document.getElementById("rows_chp");
+  const updatedAt_chp = document.getElementById("updatedAt_chp");
+  const activeCount_chp = document.getElementById("activeCount_chp");
+
+  function initChpMap(){
+    map_chp = L.map("map_chp", { zoomControl:true }).setView([34.278, -119.293], 9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map_chp);
+    layer_chp = L.layerGroup().addTo(map_chp);
+    document.getElementById("fitBtn_chp").addEventListener("click", fitChpMap);
+  }
+
+  function fitChpMap(){
+    const pts = [];
+    layer_chp.eachLayer(m=>pts.push(m.getLatLng()));
+    if(pts.length) map_chp.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  function renderChp(){
+    rows_chp.innerHTML = "";
+    activeCount_chp.textContent = `${chpIncidents.length} incidents`;
+    const isMobile = window.matchMedia("(max-width: 760px)").matches;
+
+    chpIncidents.forEach(x=>{
+      if(isMobile){
+        const card = document.createElement("div");
+        card.className = "chpRow";
+        card.innerHTML = `
+          <div class="chpKV"><div class="k">Time</div><div class="v">${escapeHtml(x.dateStr || "—")}</div></div>
+          <div class="chpKV"><div class="k">Type</div><div class="v">${escapeHtml(x.type || "—")}</div></div>
+          <div class="chpKV"><div class="k">Location</div><div class="v">${escapeHtml(x.location || "—")}</div></div>
+          <div class="chpKV"><div class="k">Lat</div><div class="v chpMono">${x.lat != null ? escapeHtml(x.lat) : "—"}</div></div>
+          <div class="chpKV"><div class="k">Lon</div><div class="v chpMono">${x.lon != null ? escapeHtml(x.lon) : "—"}</div></div>
+        `;
+        card.addEventListener("click", ()=>{
+          if(x.lat!=null && x.lon!=null){
+            map_chp.setView([x.lat, x.lon], Math.max(map_chp.getZoom(), 11), { animate:true });
+            document.getElementById("map_chp").scrollIntoView({ behavior:"smooth", block:"start" });
+          }
+        });
+        rows_chp.appendChild(card);
+      } else {
+        const row = document.createElement("div");
+        row.className = "chpRow";
+        row.innerHTML = `
+          <div class="chpTime">${escapeHtml(x.dateStr || "—")}</div>
+          <div class="chpType">${escapeHtml(x.type || "—")}</div>
+          <div class="chpLoc">${escapeHtml(x.location || "—")}</div>
+          <div class="chpMono">${x.lat != null ? escapeHtml(x.lat) : "—"}</div>
+          <div class="chpMono">${x.lon != null ? escapeHtml(x.lon) : "—"}</div>
+        `;
+        row.addEventListener("click", ()=>{
+          if(x.lat!=null && x.lon!=null){
+            map_chp.setView([x.lat, x.lon], Math.max(map_chp.getZoom(), 11), { animate:true });
+            document.getElementById("map_chp").scrollIntoView({ behavior:"smooth", block:"start" });
+          }
+        });
+        rows_chp.appendChild(row);
+      }
+    });
+  }
+
+  function updateChpMarkers(){
+    layer_chp.clearLayers();
+    chpIncidents.forEach(x=>{
+      if(x.lat==null || x.lon==null) return;
+      const m = L.marker([x.lat, x.lon], { icon: markerIcon(x.type || "CHP", "#0ea5e9") })
+        .bindPopup(`
+          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+            <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "CHP")}</div>
+            <div style="color:rgba(0,0,0,.75);white-space:pre-wrap">${escapeHtml(x.location || "")}</div>
+            <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
+              <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
+              <div><b>Lat/Lon:</b> ${x.lat ?? "—"}, ${x.lon ?? "—"}</div>
+            </div>
+          </div>
+        `);
+      m.addTo(layer_chp);
+    });
+  }
+
+  async function fetchChp(){
+    setStatus("wait","Refreshing…");
+    try{
+      const res = await fetch("/api/incidents", { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const raw = Array.isArray(data?.chp?.incidents) ? data.chp.incidents : [];
+
+chpIncidents = raw.map((x, i) => {
+  const lat = x?.latitude ?? x?.lat ?? null;
+  const lon = x?.longitude ?? x?.lon ?? null;
+
+  return {
+    id: x?.id ?? `${x?.type || "CHP"}-${i}`,
+    // the table expects dateStr
+    dateStr: x?.dateStr ?? x?.dateTime ?? "—",
+    type: x?.type || "CHP",
+    location: x?.location || "—",
+    // the map expects lat/lon numbers
+    lat: lat != null ? Number(lat) : null,
+    lon: lon != null ? Number(lon) : null,
+  };
+});
+
+  if (data?.updatedAt) {
+  const formatted = formatUpdatedLikeVCFD(data.updatedAt);
+  updatedAt_chp.textContent = `Updated ${formatted}`;
+} else {
+  updatedAt_chp.textContent = "Updated —";
 }
 
-async function fetchIncidents(){
-  setStatus("wait","Refreshing…");
-  const res = await fetch(API_URL);
-  const data = await res.json();
-  lastIncidents = data;
-  updatedAtEl.textContent = `Updated ${new Date().toLocaleTimeString()}`;
-  render();
-  setStatus("ok","Updated");
-}
 
-fetchIncidents();
-setInterval(fetchIncidents, 60000);
+
+      renderChp();
+      updateChpMarkers();
+      setStatus("ok","Updated");
+    }catch(e){
+      console.error(e);
+      setStatus("err","Error");
+      updatedAt_chp.textContent = "Updated —";
+      rows_chp.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load CHP right now.</div>`;
+    }
+  }
+
+  // =====================================================
+  // ==================== EARTHQUAKES ====================
+  // =====================================================
+  let map_eq, layer_eq;
+  let eqEvents = [];
+  let eqWindow = "hour"; // hour | day | week
+
+  const rows_eq = document.getElementById("rows_eq");
+  const updatedAt_eq = document.getElementById("updatedAt_eq");
+  const activeCount_eq = document.getElementById("activeCount_eq");
+
+  const eqBtnHour = document.getElementById("eqBtn_hour");
+  const eqBtnDay = document.getElementById("eqBtn_day");
+  const eqBtnWeek = document.getElementById("eqBtn_week");
+
+  function setEqWindow(w){
+    eqWindow = w;
+    [eqBtnHour, eqBtnDay, eqBtnWeek].forEach(b=>b.classList.remove("active"));
+    if(w==="hour") eqBtnHour.classList.add("active");
+    if(w==="day") eqBtnDay.classList.add("active");
+    if(w==="week") eqBtnWeek.classList.add("active");
+    fetchEarthquakes();
+  }
+
+  eqBtnHour.addEventListener("click", ()=>setEqWindow("hour"));
+  eqBtnDay.addEventListener("click", ()=>setEqWindow("day"));
+  eqBtnWeek.addEventListener("click", ()=>setEqWindow("week"));
+
+  function initEqMap(){
+    map_eq = L.map("map_eq", { zoomControl:true }).setView([34.1, -118.4], 7.5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map_eq);
+    layer_eq = L.layerGroup().addTo(map_eq);
+    document.getElementById("fitBtn_eq").addEventListener("click", fitEqMap);
+  }
+
+  function fitEqMap(){
+    const pts = [];
+    layer_eq.eachLayer(m=>pts.push(m.getLatLng()));
+    if(pts.length) map_eq.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  // Color by magnitude (A)
+  function eqColor(mag){
+    const m = Number(mag || 0);
+    if(m >= 5.0) return "#ef4444";     // red
+    if(m >= 4.0) return "#f97316";     // orange
+    return "#fbbf24";                  // yellow
+  }
+
+  function eqIcon(mag){
+    const color = eqColor(mag);
+    // size bumps slightly with magnitude
+    const size = Math.max(30, Math.min(44, 26 + (Number(mag || 0) * 4)));
+    return L.divIcon({
+      className:"",
+      iconSize:[size,size],
+      iconAnchor:[size/2,size/2],
+      popupAnchor:[0,-14],
+      html:`<div class="emojiPin" style="width:${size}px;height:${size}px;background:${color};font-size:16px">🌎</div>`
+    });
+  }
+
+  function magChip(mag){
+    const c = eqColor(mag);
+    return `<span class="magChip" style="background:${c};border-color:rgba(255,255,255,.22)">M ${escapeHtml(mag)}</span>`;
+  }
+
+  function renderEq(){
+    rows_eq.innerHTML = "";
+    activeCount_eq.textContent = `${eqEvents.length} events`;
+
+    if(!eqEvents.length){
+      rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No M3.0+ earthquakes found in the selected window.</div>`;
+      return;
+    }
+
+    eqEvents.forEach(ev=>{
+      const row = document.createElement("div");
+      row.className = "row";
+      const when = ev.time ? new Date(ev.time).toLocaleString() : "—";
+      row.innerHTML = `
+        <div class="tbl" style="grid-template-columns: 170px 110px 1fr 140px 0; padding:0 16px;">
+          <div class="date">${escapeHtml(when)}</div>
+          <div>${magChip(ev.mag ?? "—")}</div>
+          <div class="addr">
+            <div style="font-weight:800;font-size:14px">${escapeHtml(ev.place || "—")}</div>
+            <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
+          </div>
+          <div class="mono">${escapeHtml(ev.id || "")}</div>
+          <div></div>
+        </div>
+      `;
+      row.addEventListener("click", ()=>{
+        if(ev.lat!=null && ev.lon!=null){
+          map_eq.setView([ev.lat, ev.lon], Math.max(map_eq.getZoom(), 9), { animate:true });
+          document.getElementById("map_eq").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
+      rows_eq.appendChild(row);
+    });
+  }
+
+  function updateEqMarkers(){
+    layer_eq.clearLayers();
+    eqEvents.forEach(ev=>{
+      if(ev.lat==null || ev.lon==null) return;
+      const m = L.marker([ev.lat, ev.lon], { icon: eqIcon(ev.mag) })
+        .bindPopup(`
+          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+            <div style="font-weight:900;margin-bottom:6px">M ${escapeHtml(ev.mag ?? "—")} — ${escapeHtml(ev.place || "")}</div>
+            <div style="font-size:12px;color:rgba(0,0,0,.75)">
+              <div><b>Time:</b> ${escapeHtml(ev.time ? new Date(ev.time).toLocaleString() : "—")}</div>
+              <div><b>Depth:</b> ${escapeHtml(ev.depthKm != null ? (ev.depthKm + " km") : "—")}</div>
+            </div>
+          </div>
+        `);
+      m.addTo(layer_eq);
+    });
+  }
+
+  async function fetchEarthquakes(){
+    setStatus("wait","Refreshing…");
+    try{
+      const res = await fetch(`/api/earthquakes?window=${encodeURIComponent(eqWindow)}`, { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      eqEvents = Array.isArray(data?.events) ? data.events : [];
+      updatedAt_eq.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
+
+      renderEq();
+      updateEqMarkers();
+      setStatus("ok","Updated");
+    }catch(e){
+      console.error(e);
+      setStatus("err","Error");
+      updatedAt_eq.textContent = "Updated —";
+      rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load earthquakes right now.</div>`;
+    }
+  }
+
+  // =====================================================
+  // =================== WEATHER ALERTS ==================
+  // =====================================================
+  let map_weather, layer_weather;
+  let wxAlerts = [];
+
+  const rows_weather = document.getElementById("rows_weather");
+  const updatedAt_weather = document.getElementById("updatedAt_weather");
+  const activeCount_weather = document.getElementById("activeCount_weather");
+
+  function initWeatherMap(){
+    map_weather = L.map("map_weather", { zoomControl:true }).setView([34.278, -119.293], 8.5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map_weather);
+    layer_weather = L.layerGroup().addTo(map_weather);
+    document.getElementById("fitBtn_weather").addEventListener("click", fitWeatherMap);
+  }
+
+  function fitWeatherMap(){
+    const bounds = [];
+    layer_weather.eachLayer(l=>{
+      if(l.getBounds) bounds.push(l.getBounds());
+    });
+    if(bounds.length){
+      const b = bounds.reduce((acc,bb)=> acc.extend(bb), bounds[0]);
+      map_weather.fitBounds(b, { padding:[20,20] });
+    }
+  }
+
+  function renderWeather(){
+    rows_weather.innerHTML = "";
+    activeCount_weather.textContent = `${wxAlerts.length} alerts`;
+
+    if(!wxAlerts.length){
+      rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No active Ventura-related alerts found right now.</div>`;
+      return;
+    }
+
+    wxAlerts.forEach(a=>{
+      const headline = a.headline || a.event || "Alert";
+      const area = a.areaDesc || "";
+      const ends = a.ends || a.expires || "";
+      const sent = a.sent || "";
+
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
+          <div class="date">${escapeHtml(sent ? new Date(sent).toLocaleString() : "—")}</div>
+          <div class="icon">⚠️</div>
+          <div class="addr">
+            <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
+            <div class="typeText">${escapeHtml(area)}</div>
+          </div>
+          <div class="mono">${escapeHtml(ends ? ("Ends: " + new Date(ends).toLocaleString()) : "—")}</div>
+          <div class="desktopStatus"><span class="chip slate">${escapeHtml(a.severity || "—")}</span></div>
+        </div>
+      `;
+
+      row.addEventListener("click", ()=>{
+        if(a._bounds){
+          map_weather.fitBounds(a._bounds, { padding:[20,20] });
+          document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
+
+      rows_weather.appendChild(row);
+    });
+  }
+
+  function updateWeatherMap(){
+    layer_weather.clearLayers();
+    wxAlerts.forEach(a=>{
+      if(!a.geometry) return;
+      const layer = L.geoJSON(a.geometry, {
+        style: { weight:2, opacity:0.9, fillOpacity:0.15 }
+      }).bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
+          <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
+          <div style="font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
+            <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
+          </div>
+        </div>
+      `);
+      layer.addTo(layer_weather);
+
+      try{ a._bounds = layer.getBounds(); }catch(_){}
+    });
+  }
+
+  async function fetchWeather(){
+    setStatus("wait","Refreshing…");
+    try{
+      const res = await fetch("/api/weather", { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
+      updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
+
+      renderWeather();
+      updateWeatherMap();
+      setStatus("ok","Updated");
+    }catch(e){
+      console.error(e);
+      setStatus("err","Error");
+      updatedAt_weather.textContent = "Updated —";
+      rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
+    }
+  }
+
+  // ===== INIT ALL MAPS =====
+  initFireMap();
+  initChpMap();
+  initEqMap();
+  initWeatherMap();
+
+  // ===== FIRST LOAD =====
+  fetchFire();
+  fetchChp();
+  fetchEarthquakes();
+  fetchWeather();
+
+  // ===== REFRESH CADENCE =====
+  setInterval(fetchFire, 60000);        // 60s
+  setInterval(fetchChp, 60000);         // 60s
+  setInterval(fetchEarthquakes, 300000);// 5m
+  setInterval(fetchWeather, 300000);    // 5m
 </script>
-
 </body>
 </html>
