@@ -8,13 +8,22 @@
     body { margin:0; font-family:system-ui; background:#0b0b0b; color:#f1f1f1; }
     header { background:#8f1414; padding:20px; }
     header h1 { margin:0; font-size:22px; font-weight:800; }
+    #status { font-size:13px; opacity:.9; margin-top:6px; }
+
     .tabs { padding:10px; }
     .tab { background:#222; color:white; padding:8px 12px; border-radius:6px; border:none; cursor:pointer; margin-right:5px; }
     .tab.active { background:#555; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:8px; border-bottom:1px solid #333; font-size:13px; }
-    th { background:#111; color:#aaa; position:sticky; top:0; }
-    .error { color:#ffbdbd; padding:10px; }
+
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    th, td { padding:8px; border-bottom:1px solid #333; font-size:13px; vertical-align:top; }
+    th { background:#111; color:#aaa; position:sticky; top:0; text-align:left; }
+    .error { color:#ffbdbd; padding:10px; white-space:pre-wrap; }
+
+    /* CHP column sizing to match your screenshot */
+    .col-time { width:120px; }
+    .col-type { width:160px; }
+    .col-lat  { width:90px; }
+    .col-lon  { width:90px; }
   </style>
 </head>
 <body>
@@ -58,43 +67,68 @@
 
     async function load() {
       try {
-        const res = await fetch("/api/incidents");
+        errorEl.textContent = "";
+        const res = await fetch("/api/incidents", { cache: "no-store" });
         const json = await res.json();
-        if (!json.ok) throw new Error(json.error);
+        if (!json.ok) throw new Error(json.error || "API error");
         data = json;
         statusEl.textContent = "Updated " + new Date(json.updatedAt).toLocaleTimeString();
         render();
       } catch (e) {
-        errorEl.textContent = e.message;
+        errorEl.textContent = e?.message || String(e);
+        tbody.innerHTML = `<tr><td>Loading…</td></tr>`;
       }
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#39;");
     }
 
     function render() {
       if (!data) return;
 
       if (active === "VCFD") {
+        // ✅ VCFD: keep it exactly "as it was" structurally
         thead.innerHTML = "<tr><th>Time</th><th>Type</th><th>Location</th><th>City</th></tr>";
-        tbody.innerHTML = data.vcfd.incidents.map(i => `
+        const list = (data.vcfd && data.vcfd.incidents) ? data.vcfd.incidents : [];
+        tbody.innerHTML = list.map(i => `
           <tr>
-            <td>${i.dateTime}</td>
-            <td>${i.type}</td>
-            <td>${i.location}</td>
-            <td>${i.city}</td>
+            <td>${escapeHtml(i.dateTime || "")}</td>
+            <td>${escapeHtml(i.type || "")}</td>
+            <td>${escapeHtml(i.location || "")}</td>
+            <td>${escapeHtml(i.city || "")}</td>
           </tr>
         `).join("");
+        return;
       }
 
       if (active === "CHP") {
-        thead.innerHTML = "<tr><th>Time</th><th>Type</th><th>Location</th><th>Lat</th><th>Lon</th></tr>";
-        tbody.innerHTML = data.chp.incidents.map(i => `
+        // ✅ CHP: EXACTLY like your screenshot
+        thead.innerHTML = `
           <tr>
-            <td>${i.dateTime}</td>
-            <td>${i.type}</td>
-            <td>${i.location}</td>
-            <td>${i.latitude?.toFixed(5)}</td>
-            <td>${i.longitude?.toFixed(5)}</td>
+            <th class="col-time">Time</th>
+            <th class="col-type">Type</th>
+            <th>Location</th>
+            <th class="col-lat">Lat</th>
+            <th class="col-lon">Lon</th>
+          </tr>`;
+
+        const list = (data.chp && data.chp.incidents) ? data.chp.incidents : [];
+        tbody.innerHTML = list.map(i => `
+          <tr>
+            <td class="col-time">${escapeHtml(i.dateTime || "")}</td>
+            <td class="col-type">${escapeHtml(i.type || "")}</td>
+            <td>${escapeHtml(i.location || "")}</td>
+            <td class="col-lat">${(typeof i.latitude === "number") ? i.latitude.toFixed(5) : ""}</td>
+            <td class="col-lon">${(typeof i.longitude === "number") ? i.longitude.toFixed(5) : ""}</td>
           </tr>
         `).join("");
+        return;
       }
     }
 
