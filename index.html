@@ -452,6 +452,23 @@
   </main>
 
 <script>
+  function formatUpdatedLikeVCFD(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return "—";
+
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const yr = String(d.getFullYear()).slice(-2);
+
+  let h = d.getHours();
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ampm = h >= 12 ? "pm" : "am";
+  h = h % 12 || 12;
+
+  return `${m}/${day}/${yr} ${h}:${min}${ampm}`;
+}
+
   // ===== GLOBAL STATUS DOT =====
   const dot = document.getElementById("dot");
   const statusText = document.getElementById("statusText");
@@ -826,18 +843,13 @@ chpIncidents = raw.map((x, i) => {
   };
 });
 
-      if (data?.updatedAt) {
-  const d = new Date(data.updatedAt);
-  const formatted = d.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  if (data?.updatedAt) {
+  const formatted = formatUpdatedLikeVCFD(data.updatedAt);
   updatedAt_chp.textContent = `Updated ${formatted}`;
 } else {
   updatedAt_chp.textContent = "Updated —";
 }
+
 
 
       renderChp();
