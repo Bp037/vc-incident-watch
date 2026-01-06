@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VC Incident Watch</title>
 
+  <!-- Leaflet (no integrity hash to avoid SRI/CSP headaches) -->
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
   <style>
     :root{
@@ -62,6 +61,30 @@
     .dot.wait{ background:#fbbf24; }
     .dot.err{ background:#fb7185; }
 
+    .tabs{
+      max-width:1120px;
+      margin:0 auto;
+      padding:0 16px 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .tabBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.18);
+      color:rgba(255,255,255,.92);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .tabBtn.active{
+      border-color:rgba(255,255,255,.30);
+      background:rgba(255,255,255,.08);
+    }
+
     main{ max-width:1120px; margin:16px auto 28px; padding:0 16px; }
 
     .card{
@@ -84,30 +107,6 @@
     .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
     .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; }
 
-    /* tabs */
-    .tabs{
-      display:flex; gap:10px; flex-wrap:wrap;
-      padding:10px 16px;
-      background:rgba(0,0,0,.25);
-      border-bottom:1px solid rgba(255,255,255,.10);
-    }
-    .tabBtn{
-      appearance:none;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-      color:rgba(255,255,255,.92);
-      border-radius:999px;
-      padding:8px 12px;
-      font-size:12px;
-      font-weight:800;
-      cursor:pointer;
-    }
-    .tabBtn:hover{ background:rgba(255,255,255,.10); }
-    .tabBtn.active{
-      background:rgba(255,255,255,.14);
-      border-color:rgba(255,255,255,.28);
-    }
-
     /* table headings (desktop) */
     .tblHead{
       background:#060607;
@@ -120,13 +119,18 @@
       text-transform:uppercase;
     }
 
-    /* grid */
+    /* grid (VC) */
     .tbl{
       display:grid;
       grid-template-columns: 140px 64px 1fr 240px 140px; /* date | icon | address | units | status */
       gap:12px;
       align-items:center;
       padding:0 16px;
+    }
+
+    /* grid (CHP) */
+    .tbl.chp{
+      grid-template-columns: 140px 64px 1fr 1fr; /* date | icon | location | details */
     }
 
     .row{
@@ -198,10 +202,12 @@
     .btn:hover{ background:rgba(255,255,255,.10); }
     #map{ height:360px; background:#111; }
 
-    /* ===== MOBILE: show everything (units + status under address) ===== */
+    /* ===== MOBILE ===== */
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
-      .tblHead{ display:none; reopen }
+      .tblHead{ display:none; }
+
+      /* VC */
       .tbl{ grid-template-columns: 118px 44px 1fr; gap:10px; }
       .addr a{ white-space:normal; overflow:visible; text-overflow:unset; line-height:1.15; }
       .desktopUnits, .desktopStatus{ display:none; }
@@ -213,6 +219,11 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
+
+      /* CHP: keep it readable on mobile too */
+      .tbl.chp{ grid-template-columns: 118px 44px 1fr; gap:10px; }
+      .chpDetailsDesktop{ display:none; }
+
       #map{ height:420px; }
     }
   </style>
@@ -232,12 +243,9 @@
         </div>
       </div>
 
-      <div class="wrap" style="padding-top:0;">
-        <div class="tabs" style="width:100%;">
-          <button class="tabBtn active" id="tabVC" type="button">Ventura County</button>
-          <button class="tabBtn" id="tabCHP" type="button">CHP (VC)</button>
-          <button class="tabBtn" id="tabCF" type="button">CAL FIRE</button>
-        </div>
+      <div class="tabs">
+        <button class="tabBtn active" id="tabVC" type="button">Ventura County</button>
+        <button class="tabBtn" id="tabCHP" type="button">CHP (VC)</button>
       </div>
     </div>
   </header>
@@ -252,18 +260,10 @@
         <div class="right" id="activeCount">— active</div>
       </div>
 
-      <div class="tblHead">
-        <div class="tbl" style="padding:0;">
-          <div>DATE/TIME</div>
-          <div>TYPE</div>
-          <div>ADDRESS</div>
-          <div>UNITS</div>
-          <div>STATUS</div>
-        </div>
-      </div>
+      <div class="tblHead" id="tblHead"></div>
 
       <div id="rows"></div>
-      <div class="helper">Row tap jumps to map. Address tap opens Google Maps.</div>
+      <div class="helper">Row tap jumps to map. Address tap opens Google Maps (VC tab only).</div>
     </section>
 
     <section class="card mapCard" aria-label="Map">
@@ -276,29 +276,26 @@
   </main>
 
 <script>
-  // ===== DATA SOURCES =====
-  const VC_API = "https://firefeeds.venturacounty.gov/api/incidents";
-  const const WORKER_BASE = "https://bp037.brallanp.workers.dev";
-  const CALFIRE_URL = "https://incidents.fire.ca.gov/umbraco/api/IncidentApi/GeoJsonList?inactive=false";
+  /********************
+   * CONFIG
+   ********************/
+  const VC_API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 
-  const VC_BBOX = { lat1: 33.98, lat2: 34.95, lon1: -119.85, lon2: -118.55 };
-  function proxied(url){ return `${WORKER_BASE}/?u=` + encodeURIComponent(url); }
+  // Your Cloudflare Worker that returns CHP incidents as JSON for VC-ish bounds:
+  // (this is the one you got returning JSON successfully)
+  const WORKER_BASE = "https://bp037.brallanp.workers.dev";
 
-  const SOURCES = {
-    vc: VC_API,
-    chp: `${WORKER_BASE}/chp?lat1=${VC_BBOX.lat1}&lat2=${VC_BBOX.lat2}&lon1=${VC_BBOX.lon1}&lon2=${VC_BBOX.lon2}`,
-    calfire: proxied(CALFIRE_URL),
-  };
+  // Ventura-ish bounding box (you used this earlier)
+  const VC_BOUNDS = { lat1: 33.9, lat2: 34.9, lon1: -119.9, lon2: -118.6 };
 
-  const SUBTITLES = {
-    vc: "Live Ventura County incidents",
-    chp: "CHP incidents within Ventura County bounds",
-    calfire: "CAL FIRE active incidents (statewide)"
-  };
+  // This assumes your Worker supports /chp?lat1=&lat2=&lon1=&lon2=
+  const CHP_API_URL =
+    `${WORKER_BASE}/chp?lat1=${encodeURIComponent(VC_BOUNDS.lat1)}&lat2=${encodeURIComponent(VC_BOUNDS.lat2)}&lon1=${encodeURIComponent(VC_BOUNDS.lon1)}&lon2=${encodeURIComponent(VC_BOUNDS.lon2)}`;
 
-  let currentTab = "vc";
-
-  // ===== STATE =====
+  /********************
+   * STATE + ELEMENTS
+   ********************/
+  let mode = "vc"; // "vc" or "chp"
   let map, markersLayer;
   let lastIncidents = [];
 
@@ -308,18 +305,9 @@
   const updatedAtEl = document.getElementById("updatedAt");
   const activeCountEl = document.getElementById("activeCount");
   const subtitleEl = document.getElementById("subtitle");
-
   const tabVC = document.getElementById("tabVC");
   const tabCHP = document.getElementById("tabCHP");
-  const tabCF = document.getElementById("tabCF");
-
-  function setActiveTabButton(){
-    [tabVC, tabCHP, tabCF].forEach(b => b.classList.remove("active"));
-    if(currentTab === "vc") tabVC.classList.add("active");
-    if(currentTab === "chp") tabCHP.classList.add("active");
-    if(currentTab === "calfire") tabCF.classList.add("active");
-    subtitleEl.textContent = SUBTITLES[currentTab] || "Incidents";
-  }
+  const tblHeadEl = document.getElementById("tblHead");
 
   function setStatus(state, text){
     dot.classList.remove("ok","wait","err");
@@ -330,27 +318,27 @@
   }
 
   function escapeHtml(s){
-    return String(s ?? "").replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m]));
+    return String(s ?? "").replace(/[&<>"']/g, function(m){
+      const mapObj = {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"};
+      return mapObj[m];
+    });
   }
 
-  // VC fields: address, block, city, incidentType, responseDate, status, units, latitude, longitude
-  // CHP Worker returns: id,dateStr,type,status,units,fullAddress,latitude,longitude
-  function normalize(raw){
-    const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
-    const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || raw?.dateStr || "—";
+  /********************
+   * NORMALIZERS
+   ********************/
+  // VC API: address, block, city, incidentType, responseDate, status, units, latitude, longitude
+  function normalizeVC(raw){
+    const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || (crypto?.randomUUID ? crypto.randomUUID() : String(Math.random()));
+    const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || "—";
 
     const block = raw?.block ? String(raw.block).trim() : "";
     const addr = raw?.address ? String(raw.address).trim() : "";
     const city = raw?.city ? String(raw.city).trim() : "";
-
-    // If VC-style address exists, build it, else use provided fullAddress
     const street = [block, addr].filter(Boolean).join(" ").trim();
-    const vcFull = [street, city].filter(Boolean).join(", ").trim();
-    const fullAddress = vcFull || String(raw?.fullAddress || "").trim() || "—";
+    const fullAddress = [street, city].filter(Boolean).join(", ").trim();
 
-    const type = raw?.incidentType || raw?.IncidentType || raw?.type || "";
+    const type = raw?.incidentType || raw?.IncidentType || "";
     const status = raw?.status || raw?.Status || "";
     const units = raw?.units || raw?.Units || "";
 
@@ -369,6 +357,31 @@
     };
   }
 
+  // CHP Worker output: we expect fields similar to:
+  // { id, dateStr, type, status, units, fullAddress, latitude, longitude } OR lat/lon
+  function normalizeCHP(raw){
+    const id = raw?.id || raw?.incidentNumberId || raw?.incidentNumber || (crypto?.randomUUID ? crypto.randomUUID() : String(Math.random()));
+    const dateStr = raw?.dateStr || raw?.responseDate || raw?.time || "";
+    const type = raw?.type || "CHP Incident";
+    const fullAddress = raw?.fullAddress || raw?.desc || raw?.description || raw?.location || "";
+    const latVal = raw?.lat ?? raw?.latitude ?? null;
+    const lonVal = raw?.lon ?? raw?.longitude ?? null;
+
+    return {
+      id,
+      dateStr,
+      type,
+      status: "",
+      units: "",
+      fullAddress,
+      lat: latVal != null ? Number(latVal) : null,
+      lon: lonVal != null ? Number(lonVal) : null
+    };
+  }
+
+  /********************
+   * VC HELPERS
+   ********************/
   function emojiFor(typeText){
     const t = (typeText || "").toLowerCase();
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
@@ -382,98 +395,97 @@
     if(t.includes("alarm")) return "🔔";
     if(t.includes("investig")) return "🔎";
     if(t.includes("public")) return "🧰";
-    if(t.includes("chp")) return "🚓";
     return "📍";
   }
 
   function chipFor(statusText){
     const s = (statusText || "").toLowerCase();
-    if(s.includes("on scene") || s.includes("onscene")) return `<span class="chip green">On scene</span>`;
-    if(s.includes("en route") || s.includes("enroute")) return `<span class="chip amber">En Route</span>`;
-    if(!s) return `<span class="chip slate">—</span>`;
-    return `<span class="chip slate">${escapeHtml(statusText)}</span>`;
+    if(s.includes("on scene") || s.includes("onscene")) return '<span class="chip green">On scene</span>';
+    if(s.includes("en route") || s.includes("enroute")) return '<span class="chip amber">En Route</span>';
+    if(!s) return '<span class="chip slate">—</span>';
+    return '<span class="chip slate">' + escapeHtml(statusText) + '</span>';
   }
 
-  function googleMapsLink(fullAddress, lat, lon){
-    const addr = (fullAddress || "").trim();
-    if(addr && addr.length > 2){
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
-    }
-    if(lat != null && lon != null){
-      return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-    }
-    return `https://www.google.com/maps`;
+  function googleMapsLink(fullAddress){
+    const q = encodeURIComponent(fullAddress || "");
+    return "https://www.google.com/maps/search/?api=1&query=" + q;
   }
 
-  function parseResponseDate(s){
-    // VC: "1/4/26 3:21"
+  function parseResponseDateVC(s){
+    // "1/4/26 3:21"
     const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
-    if(m){
-      const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
-      const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
-      const year = yy < 100 ? (2000+yy) : yy;
-      return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
-    }
-    // CAL FIRE updatedOn sometimes ISO
-    const t = Date.parse(s);
-    return Number.isFinite(t) ? t : 0;
+    if(!m) return 0;
+    const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
+    const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
+    const year = yy < 100 ? (2000+yy) : yy;
+    return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
   }
 
-  function render(){
-    rowsEl.innerHTML = "";
-    activeCountEl.textContent = `${lastIncidents.length} active`;
+  /********************
+   * CHP FORMATTING (your request)
+   * - Separate Date/Time column
+   * - Separate Location column
+   * - No units/status for CHP
+   ********************/
+  function splitChpText(text){
+    const lines = String(text || "").split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+    // Many CHP entries look like:
+    // "Jan 5 2026 3:19PM 1179-Trfc Collision-1141 Enrt SR154 / Stagecoach Rd ..."
+    // We'll pull a "date/time" token from the start if present.
+    const first = lines[0] || "";
+    const dateMatch = first.match(/^([A-Za-z]{3}\s+\d{1,2}\s+\d{4}\s+\d{1,2}:\d{2}(?:AM|PM))/i);
+    const dateTime = dateMatch ? dateMatch[1] : "";
 
-    lastIncidents.forEach((x) => {
-      const mapsHref = googleMapsLink(x.fullAddress, x.lat, x.lon);
-      const statusChip = chipFor(x.status);
-      const unitsText = x.units ? escapeHtml(x.units) : `<span style="color:rgba(255,255,255,.35)">—</span>`;
+    // Location guess: try after "SR" "/" patterns, otherwise use the remainder of first line
+    let location = "";
+    let details = "";
 
-      const row = document.createElement("div");
-      row.className = "row";
-      row.innerHTML = `
-        <div class="tbl">
-          <div class="date">${escapeHtml(x.dateStr)}</div>
+    if(first){
+      // Remove leading datetime if found
+      const firstNoDate = dateTime ? first.slice(dateTime.length).trim() : first;
 
-          <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
-
-          <div class="addr">
-            <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
-            <div class="typeText">${escapeHtml(x.type || "")}</div>
-
-            <div class="mobileMeta">
-              <div class="mobileUnits">${unitsText}</div>
-              <div>${statusChip}</div>
-            </div>
-          </div>
-
-          <div class="desktopUnits mono">${unitsText}</div>
-          <div class="desktopStatus">${statusChip}</div>
-        </div>
-      `;
-
-      row.addEventListener("click", (ev) => {
-        const tag = ev.target?.tagName?.toLowerCase?.() || "";
-        if(tag === "a" || tag === "button") return;
-
-        if(x.lat != null && x.lon != null && map){
-          map.setView([x.lat, x.lon], Math.max(map.getZoom(), 12), { animate:true });
-          markersLayer.eachLayer((m) => {
-            if(m?.options?.incidentId === x.id) m.openPopup();
-          });
-          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+      // If it has " / " treat that as location chunk
+      const slashIdx = firstNoDate.indexOf(" / ");
+      if(slashIdx !== -1){
+        location = firstNoDate.slice(slashIdx + 3).trim();
+      }else{
+        // Otherwise try to find "SR" or "US" or "I-" and use from there onward
+        const hw = firstNoDate.match(/\b(SR\d+|SR\s*\d+|US\d+|I-\d+|HWY\s*\d+)\b/i);
+        if(hw && hw.index != null){
+          location = firstNoDate.slice(hw.index).trim();
         }else{
-          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+          // fallback: use the whole first line as "location"
+          location = firstNoDate.trim();
         }
-      });
+      }
 
-      rowsEl.appendChild(row);
-    });
-
-    if(!lastIncidents.length){
-      rowsEl.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No incidents returned for this tab right now.</div>`;
+      // Details: everything else (including first line without date if you want)
+      details = lines.slice(1).join(" • ");
+      if(!details){
+        // If no extra lines, use the remainder of first line after date
+        details = (dateTime ? first.slice(dateTime.length).trim() : first).trim();
+      }
     }
+
+    return {
+      dateTime: dateTime || "—",
+      location: location || "—",
+      details: details || ""
+    };
   }
 
+  function emojiForChp(typeText){
+    // Keep it simple for CHP
+    const t = (typeText || "").toLowerCase();
+    if(t.includes("collision") || t.includes("hit") || t.includes("trfc") || t.includes("traffic")) return "🚗💥";
+    if(t.includes("hazard") || t.includes("blocking") || t.includes("debris")) return "⚠️";
+    if(t.includes("fire")) return "🔥";
+    return "🚔";
+  }
+
+  /********************
+   * MAP
+   ********************/
   function initMap(){
     map = L.map("map", { zoomControl:true }).setView([34.278, -119.293], 10);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -491,17 +503,31 @@
       if(x.lat == null || x.lon == null) return;
 
       const marker = L.marker([x.lat, x.lon], { incidentId: x.id });
-      marker.bindPopup(`
-        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-          <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "Incident")}</div>
-          <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
-          <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
-            <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
-            <div><b>Units:</b> ${escapeHtml(x.units || "—")}</div>
-            <div><b>Status:</b> ${escapeHtml(x.status || "—")}</div>
-          </div>
-        </div>
-      `);
+
+      if(mode === "chp"){
+        const parts = splitChpText(x.fullAddress);
+        marker.bindPopup(
+          '<div style="font-family:system-ui;font-size:13px;line-height:1.25">' +
+            '<div style="font-weight:800;margin-bottom:4px">' + escapeHtml(x.type || "CHP") + '</div>' +
+            '<div style="color:rgba(0,0,0,.75)"><b>' + escapeHtml(parts.dateTime) + '</b></div>' +
+            '<div style="color:rgba(0,0,0,.75);margin-top:4px">' + escapeHtml(parts.location) + '</div>' +
+            (parts.details ? '<div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">' + escapeHtml(parts.details) + '</div>' : '') +
+          '</div>'
+        );
+      }else{
+        marker.bindPopup(
+          '<div style="font-family:system-ui;font-size:13px;line-height:1.25">' +
+            '<div style="font-weight:800;margin-bottom:4px">' + escapeHtml(x.type || "Incident") + '</div>' +
+            '<div style="color:rgba(0,0,0,.75)">' + escapeHtml(x.fullAddress || "") + '</div>' +
+            '<div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">' +
+              '<div><b>Time:</b> ' + escapeHtml(x.dateStr || "—") + '</div>' +
+              '<div><b>Units:</b> ' + escapeHtml(x.units || "—") + '</div>' +
+              '<div><b>Status:</b> ' + escapeHtml(x.status || "—") + '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }
+
       marker.addTo(markersLayer);
     });
   }
@@ -512,42 +538,123 @@
     if(pts.length) map.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
+  /********************
+   * TABLE HEADS
+   ********************/
+  function renderTableHead(){
+    if(mode === "vc"){
+      tblHeadEl.innerHTML =
+        '<div class="tbl" style="padding:0;">' +
+          '<div>DATE/TIME</div>' +
+          '<div>TYPE</div>' +
+          '<div>ADDRESS</div>' +
+          '<div>UNITS</div>' +
+          '<div>STATUS</div>' +
+        '</div>';
+    }else{
+      tblHeadEl.innerHTML =
+        '<div class="tbl chp" style="padding:0;">' +
+          '<div>DATE/TIME</div>' +
+          '<div>TYPE</div>' +
+          '<div>LOCATION</div>' +
+          '<div class="chpDetailsDesktop">DETAILS</div>' +
+        '</div>';
+    }
+  }
+
+  /********************
+   * RENDER
+   ********************/
+  function render(){
+    rowsEl.innerHTML = "";
+    activeCountEl.textContent = lastIncidents.length + " active";
+
+    lastIncidents.forEach((x) => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      if(mode === "chp"){
+        const parts = splitChpText(x.fullAddress);
+        row.innerHTML =
+          '<div class="tbl chp">' +
+            '<div class="date">' + escapeHtml(parts.dateTime) + '</div>' +
+            '<div class="icon" title="' + escapeHtml(x.type) + '">' + emojiForChp(x.type) + '</div>' +
+            '<div class="addr">' +
+              '<div style="font-size:14px;font-weight:800;color:rgba(255,255,255,.92)">' + escapeHtml(parts.location) + '</div>' +
+              '<div class="typeText">' + escapeHtml(x.type || "") + '</div>' +
+              '<div style="margin-top:6px;font-size:12px;color:rgba(255,255,255,.55);white-space:normal">' + escapeHtml(parts.details) + '</div>' +
+            '</div>' +
+            '<div class="mono chpDetailsDesktop">' + escapeHtml(parts.details) + '</div>' +
+          '</div>';
+      }else{
+        const mapsHref = googleMapsLink(x.fullAddress);
+        const statusChip = chipFor(x.status);
+        const unitsText = x.units ? escapeHtml(x.units) : '<span style="color:rgba(255,255,255,.35)">—</span>';
+
+        row.innerHTML =
+          '<div class="tbl">' +
+            '<div class="date">' + escapeHtml(x.dateStr) + '</div>' +
+            '<div class="icon" title="' + escapeHtml(x.type) + '">' + emojiFor(x.type) + '</div>' +
+            '<div class="addr">' +
+              '<a href="' + mapsHref + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(x.fullAddress || "—") + '</a>' +
+              '<div class="typeText">' + escapeHtml(x.type || "") + '</div>' +
+              '<div class="mobileMeta">' +
+                '<div class="mobileUnits">' + unitsText + '</div>' +
+                '<div>' + statusChip + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="desktopUnits mono">' + unitsText + '</div>' +
+            '<div class="desktopStatus">' + statusChip + '</div>' +
+          '</div>';
+      }
+
+      row.addEventListener("click", function(ev){
+        const tag = ev.target && ev.target.tagName ? ev.target.tagName.toLowerCase() : "";
+        if(tag === "a" || tag === "button") return;
+
+        if(x.lat != null && x.lon != null && map){
+          map.setView([x.lat, x.lon], Math.max(map.getZoom(), 12), { animate:true });
+          markersLayer.eachLayer((m) => {
+            if(m && m.options && m.options.incidentId === x.id) m.openPopup();
+          });
+          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+        }else{
+          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
+
+      rowsEl.appendChild(row);
+    });
+  }
+
+  /********************
+   * FETCH
+   ********************/
   async function fetchIncidents(){
     setStatus("wait","Refreshing…");
     try{
-      const res = await fetch(SOURCES[currentTab], { cache:"no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const apiUrl = (mode === "vc") ? VC_API_URL : CHP_API_URL;
+
+      const res = await fetch(apiUrl, { cache:"no-store" });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+
       const data = await res.json();
 
-      let items = [];
+      if(mode === "vc"){
+        lastIncidents = (Array.isArray(data) ? data : [])
+          .map(normalizeVC)
+          .sort((a,b) => parseResponseDateVC(b.dateStr) - parseResponseDateVC(a.dateStr));
 
-      if(currentTab === "calfire"){
-        const features = data?.features || [];
-        items = features.map(f => {
-          const p = f?.properties || {};
-          const g = f?.geometry || {};
-          const coords = Array.isArray(g.coordinates) ? g.coordinates : null;
-
-          return {
-            id: p?.UniqueId || p?.uniqueId || crypto.randomUUID(),
-            dateStr: p?.UpdatedOn || "",
-            type: p?.Name || "CAL FIRE Incident",
-            status: p?.Status || "",
-            units: "",
-            fullAddress: p?.Location || p?.County || "California",
-            latitude: coords ? coords[1] : null,
-            longitude: coords ? coords[0] : null
-          };
-        });
+        updatedAtEl.textContent = lastIncidents[0]?.dateStr ? ("Updated " + lastIncidents[0].dateStr) : "Updated —";
       }else{
-        items = Array.isArray(data) ? data : [];
+        lastIncidents = (Array.isArray(data) ? data : [])
+          .map(normalizeCHP);
+
+        // CHP: no clean date field guaranteed, so just show "Updated now"
+        updatedAtEl.textContent = "Updated just now";
       }
 
-      lastIncidents = items
-        .map(normalize)
-        .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
-
-      updatedAtEl.textContent = lastIncidents[0]?.dateStr ? `Updated ${lastIncidents[0].dateStr}` : "Updated —";
+      renderTableHead();
       render();
       updateMarkers();
       setStatus("ok","Updated");
@@ -555,22 +662,50 @@
       console.error(e);
       setStatus("err","Error");
       updatedAtEl.textContent = "Updated —";
-      rowsEl.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
+      rowsEl.innerHTML = '<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>';
     }
   }
 
-  function setTab(tab){
-    currentTab = tab;
-    setActiveTabButton();
+  /********************
+   * TABS
+   ********************/
+  function setMode(nextMode){
+    mode = nextMode;
+
+    tabVC.classList.toggle("active", mode === "vc");
+    tabCHP.classList.toggle("active", mode === "chp");
+
+    if(mode === "vc"){
+      subtitleEl.textContent = "Live Ventura County incidents";
+      setStatus("wait","Switching…");
+      // Map view closer to VC
+      if(map) map.setView([34.278, -119.293], 10);
+    }else{
+      subtitleEl.textContent = "CHP incidents within Ventura County bounds";
+      setStatus("wait","Switching…");
+      // Keep similar view
+      if(map) map.setView([34.278, -119.293], 9);
+    }
+
+    // Clear UI quickly then fetch
+    rowsEl.innerHTML = "";
+    activeCountEl.textContent = "— active";
     fetchIncidents();
   }
 
-  tabVC.addEventListener("click", () => setTab("vc"));
-  tabCHP.addEventListener("click", () => setTab("chp"));
-  tabCF.addEventListener("click", () => setTab("calfire"));
+  tabVC.addEventListener("click", function(){ setMode("vc"); });
+  tabCHP.addEventListener("click", function(){ setMode("chp"); });
 
-  setActiveTabButton();
+  /********************
+   * BOOT
+   ********************/
+  window.addEventListener("error", function(ev){
+    // If JS crashes, show a clear status instead of "Idle"
+    setStatus("err","Script error");
+  });
+
   initMap();
+  renderTableHead();
   fetchIncidents();
   setInterval(fetchIncidents, 60000);
 </script>
