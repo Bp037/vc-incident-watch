@@ -28,7 +28,6 @@ export async function onRequestGet() {
 }
 
 // ---------------- VCFD ----------------
-// VCFD feed returns JSON (we keep as much as possible incl lat/lon)
 async function getVCFD() {
   const url = "https://firefeeds.venturacounty.gov/api/incidents";
   const res = await fetch(url, { cf: { cacheTtl: 30, cacheEverything: true } });
@@ -56,8 +55,6 @@ async function getVCFD() {
 }
 
 // ---------------- CHP ----------------
-// CHP feed returns KML; we parse Placemark name/description/coordinates.
-// Ventura County POLYGON filter is applied (your uploaded poly, as-is).
 async function getCHP() {
   const url = "https://quickmap.dot.ca.gov/data/chp-only.kml";
   const res = await fetch(url, { cf: { cacheTtl: 30, cacheEverything: true } });
@@ -66,7 +63,7 @@ async function getCHP() {
   const kml = await res.text();
   const incidents = parseCHPKml(kml);
 
-  // Ventura County polygon (lon,lat) ring
+  // Your extended polygon (lon,lat)
   const VC_POLY = [
     [-118.5300939712794, 34.03185528637208],
     [-118.6116939741298, 34.17101829902782],
@@ -88,7 +85,8 @@ async function getCHP() {
   return { count: filtered.length, incidents: filtered };
 }
 
-// Ray-casting point in polygon (lon/lat)
+// ---------------- Utilities ----------------
+
 function pointInPolygon(x, y, poly) {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -119,9 +117,7 @@ function parseCHPKml(kml) {
     const latitude = Number(latStr);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
 
-    // Turn HTML-ish description into plain text
     const plain = htmlToText(descRaw);
-
     const dateTime = extractDateTime(plain);
     let location = plain;
     if (dateTime) location = plain.replace(dateTime, "").trim();
@@ -132,11 +128,30 @@ function parseCHPKml(kml) {
       location: location || "",
       latitude,
       longitude,
-      epochMs: dateTime ? Date.parse(dateTime) : null,
+      epochMs: parseChpDate(dateTime),
     });
   }
 
   return out;
+}
+
+function parseChpDate(str) {
+  if (!str) return null;
+
+  const m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(am|pm)/i);
+  if (!m) return null;
+
+  let [, mm, dd, yyyy, hh, min, ap] = m;
+  mm = Number(mm);
+  dd = Number(dd);
+  yyyy = Number(yyyy);
+  hh = Number(hh);
+  min = Number(min);
+
+  if (ap.toLowerCase() === "pm" && hh !== 12) hh += 12;
+  if (ap.toLowerCase() === "am" && hh === 12) hh = 0;
+
+  return new Date(yyyy, mm - 1, dd, hh, min).getTime();
 }
 
 function getTag(str, tag) {
@@ -147,13 +162,9 @@ function getTag(str, tag) {
 
 function htmlToText(input) {
   let s = String(input);
-  // Remove CDATA safely (no regex that can break builds)
   s = s.replace("<![CDATA[", "").replace("]]>", "");
-  // Normalize line breaks
   s = s.split("<br>").join(" ").split("<br/>").join(" ").split("<br />").join(" ");
-  // Strip remaining tags
   s = s.replace(/<[^>]*>/g, " ");
-  // Collapse whitespace
   s = s.replace(/\s+/g, " ").trim();
   return decodeXml(s);
 }
