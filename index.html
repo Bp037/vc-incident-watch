@@ -1,68 +1,633 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VC Incident Watch</title>
-<style>
-body { margin:0; font-family:system-ui; background:#000; color:#fff; }
-header { background:#8c1111; padding:12px; }
-button { padding:8px 12px; border-radius:999px; border:none; background:#222; color:#fff; cursor:pointer; }
-button.active { background:#444; }
-#rows { padding:16px; }
-.row { border-bottom:1px solid #333; padding:12px 0; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VC Incident Watch</title>
+
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    :root{
+      --bg:#000;
+      --ink:#f4f4f5;
+      --muted:rgba(255,255,255,.7);
+      --muted2:rgba(255,255,255,.45);
+      --link:#60a5fa;
+
+      --hdr:#8c1111;
+      --hdrOutline:#000;
+
+      --card:rgba(255,255,255,.03);
+      --cardBorder:rgba(255,255,255,.08);
+
+      --rowA:rgba(255,255,255,.02);
+      --rowB:rgba(255,255,255,.04);
+
+      --greenLine:rgba(16,185,129,.35);
+      --shadow:rgba(0,0,0,.55);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:var(--bg);
+      color:var(--ink);
+    }
+    a{ color:var(--link); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+
+    header{ position:sticky; top:0; z-index:50; background:var(--bg); }
+    header .bar{
+      background:var(--hdr);
+      outline:2px solid var(--hdrOutline);
+      box-shadow: 0 6px 18px var(--shadow);
+    }
+    .wrap{
+      max-width:1120px; margin:0 auto; padding:14px 16px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    }
+    .title{ display:flex; flex-direction:column; gap:6px; }
+    .title h1{ margin:0; font-size:18px; font-weight:750; letter-spacing:.2px; }
+    .title p{ margin:0; font-size:12px; color:rgba(255,255,255,.82); }
+
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+    .tabBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.22);
+      background:rgba(0,0,0,.10);
+      color:#fff;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .tabBtn.active{
+      background:rgba(0,0,0,.35);
+      border-color:rgba(255,255,255,.35);
+    }
+
+    .statusBox{ display:flex; align-items:center; gap:10px; white-space:nowrap; font-size:12px; margin-top:2px; }
+    .dot{ width:10px;height:10px;border-radius:999px; background:rgba(255,255,255,.35); box-shadow:0 0 0 2px rgba(0,0,0,.25) inset; }
+    .dot.ok{ background:#34d399; }
+    .dot.wait{ background:#fbbf24; }
+    .dot.err{ background:#fb7185; }
+
+    main{ max-width:1120px; margin:16px auto 28px; padding:0 16px; }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--cardBorder);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    }
+
+    .sectionBar{
+      background:#0d1c2f;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      padding:14px 16px;
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+    }
+    .sectionBar .left{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+    .sectionBar .label{ font-weight:800; font-size:16px; }
+    .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
+    .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; }
+
+    .tblHead{
+      background:#060607;
+      border-top:1px solid rgba(255,255,255,.08);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:10px 16px;
+      color:rgba(255,255,255,.72);
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+
+    /* VC grid: date | icon | address | units | status */
+    .tbl.vc{
+      display:grid;
+      grid-template-columns: 140px 64px 1fr 240px 140px;
+      gap:12px;
+      align-items:center;
+      padding:0 16px;
+    }
+
+    /* CHP grid: date | icon | location | details  */
+    .tbl.chp{
+      display:grid;
+      grid-template-columns: 160px 52px 260px 1fr;
+      gap:12px;
+      align-items:center;
+      padding:0 16px;
+    }
+
+    .row{
+      border-bottom:1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 -1px 0 var(--greenLine);
+      padding:14px 0;
+    }
+    .row:nth-child(odd){ background:var(--rowA); }
+    .row:nth-child(even){ background:var(--rowB); }
+
+    .date{
+      font-variant-numeric: tabular-nums;
+      color:rgba(255,255,255,.88);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .icon{ font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; }
+
+    .addr a{ display:block; font-size:14px; font-weight:700; color:var(--link); }
+    .addr .typeText{
+      margin-top:3px;
+      font-size:12px;
+      color:rgba(255,255,255,.55);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size:12px;
+      color:rgba(255,255,255,.85);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    .chip{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:750;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.92);
+      white-space:nowrap;
+    }
+    .chip.green{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); }
+    .chip.amber{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.10); }
+    .chip.slate{ border-color:rgba(148,163,184,.30); background:rgba(148,163,184,.10); }
+
+    .helper{ padding:10px 16px; color:rgba(255,255,255,.4); font-size:11px; }
+
+    .mapCard{ margin-top:18px; }
+    .mapTop{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px;
+      background:rgba(255,255,255,.04);
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .mapTop .label{ font-weight:800; font-size:16px; }
+    .btn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.92);
+      border-radius:10px;
+      padding:8px 12px;
+      font-size:12px;
+      font-weight:750;
+      cursor:pointer;
+    }
+    .btn:hover{ background:rgba(255,255,255,.10); }
+    #map{ height:360px; background:#111; }
+
+    /* MOBILE */
+    .mobileMeta{ display:none; }
+    @media (max-width: 760px){
+      .tblHead{ display:none; }
+
+      .tbl.vc{ grid-template-columns: 118px 44px 1fr; gap:10px; }
+      .tbl.chp{ grid-template-columns: 118px 44px 1fr; gap:10px; }
+
+      .addr a{ white-space:normal; overflow:visible; text-overflow:unset; line-height:1.15; }
+      .desktopUnits, .desktopStatus{ display:none; }
+
+      .mobileMeta{
+        display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; align-items:center;
+      }
+      .mobileUnits{
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+        font-size:12px; color:rgba(255,255,255,.82);
+        white-space:normal;
+      }
+
+      #map{ height:420px; }
+    }
+  </style>
 </head>
 
 <body>
-<header>
-  <h2>VC Incident Watch</h2>
-  <button id="vcBtn" class="active">Ventura County</button>
-  <button id="chpBtn">CHP</button>
-  <span id="status">Idle</span>
-</header>
+  <header>
+    <div class="bar">
+      <div class="wrap">
+        <div class="title">
+          <h1>VC Incident Watch</h1>
+          <p id="subtitle">Live Ventura County incidents</p>
 
-<div id="rows">Loading…</div>
+          <div class="tabs">
+            <button class="tabBtn active" id="tabVC" type="button">Ventura County</button>
+            <button class="tabBtn" id="tabCHP" type="button">CHP (VC)</button>
+          </div>
+        </div>
+
+        <div class="statusBox">
+          <span class="dot" id="dot"></span>
+          <span id="statusText">Idle</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" aria-label="Active Calls">
+      <div class="sectionBar">
+        <div class="left">
+          <div class="label" id="sectionTitle">Active Calls</div>
+          <div class="sub" id="updatedAt">Updated —</div>
+        </div>
+        <div class="right" id="activeCount">— active</div>
+      </div>
+
+      <div class="tblHead" id="tblHead"></div>
+      <div id="rows"></div>
+      <div class="helper" id="helperText">Row tap jumps to map. Address tap opens Google Maps.</div>
+    </section>
+
+    <section class="card mapCard" aria-label="Map">
+      <div class="mapTop">
+        <div class="label">Map</div>
+        <button class="btn" id="fitBtn" type="button">Fit Map</button>
+      </div>
+      <div id="map"></div>
+    </section>
+  </main>
 
 <script>
-const VC_API = "https://firefeeds.venturacounty.gov/api/incidents";
-const CHP_API = "https://bp037.brallanp.workers.dev/chp?lat1=33.9&lat2=34.9&lon1=-119.9&lon2=-118.6";
+  // ====== ENDPOINTS ======
+  const VC_API = "https://firefeeds.venturacounty.gov/api/incidents";
 
-let current = "vc";
+  // IMPORTANT: this must be your working Worker endpoint that returns JSON for CHP in a bbox.
+  // From your screenshots, you had it working as /chp?lat1=...&lat2=...&lon1=...&lon2=...
+  const CHP_WORKER_BASE = "https://bp037.brallanp.workers.dev/chp";
 
-const rows = document.getElementById("rows");
-const status = document.getElementById("status");
-const vcBtn = document.getElementById("vcBtn");
-const chpBtn = document.getElementById("chpBtn");
+  // Ventura County-ish bbox (tweak later if you want tighter)
+  const VC_BBOX = { lat1: 33.9, lat2: 34.9, lon1: -119.9, lon2: -118.6 };
 
-vcBtn.onclick = () => { current="vc"; vcBtn.classList.add("active"); chpBtn.classList.remove("active"); load(); };
-chpBtn.onclick = () => { current="chp"; chpBtn.classList.add("active"); vcBtn.classList.remove("active"); load(); };
+  // ====== STATE ======
+  let mode = "vc"; // "vc" | "chp"
+  let map, markersLayer;
+  let lastIncidents = [];
 
-async function load() {
-  status.textContent = "Loading…";
-  rows.textContent = "Loading…";
-  try {
-    const url = current === "vc" ? VC_API : CHP_API;
-    const res = await fetch(url);
-    const data = await res.json();
+  const dot = document.getElementById("dot");
+  const statusText = document.getElementById("statusText");
+  const rowsEl = document.getElementById("rows");
+  const updatedAtEl = document.getElementById("updatedAt");
+  const activeCountEl = document.getElementById("activeCount");
+  const subtitleEl = document.getElementById("subtitle");
+  const sectionTitleEl = document.getElementById("sectionTitle");
+  const helperTextEl = document.getElementById("helperText");
+  const tblHeadEl = document.getElementById("tblHead");
 
-    rows.innerHTML = "";
-    data.forEach(x => {
-      const div = document.createElement("div");
-      div.className = "row";
-      div.textContent = JSON.stringify(x, null, 2);
-      rows.appendChild(div);
-    });
+  const tabVC = document.getElementById("tabVC");
+  const tabCHP = document.getElementById("tabCHP");
 
-    status.textContent = "Updated";
-  } catch (e) {
-    rows.textContent = "Failed to load";
-    status.textContent = "Error";
-    console.error(e);
+  function setStatus(state, text){
+    dot.classList.remove("ok","wait","err");
+    if(state === "ok") dot.classList.add("ok");
+    if(state === "wait") dot.classList.add("wait");
+    if(state === "err") dot.classList.add("err");
+    statusText.textContent = text;
   }
-}
 
-load();
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  function emojiFor(typeText){
+    const t = (typeText || "").toLowerCase();
+    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
+    if(t.includes("rescue")) return "🛟";
+    if(t.includes("water")) return "🌊";
+    if(t.includes("structure")) return "🏠🔥";
+    if(t.includes("fire")) return "🔥";
+    if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
+    if(t.includes("haz") || t.includes("hazmat")) return "☣️";
+    if(t.includes("traffic") || t.includes("tc") || t.includes("collision") || t.includes("hazard")) return "🚗💥";
+    if(t.includes("alarm")) return "🔔";
+    if(t.includes("investig")) return "🔎";
+    return "📍";
+  }
+
+  function chipFor(statusText){
+    const s = (statusText || "").toLowerCase();
+    if(s.includes("on scene") || s.includes("onscene")) return `<span class="chip green">On scene</span>`;
+    if(s.includes("en route") || s.includes("enroute")) return `<span class="chip amber">En Route</span>`;
+    if(!s) return `<span class="chip slate">—</span>`;
+    return `<span class="chip slate">${escapeHtml(statusText)}</span>`;
+  }
+
+  function googleMapsLink(fullAddress){
+    const q = encodeURIComponent(fullAddress || "");
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
+
+  function parseResponseDateVC(s){
+    // VC API format: "1/5/26 5:13"
+    const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
+    if(!m) return 0;
+    const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
+    const hh = parseInt(m[4],10), mi = parseInt(m[5],10);
+    const year = yy < 100 ? (2000+yy) : yy;
+    return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
+  }
+
+  function parseChpDatetimeFromType(type){
+    // e.g. "CHP Incident 260105VT0125" -> YYMMDD???? 260105 = 2026-01-05
+    const m = String(type||"").match(/\b(\d{6})\b/);
+    if(!m) return "";
+    const y = 2000 + parseInt(m[1].slice(0,2),10);
+    const mo = m[1].slice(2,4);
+    const d = m[1].slice(4,6);
+    return `${mo}/${d}/${String(y).slice(-2)}`;
+  }
+
+  function shorten(s, n=140){
+    const t = String(s||"").replace(/\s+/g," ").trim();
+    if(t.length <= n) return t;
+    return t.slice(0, n-1) + "…";
+  }
+
+  // ====== NORMALIZERS ======
+  function normalizeVC(raw){
+    const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
+    const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || "—";
+
+    const block = raw?.block ? String(raw.block).trim() : "";
+    const addr = raw?.address ? String(raw.address).trim() : "";
+    const city = raw?.city ? String(raw.city).trim() : "";
+    const street = [block, addr].filter(Boolean).join(" ").trim();
+    const fullAddress = [street, city].filter(Boolean).join(", ").trim();
+
+    const type = raw?.incidentType || raw?.IncidentType || "";
+    const status = raw?.status || raw?.Status || "";
+    const units = raw?.units || raw?.Units || "";
+
+    const lat = raw?.latitude ?? raw?.Latitude ?? null;
+    const lon = raw?.longitude ?? raw?.Longitude ?? null;
+
+    return {
+      id,
+      dateStr,
+      type,
+      status,
+      units,
+      fullAddress,
+      lat: lat != null ? Number(lat) : null,
+      lon: lon != null ? Number(lon) : null
+    };
+  }
+
+  function normalizeCHP(raw){
+    // Expecting worker output like:
+    // { id, dateStr, type, status, units, fullAddress, latitude, longitude }
+    // but your worker screenshots showed: { id, dateStr:"", type:"CHP Incident ...", status:"", units:"", fullAddress:"...", latitude, longitude }
+    const id = raw?.id || raw?.incidentId || raw?.IncidentNumber || crypto.randomUUID();
+
+    const fullAddress = raw?.fullAddress || raw?.location || raw?.addr || raw?.address || "";
+    const details = raw?.details || raw?.description || raw?.desc || raw?.comment || raw?.notes || "";
+
+    const type = raw?.type || "CHP Incident";
+    const dateStr = raw?.dateStr || parseChpDatetimeFromType(type) || "—";
+
+    const lat = raw?.latitude ?? raw?.lat ?? null;
+    const lon = raw?.longitude ?? raw?.lon ?? null;
+
+    return {
+      id,
+      dateStr,
+      type,
+      status: "",
+      units: "",
+      fullAddress: String(fullAddress || "").trim(),
+      details: String(details || "").trim(),
+      lat: lat != null ? Number(lat) : null,
+      lon: lon != null ? Number(lon) : null
+    };
+  }
+
+  // ====== HEADERS PER MODE ======
+  function renderHeaders(){
+    if(mode === "vc"){
+      tblHeadEl.innerHTML = `
+        <div class="tbl vc" style="padding:0;">
+          <div>DATE/TIME</div>
+          <div>TYPE</div>
+          <div>ADDRESS</div>
+          <div>UNITS</div>
+          <div>STATUS</div>
+        </div>
+      `;
+    }else{
+      tblHeadEl.innerHTML = `
+        <div class="tbl chp" style="padding:0;">
+          <div>DATE</div>
+          <div>TYPE</div>
+          <div>LOCATION</div>
+          <div>DETAILS</div>
+        </div>
+      `;
+    }
+  }
+
+  // ====== RENDER ======
+  function render(){
+    rowsEl.innerHTML = "";
+    activeCountEl.textContent = `${lastIncidents.length} active`;
+
+    lastIncidents.forEach((x) => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      if(mode === "vc"){
+        const mapsHref = googleMapsLink(x.fullAddress);
+        const statusChip = chipFor(x.status);
+        const unitsText = x.units ? escapeHtml(x.units) : `<span style="color:rgba(255,255,255,.35)">—</span>`;
+
+        row.innerHTML = `
+          <div class="tbl vc">
+            <div class="date">${escapeHtml(x.dateStr)}</div>
+            <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+
+            <div class="addr">
+              <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
+              <div class="typeText">${escapeHtml(x.type || "")}</div>
+
+              <div class="mobileMeta">
+                <div class="mobileUnits">${unitsText}</div>
+                <div>${statusChip}</div>
+              </div>
+            </div>
+
+            <div class="desktopUnits mono">${unitsText}</div>
+            <div class="desktopStatus">${statusChip}</div>
+          </div>
+        `;
+      } else {
+        const mapsHref = googleMapsLink(x.fullAddress);
+        const locText = x.fullAddress ? x.fullAddress : "—";
+        const detText = x.details ? shorten(x.details, 160) : shorten(x.type, 160);
+
+        row.innerHTML = `
+          <div class="tbl chp">
+            <div class="date">${escapeHtml(x.dateStr || "—")}</div>
+            <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+
+            <div class="addr">
+              <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(locText)}</a>
+              <div class="typeText">${escapeHtml(x.type || "")}</div>
+            </div>
+
+            <div class="mono">${escapeHtml(detText)}</div>
+          </div>
+        `;
+      }
+
+      row.addEventListener("click", (ev) => {
+        const tag = ev.target?.tagName?.toLowerCase?.() || "";
+        if(tag === "a" || tag === "button") return;
+
+        if(x.lat != null && x.lon != null && map){
+          map.setView([x.lat, x.lon], Math.max(map.getZoom(), 12), { animate:true });
+          markersLayer.eachLayer((m) => {
+            if(m?.options?.incidentId === x.id) m.openPopup();
+          });
+          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+        }else{
+          document.getElementById("map").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
+
+      rowsEl.appendChild(row);
+    });
+  }
+
+  function initMap(){
+    map = L.map("map", { zoomControl:true }).setView([34.278, -119.293], 10);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    markersLayer = L.layerGroup().addTo(map);
+    document.getElementById("fitBtn").addEventListener("click", fitMap);
+  }
+
+  function updateMarkers(){
+    markersLayer.clearLayers();
+    lastIncidents.forEach((x) => {
+      if(x.lat == null || x.lon == null) return;
+
+      const marker = L.marker([x.lat, x.lon], { incidentId: x.id });
+      marker.bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "Incident")}</div>
+          <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
+          <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
+            ${mode === "vc" ? `<div><b>Units:</b> ${escapeHtml(x.units || "—")}</div>` : ``}
+            ${mode === "vc" ? `<div><b>Status:</b> ${escapeHtml(x.status || "—")}</div>` : ``}
+            ${mode === "chp" ? `<div><b>Details:</b> ${escapeHtml(shorten(x.details || "", 220) || "—")}</div>` : ``}
+          </div>
+        </div>
+      `);
+      marker.addTo(markersLayer);
+    });
+  }
+
+  function fitMap(){
+    const pts = [];
+    markersLayer.eachLayer((m) => pts.push(m.getLatLng()));
+    if(pts.length) map.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  function setMode(next){
+    mode = next;
+    tabVC.classList.toggle("active", mode === "vc");
+    tabCHP.classList.toggle("active", mode === "chp");
+
+    if(mode === "vc"){
+      subtitleEl.textContent = "Live Ventura County incidents";
+      sectionTitleEl.textContent = "Active Calls";
+      helperTextEl.textContent = "Row tap jumps to map. Address tap opens Google Maps.";
+    }else{
+      subtitleEl.textContent = "CHP incidents within Ventura County bounds";
+      sectionTitleEl.textContent = "CHP Incidents";
+      helperTextEl.textContent = "Row tap jumps to map. Location tap opens Google Maps.";
+    }
+    renderHeaders();
+    fetchIncidents();
+  }
+
+  tabVC.addEventListener("click", () => setMode("vc"));
+  tabCHP.addEventListener("click", () => setMode("chp"));
+
+  function chpUrl(){
+    const q = new URLSearchParams({
+      lat1: String(VC_BBOX.lat1),
+      lat2: String(VC_BBOX.lat2),
+      lon1: String(VC_BBOX.lon1),
+      lon2: String(VC_BBOX.lon2)
+    });
+    return `${CHP_WORKER_BASE}?${q.toString()}`;
+  }
+
+  async function fetchIncidents(){
+    setStatus("wait","Refreshing…");
+    try{
+      const url = mode === "vc" ? VC_API : chpUrl();
+      const res = await fetch(url, { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const arr = Array.isArray(data) ? data : [];
+
+      if(mode === "vc"){
+        lastIncidents = arr
+          .map(normalizeVC)
+          .sort((a,b) => parseResponseDateVC(b.dateStr) - parseResponseDateVC(a.dateStr));
+        updatedAtEl.textContent = lastIncidents[0]?.dateStr ? `Updated ${lastIncidents[0].dateStr}` : "Updated —";
+      }else{
+        lastIncidents = arr.map(normalizeCHP);
+        // sort by whatever dateStr we have (not perfect, but stable)
+        lastIncidents = lastIncidents.sort((a,b) => (String(b.dateStr||"")).localeCompare(String(a.dateStr||"")));
+        updatedAtEl.textContent = "Updated —";
+      }
+
+      render();
+      updateMarkers();
+      setStatus("ok","Updated");
+    }catch(e){
+      console.error(e);
+      setStatus("err","Error");
+      updatedAtEl.textContent = "Updated —";
+      rowsEl.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
+      markersLayer && markersLayer.clearLayers();
+    }
+  }
+
+  initMap();
+  renderHeaders();
+  fetchIncidents();
+  setInterval(fetchIncidents, 60000);
 </script>
 </body>
 </html>
