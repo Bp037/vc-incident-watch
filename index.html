@@ -1,148 +1,105 @@
-export async function onRequestGet(context) {
-  const headers = {
-    "content-type": "application/json; charset=utf-8",
-    "cache-control": "public, max-age=30",
-    "access-control-allow-origin": "*",
-  };
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VC Incident Watch</title>
+  <style>
+    body { margin:0; font-family:system-ui; background:#0b0b0b; color:#f1f1f1; }
+    header { background:#8f1414; padding:20px; }
+    header h1 { margin:0; font-size:22px; font-weight:800; }
+    .tabs { padding:10px; }
+    .tab { background:#222; color:white; padding:8px 12px; border-radius:6px; border:none; cursor:pointer; margin-right:5px; }
+    .tab.active { background:#555; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:8px; border-bottom:1px solid #333; font-size:13px; }
+    th { background:#111; color:#aaa; position:sticky; top:0; }
+    .error { color:#ffbdbd; padding:10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>VC Incident Watch</h1>
+    <div id="status">Loading…</div>
+  </header>
 
-  try {
-    const [vcfd, chp] = await Promise.all([
-      fetchVCFD(),
-      fetchCHP(),
-    ]);
+  <div class="tabs">
+    <button class="tab active" id="tabVCFD">VCFD</button>
+    <button class="tab" id="tabCHP">CHP</button>
+  </div>
 
-    return new Response(JSON.stringify({
-      ok: true,
-      updatedAt: new Date().toISOString(),
-      vcfd,
-      chp
-    }), { status: 200, headers });
+  <div id="error" class="error"></div>
 
-  } catch (err) {
-    return new Response(JSON.stringify({
-      ok: false,
-      error: err?.message || String(err)
-    }), { status: 500, headers });
-  }
-}
+  <table>
+    <thead id="thead"></thead>
+    <tbody id="tbody"><tr><td>Loading…</td></tr></tbody>
+  </table>
 
-// -------------------- VCFD --------------------
-async function fetchVCFD() {
-  const url = "https://firefeeds.venturacounty.gov/api/incidents";
+  <script>
+    const tabVCFD = document.getElementById("tabVCFD");
+    const tabCHP = document.getElementById("tabCHP");
+    const tbody = document.getElementById("tbody");
+    const thead = document.getElementById("thead");
+    const statusEl = document.getElementById("status");
+    const errorEl = document.getElementById("error");
 
-  const json = await fetchWithTimeout(url, 8000, {
-    headers: { "accept": "application/json" },
-    cf: { cacheTtl: 30, cacheEverything: true },
-  }).then(r => {
-    if (!r.ok) throw new Error(`VCFD feed failed: ${r.status}`);
-    return r.json();
-  });
+    let active = "VCFD";
+    let data = null;
 
-  const incidents = Array.isArray(json) ? json : (json?.incidents || json?.data || []);
+    tabVCFD.onclick = () => setActive("VCFD");
+    tabCHP.onclick = () => setActive("CHP");
 
-  const normalized = incidents.slice(0, 300).map((x) => ({
-    id: x.id || x.incident_id || x.IncidentID || x.IncidentNumber || null,
-    dateTime: x.dateTime || x.datetime || x.time || x.received || x.received_time || x.CallReceived || x.Created || "",
-    type: x.type || x.call_type || x.CallType || x.incidentType || x.IncidentType || x.Type || "",
-    location: x.location || x.address || x.Address || x.Location || "",
-    city: x.city || x.City || "",
-  }));
+    function setActive(which) {
+      active = which;
+      tabVCFD.classList.toggle("active", which === "VCFD");
+      tabCHP.classList.toggle("active", which === "CHP");
+      render();
+    }
 
-  return { count: normalized.length, incidents: normalized };
-}
+    async function load() {
+      try {
+        const res = await fetch("/api/incidents");
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.error);
+        data = json;
+        statusEl.textContent = "Updated " + new Date(json.updatedAt).toLocaleTimeString();
+        render();
+      } catch (e) {
+        errorEl.textContent = e.message;
+      }
+    }
 
-// -------------------- CHP --------------------
-async function fetchCHP() {
-  const url = "https://quickmap.dot.ca.gov/data/chp-only.kml";
+    function render() {
+      if (!data) return;
 
-  const kmlText = await fetchWithTimeout(url, 8000, {
-    headers: { "accept": "application/vnd.google-earth.kml+xml, application/xml;q=0.9,*/*;q=0.8" },
-    cf: { cacheTtl: 30, cacheEverything: true },
-  }).then(r => {
-    if (!r.ok) throw new Error(`CHP feed failed: ${r.status}`);
-    return r.text();
-  });
+      if (active === "VCFD") {
+        thead.innerHTML = "<tr><th>Time</th><th>Type</th><th>Location</th><th>City</th></tr>";
+        tbody.innerHTML = data.vcfd.incidents.map(i => `
+          <tr>
+            <td>${i.dateTime}</td>
+            <td>${i.type}</td>
+            <td>${i.location}</td>
+            <td>${i.city}</td>
+          </tr>
+        `).join("");
+      }
 
-  const incidents = parseChpKml(kmlText);
+      if (active === "CHP") {
+        thead.innerHTML = "<tr><th>Time</th><th>Type</th><th>Location</th><th>Lat</th><th>Lon</th></tr>";
+        tbody.innerHTML = data.chp.incidents.map(i => `
+          <tr>
+            <td>${i.dateTime}</td>
+            <td>${i.type}</td>
+            <td>${i.location}</td>
+            <td>${i.latitude?.toFixed(5)}</td>
+            <td>${i.longitude?.toFixed(5)}</td>
+          </tr>
+        `).join("");
+      }
+    }
 
-  const VC = { minLat: 33.90, maxLat: 34.95, minLon: -119.80, maxLon: -118.55 };
-
-  const filtered = incidents.filter(i =>
-    typeof i.latitude === "number" && typeof i.longitude === "number" &&
-    i.latitude >= VC.minLat && i.latitude <= VC.maxLat &&
-    i.longitude >= VC.minLon && i.longitude <= VC.maxLon
-  ).slice(0, 300);
-
-  filtered.sort((a,b) => (b.epochMs ?? 0) - (a.epochMs ?? 0));
-
-  return { count: filtered.length, incidents: filtered };
-}
-
-function parseChpKml(kml) {
-  const placemarks = kml.split("<Placemark>").slice(1);
-  const out = [];
-
-  for (const pm of placemarks) {
-    const name = getTag(pm, "name");
-    const desc = getTag(pm, "description");
-    const coords = getTag(pm, "coordinates");
-    if (!coords) continue;
-
-    const [lonStr, latStr] = coords.trim().split(",");
-    const longitude = Number(lonStr);
-    const latitude = Number(latStr);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
-
-    const plainDesc = stripHtml(desc || "").replace(/\s+/g, " ").trim();
-    const dateTime = extractDateTime(plainDesc);
-
-    let location = plainDesc;
-    if (dateTime) location = location.replace(dateTime, "").trim();
-
-    out.push({
-      type: name || "CHP Incident",
-      dateTime: dateTime || "",
-      location: location || "",
-      latitude,
-      longitude,
-      epochMs: dateTime ? Date.parse(dateTime) : null,
-    });
-  }
-  return out;
-}
-
-function getTag(str, tag) {
-  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
-  const m = str.match(re);
-  return m ? m[1] : "";
-}
-
-function stripHtml(html) {
-  return String(html)
-    .replace(/<!\[CDATA\[/g, "")
-    .replace(/\]\]>/g, "")
-    .replace(/<br\s*\/?\s*>/gi, " ")
-    .replace(/<[^>]*>/g, " ");
-}
-
-function extractDateTime(text) {
-  const patterns = [
-    /\b\d{1,2}\/\d{1,2}\/\d{2,4}\s+\d{1,2}:\d{2}\s*(AM|PM)?\b/i,
-    /\b\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}\b/,
-  ];
-  for (const p of patterns) {
-    const m = text.match(p);
-    if (m) return m[0];
-  }
-  return "";
-}
-
-async function fetchWithTimeout(url, ms, init={}) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(t);
-  }
-}
+    load();
+    setInterval(load, 60000);
+  </script>
+</body>
+</html>
