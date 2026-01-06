@@ -64,7 +64,7 @@
     .dot.wait{ background:#fbbf24; }
     .dot.err{ background:#fb7185; }
 
-    /* NEW: tabs in header (does not affect VCFD layout) */
+    /* tabs */
     .tabs{
       display:flex;
       gap:8px;
@@ -122,10 +122,10 @@
       text-transform:uppercase;
     }
 
-    /* grid */
+    /* VCFD grid */
     .tbl{
       display:grid;
-      grid-template-columns: 140px 64px 1fr 240px 140px; /* date | icon | address | units | status */
+      grid-template-columns: 140px 64px 1fr 240px 140px;
       gap:12px;
       align-items:center;
       padding:0 16px;
@@ -200,7 +200,7 @@
     .btn:hover{ background:rgba(255,255,255,.10); }
     #map{ height:360px; background:#111; }
 
-    /* ===== MOBILE: show everything (units + status under address) ===== */
+    /* ===== MOBILE VCFD ===== */
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
       .tblHead{ display:none; }
@@ -243,12 +243,50 @@
     }
     .chpColTime{ width:120px; font-variant-numeric: tabular-nums; }
     .chpColType{ width:170px; }
-    .chpColLat, .chpColLon{ width:90px; font-variant-numeric: tabular-nums; }
+    .chpColLat, .chpColLon{ width:92px; font-variant-numeric: tabular-nums; }
     .chpRow:hover td{ background:rgba(255,255,255,.03); }
-
+    .chpLoc{ white-space:normal; word-break:break-word; color:rgba(255,255,255,.92); }
     .chpError{
       padding:16px;
       color:rgba(255,255,255,.75);
+    }
+
+    /* ===== MOBILE CHP: turn rows into stacked cards ===== */
+    @media (max-width: 760px){
+      .chpTable{
+        table-layout:auto;
+      }
+      .chpTable thead{ display:none; }
+      .chpTable tr{
+        display:block;
+        padding:12px 12px;
+        border-bottom:1px solid rgba(255,255,255,.08);
+        background:rgba(255,255,255,.02);
+      }
+      .chpTable td{
+        display:flex;
+        gap:10px;
+        padding:6px 0;
+        border:none;
+        font-size:13px;
+      }
+      .chpTable td::before{
+        content: attr(data-label);
+        flex:0 0 76px;
+        color:rgba(255,255,255,.55);
+        font-weight:800;
+        text-transform:uppercase;
+        letter-spacing:.06em;
+        font-size:11px;
+        padding-top:2px;
+      }
+      .chpColTime, .chpColType, .chpColLat, .chpColLon{ width:auto; }
+    }
+
+    /* CHP Map */
+    #chpMap{ height:360px; background:#111; }
+    @media (max-width: 760px){
+      #chpMap{ height:420px; }
     }
   </style>
 </head>
@@ -312,7 +350,7 @@
     </section>
   </main>
 
-  <!-- ================== CHP VIEW (LIKE YOUR SCREENSHOT) ================== -->
+  <!-- ================== CHP VIEW (MOBILE FRIENDLY + MAP) ================== -->
   <main id="chpView" class="hidden">
     <section class="card" aria-label="CHP Incidents">
       <div class="sectionBar">
@@ -340,6 +378,14 @@
         </table>
       </div>
     </section>
+
+    <section class="card mapCard" aria-label="CHP Map">
+      <div class="mapTop">
+        <div class="label">CHP Map</div>
+        <button class="btn" id="chpFitBtn" type="button">Fit Map</button>
+      </div>
+      <div id="chpMap"></div>
+    </section>
   </main>
 
 <script>
@@ -354,7 +400,6 @@
     tabCHP.classList.remove("active");
     vcfdView.classList.remove("hidden");
     chpView.classList.add("hidden");
-    // Let the map reflow if needed
     setTimeout(() => { try { map && map.invalidateSize(); } catch(e){} }, 150);
   }
 
@@ -363,11 +408,24 @@
     tabVCFD.classList.remove("active");
     chpView.classList.remove("hidden");
     vcfdView.classList.add("hidden");
-    fetchCHP(); // refresh when switching
+
+    // init CHP map lazily (first time only)
+    initChpMapIfNeeded();
+
+    // refresh CHP + fix map sizing
+    fetchCHP();
+    setTimeout(() => { try { chpMap && chpMap.invalidateSize(); } catch(e){} }, 200);
   }
 
   tabVCFD.addEventListener("click", showVCFD);
   tabCHP.addEventListener("click", showCHP);
+
+  // =================== HELPERS ===================
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
 
   // =================== YOUR ORIGINAL VCFD CODE (UNCHANGED) ===================
   const API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
@@ -390,14 +448,6 @@
     statusText.textContent = text;
   }
 
-  function escapeHtml(s){
-    return String(s ?? "").replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m]));
-  }
-
-  // this matches the REAL API fields:
-  // address, block, city, incidentType, responseDate, status, units, latitude, longitude
   function normalize(raw){
     const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
 
@@ -458,7 +508,6 @@
   }
 
   function parseResponseDate(s){
-    // "1/4/26 3:21"
     const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
     if(!m) return 0;
     const mm = parseInt(m[1],10), dd = parseInt(m[2],10), yy = parseInt(m[3],10);
@@ -579,18 +628,68 @@
     }
   }
 
-  // boot VCFD
   initMap();
   fetchIncidents();
   setInterval(fetchIncidents, 60000);
 
-  // =================== CHP (NEW, DOES NOT TOUCH VCFD) ===================
+  // =================== CHP (MOBILE FRIENDLY + MAP) ===================
   const chpBody = document.getElementById("chpBody");
   const chpUpdatedAt = document.getElementById("chpUpdatedAt");
   const chpCount = document.getElementById("chpCount");
 
+  let lastChp = [];
+
+  // Leaflet CHP map (separate from VCFD map)
+  let chpMap = null;
+  let chpMarkers = null;
+
+  function initChpMapIfNeeded(){
+    if(chpMap) return;
+
+    chpMap = L.map("chpMap", { zoomControl:true }).setView([34.278, -119.293], 10);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(chpMap);
+
+    chpMarkers = L.layerGroup().addTo(chpMap);
+
+    document.getElementById("chpFitBtn").addEventListener("click", () => {
+      const pts = [];
+      chpMarkers.eachLayer(m => pts.push(m.getLatLng()));
+      if(pts.length) chpMap.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+    });
+  }
+
+  function updateChpMap(){
+    if(!chpMap || !chpMarkers) return;
+    chpMarkers.clearLayers();
+
+    lastChp.forEach(i => {
+      if(typeof i.latitude !== "number" || typeof i.longitude !== "number") return;
+
+      const m = L.marker([i.latitude, i.longitude]);
+      m.bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:800;margin-bottom:4px">${escapeHtml(i.type || "CHP Incident")}</div>
+          <div style="color:rgba(0,0,0,.75)">${escapeHtml(i.location || "")}</div>
+          <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Time:</b> ${escapeHtml(i.dateTime || "—")}</div>
+            <div><b>Lat:</b> ${typeof i.latitude === "number" ? i.latitude.toFixed(5) : "—"}</div>
+            <div><b>Lon:</b> ${typeof i.longitude === "number" ? i.longitude.toFixed(5) : "—"}</div>
+          </div>
+        </div>
+      `);
+      m.addTo(chpMarkers);
+    });
+
+    // auto-fit on refresh (if we have points)
+    const pts = [];
+    chpMarkers.eachLayer(m => pts.push(m.getLatLng()));
+    if(pts.length) chpMap.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
   async function fetchCHP(){
-    // Only fetch/render if CHP tab is visible
     if (chpView.classList.contains("hidden")) return;
 
     try{
@@ -598,42 +697,45 @@
       const json = await res.json();
       if(!json.ok) throw new Error(json.error || "API error");
 
-      const list = json?.chp?.incidents || [];
-      chpCount.textContent = `${list.length} incidents`;
+      lastChp = json?.chp?.incidents || [];
+
+      chpCount.textContent = `${lastChp.length} incidents`;
       chpUpdatedAt.textContent = json.updatedAt ? `Updated ${new Date(json.updatedAt).toLocaleString()}` : "Updated —";
 
-      if(!list.length){
+      if(!lastChp.length){
         chpBody.innerHTML = `<tr><td colspan="5" class="chpError">No CHP incidents found for Ventura County right now.</td></tr>`;
+        updateChpMap();
         return;
       }
 
-      chpBody.innerHTML = list.map(i => {
+      chpBody.innerHTML = lastChp.map(i => {
         const time = escapeHtml(i.dateTime || "");
         const type = escapeHtml(i.type || "");
         const loc  = escapeHtml(i.location || "");
-        const lat  = (typeof i.latitude === "number") ? i.latitude.toFixed(5) : "";
-        const lon  = (typeof i.longitude === "number") ? i.longitude.toFixed(5) : "";
+        const lat  = (typeof i.latitude === "number") ? i.latitude.toFixed(5) : "—";
+        const lon  = (typeof i.longitude === "number") ? i.longitude.toFixed(5) : "—";
 
         return `
           <tr class="chpRow">
-            <td class="chpColTime">${time}</td>
-            <td class="chpColType">${type}</td>
-            <td>${loc}</td>
-            <td class="chpColLat">${lat}</td>
-            <td class="chpColLon">${lon}</td>
+            <td data-label="Time" class="chpColTime">${time}</td>
+            <td data-label="Type" class="chpColType">${type}</td>
+            <td data-label="Location" class="chpLoc">${loc}</td>
+            <td data-label="Lat" class="chpColLat">${lat}</td>
+            <td data-label="Lon" class="chpColLon">${lon}</td>
           </tr>
         `;
       }).join("");
+
+      updateChpMap();
     }catch(e){
       console.error(e);
       chpBody.innerHTML = `<tr><td colspan="5" class="chpError">Could not load CHP right now.</td></tr>`;
     }
   }
 
-  // refresh CHP every minute (only when on CHP tab)
   setInterval(fetchCHP, 60000);
 
-  // Default tab = VCFD (your original)
+  // default = VCFD
   showVCFD();
 </script>
 </body>
