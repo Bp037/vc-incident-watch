@@ -516,20 +516,25 @@
   // =============== MARKER ICONS (EMOJI) ================
   // =====================================================
   function emojiFor(typeText){
-    const t = (typeText || "").toLowerCase();
-    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
-    if(t.includes("rescue")) return "🛟";
-    if(t.includes("water")) return "🌊";
-    if(t.includes("structure")) return "🏠🔥";
-    if(t.includes("fire")) return "🔥";
-    if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
-    if(t.includes("haz") || t.includes("hazmat")) return "☣️";
-    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
-    if(t.includes("alarm")) return "🔔";
-    if(t.includes("investig")) return "🔎";
-    if(t.includes("public")) return "🧰";
-    return "📍";
-  }
+  const t = (typeText || "").toLowerCase().trim();
+
+  // NEW: 1E = Gas Leak
+  if (t === "1e" || t.includes(" 1e") || t.includes("1e ")) return "⚠️";
+
+  if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
+  if(t.includes("rescue")) return "🛟";
+  if(t.includes("water")) return "🌊";
+  if(t.includes("structure")) return "🏠🔥";
+  if(t.includes("fire")) return "🔥";
+  if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
+  if(t.includes("haz") || t.includes("hazmat")) return "☣️";
+  if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
+  if(t.includes("alarm")) return "🔔";
+  if(t.includes("investig")) return "🔎";
+  if(t.includes("public")) return "🧰";
+  return "📍";
+}
+
 
   // YOU REQUESTED: Fire=RED, Traffic=ORANGE
   function colorForFireMedical(typeText){
@@ -587,6 +592,11 @@
     const year = yy < 100 ? (2000+yy) : yy;
     return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
   }
+function normalizeTypeLabel(typeText){
+  const t = (typeText || "").trim();
+  if (t.toLowerCase() === "1e") return "Gas Leak";
+  return t;
+}
 
   function normalizeFire(raw){
     const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
@@ -597,8 +607,8 @@
     const city = raw?.city ? String(raw.city).trim() : "";
     const street = [block, addr].filter(Boolean).join(" ").trim();
     const fullAddress = [street, city].filter(Boolean).join(", ").trim();
+const type = normalizeTypeLabel(raw?.incidentType || raw?.IncidentType || "");
 
-    const type = raw?.incidentType || raw?.IncidentType || "";
     const status = raw?.status || raw?.Status || "";
     const units = raw?.units || raw?.Units || "";
 
