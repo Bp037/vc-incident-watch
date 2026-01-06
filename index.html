@@ -1,200 +1,148 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VC Incident Watch</title>
+export async function onRequestGet(context) {
+  const headers = {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "public, max-age=30",
+    "access-control-allow-origin": "*",
+  };
 
-  <style>
-    :root{
-      --bg:#0b0b0b;
-      --card:#0f0f0f;
-      --text:#f1f1f1;
-      --muted:#bdbdbd;
-      --accent:#8f1414;
-      --line:#222;
-      --pill:#1a1a1a;
-    }
-    *{box-sizing:border-box}
-    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); }
-    header{ background:var(--accent); padding:22px 18px; }
-    header h1{ margin:0; font-size:22px; font-weight:900; letter-spacing:.2px; }
-    .subbar{ display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap; }
-    .pill{ background:rgba(0,0,0,.35); padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; }
-    .status{ font-size:14px; font-weight:900; opacity:.95; }
-    main{ padding:14px 14px 30px; max-width:1200px; margin:0 auto; }
+  try {
+    const [vcfd, chp] = await Promise.all([
+      fetchVCFD(),
+      fetchCHP(),
+    ]);
 
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
-    button{ background:#1c1c1c; border:1px solid #333; color:var(--text); padding:9px 12px; border-radius:10px; cursor:pointer; font-weight:900; }
-    button:hover{ border-color:#555; }
-    .small{ font-size:12px; color:var(--muted); }
+    return new Response(JSON.stringify({
+      ok: true,
+      updatedAt: new Date().toISOString(),
+      vcfd,
+      chp
+    }), { status: 200, headers });
 
-    .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 12px; }
-    .tab{
-      background:var(--pill);
-      border:1px solid #2a2a2a;
-      color:var(--text);
-      padding:8px 10px;
-      border-radius:999px;
-      cursor:pointer;
-      font-weight:900;
-      font-size:12px;
-    }
-    .tab.active{ border-color:#666; background:#202020; }
+  } catch (err) {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: err?.message || String(err)
+    }), { status: 500, headers });
+  }
+}
 
-    .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
-    table{ width:100%; border-collapse:collapse; }
-    th,td{ text-align:left; padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:top; font-size:13px; }
-    th{ font-size:12px; color:var(--muted); font-weight:900; letter-spacing:.3px; background:#0e0e0e; position:sticky; top:0; z-index:1; }
-    tr:hover td{ background:#101010; }
-    .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
-    .muted{ color:var(--muted); }
-    .nowrap{ white-space:nowrap; }
-    .wrap{ white-space:normal; word-break:break-word; }
+// -------------------- VCFD --------------------
+async function fetchVCFD() {
+  const url = "https://firefeeds.venturacounty.gov/api/incidents";
 
-    .error{
-      background:#2a0f0f;
-      border:1px solid #4a1515;
-      padding:10px 12px;
-      border-radius:12px;
-      color:#ffd2d2;
-      font-weight:900;
-      margin-top:10px;
-      display:none;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>VC Incident Watch</h1>
-    <div class="subbar">
-      <div class="pill">Ventura County</div>
-      <div class="pill" id="activeFeedPill">VCFD</div>
-      <div class="status" id="status">Loading…</div>
-    </div>
-  </header>
+  const json = await fetchWithTimeout(url, 8000, {
+    headers: { "accept": "application/json" },
+    cf: { cacheTtl: 30, cacheEverything: true },
+  }).then(r => {
+    if (!r.ok) throw new Error(`VCFD feed failed: ${r.status}`);
+    return r.json();
+  });
 
-  <main>
-    <div class="row">
-      <button id="refreshBtn">Refresh</button>
-      <div class="small" id="meta">—</div>
-    </div>
+  const incidents = Array.isArray(json) ? json : (json?.incidents || json?.data || []);
 
-    <div class="tabs">
-      <button class="tab active" id="tabVCFD">VCFD</button>
-      <button class="tab" id="tabCHP">CHP</button>
-    </div>
+  const normalized = incidents.slice(0, 300).map((x) => ({
+    id: x.id || x.incident_id || x.IncidentID || x.IncidentNumber || null,
+    dateTime: x.dateTime || x.datetime || x.time || x.received || x.received_time || x.CallReceived || x.Created || "",
+    type: x.type || x.call_type || x.CallType || x.incidentType || x.IncidentType || x.Type || "",
+    location: x.location || x.address || x.Address || x.Location || "",
+    city: x.city || x.City || "",
+  }));
 
-    <div class="error" id="errBox"></div>
+  return { count: normalized.length, incidents: normalized };
+}
 
-    <div class="card">
-      <div style="max-height:70vh; overflow:auto;">
-        <table>
-          <thead id="thead"></thead>
-          <tbody id="tbody">
-            <tr><td class="muted">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </main>
+// -------------------- CHP --------------------
+async function fetchCHP() {
+  const url = "https://quickmap.dot.ca.gov/data/chp-only.kml";
 
-  <script>
-    const refreshBtn = document.getElementById("refreshBtn");
-    const statusEl = document.getElementById("status");
-    const metaEl = document.getElementById("meta");
-    const errBox = document.getElementById("errBox");
-    const tbody = document.getElementById("tbody");
-    const thead = document.getElementById("thead");
-    const activeFeedPill = document.getElementById("activeFeedPill");
+  const kmlText = await fetchWithTimeout(url, 8000, {
+    headers: { "accept": "application/vnd.google-earth.kml+xml, application/xml;q=0.9,*/*;q=0.8" },
+    cf: { cacheTtl: 30, cacheEverything: true },
+  }).then(r => {
+    if (!r.ok) throw new Error(`CHP feed failed: ${r.status}`);
+    return r.text();
+  });
 
-    const tabVCFD = document.getElementById("tabVCFD");
-    const tabCHP = document.getElementById("tabCHP");
+  const incidents = parseChpKml(kmlText);
 
-    let active = "VCFD";
-    let lastData = null;
+  const VC = { minLat: 33.90, maxLat: 34.95, minLon: -119.80, maxLon: -118.55 };
 
-    tabVCFD.addEventListener("click", () => setActive("VCFD"));
-    tabCHP.addEventListener("click", () => setActive("CHP"));
-    refreshBtn.addEventListener("click", load);
+  const filtered = incidents.filter(i =>
+    typeof i.latitude === "number" && typeof i.longitude === "number" &&
+    i.latitude >= VC.minLat && i.latitude <= VC.maxLat &&
+    i.longitude >= VC.minLon && i.longitude <= VC.maxLon
+  ).slice(0, 300);
 
-    function setActive(which){
-      active = which;
-      tabVCFD.classList.toggle("active", which === "VCFD");
-      tabCHP.classList.toggle("active", which === "CHP");
-      activeFeedPill.textContent = which;
-      render();
-    }
+  filtered.sort((a,b) => (b.epochMs ?? 0) - (a.epochMs ?? 0));
 
-    async function load(){
-      statusEl.textContent = "Loading…";
-      errBox.style.display = "none";
-      tbody.innerHTML = `<tr><td class="muted">Loading…</td></tr>`;
-      thead.innerHTML = "";
+  return { count: filtered.length, incidents: filtered };
+}
 
-      try{
-        const res = await fetch("/api/incidents", { cache: "no-store" });
-        if(!res.ok) throw new Error("API failed. Check Cloudflare deployment.");
-        const data = await res.json();
-        if(!data.ok) throw new Error(data.error || "Unknown API error");
+function parseChpKml(kml) {
+  const placemarks = kml.split("<Placemark>").slice(1);
+  const out = [];
 
-        lastData = data;
-        metaEl.textContent = `Updated: ${new Date(data.updatedAt).toLocaleString()} • VCFD: ${data.vcfd.count} • CHP: ${data.chp.count}`;
-        statusEl.textContent = "Updated";
-        render();
-      }catch(e){
-        statusEl.textContent = "Error";
-        errBox.style.display = "block";
-        errBox.textContent = e.message || String(e);
-        tbody.innerHTML = `<tr><td class="muted">No data.</td></tr>`;
-      }
-    }
+  for (const pm of placemarks) {
+    const name = getTag(pm, "name");
+    const desc = getTag(pm, "description");
+    const coords = getTag(pm, "coordinates");
+    if (!coords) continue;
 
-    function render(){
-      if(!lastData){
-        return;
-      }
+    const [lonStr, latStr] = coords.trim().split(",");
+    const longitude = Number(lonStr);
+    const latitude = Number(latStr);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
 
-      if(active === "VCFD"){
-        const rows = lastData.vcfd.incidents || [];
-        thead.innerHTML = `
-          <tr>
-            <th class="nowrap">Date/Time</th>
-            <th>Type</th>
-            <th>Location</th>
-            <th class="nowrap">City</th>
-          </tr>
-        `;
+    const plainDesc = stripHtml(desc || "").replace(/\s+/g, " ").trim();
+    const dateTime = extractDateTime(plainDesc);
 
-        if(!rows.length){
-          tbody.innerHTML = `<tr><td colspan="4" class="muted">No active VCFD calls.</td></tr>`;
-          return;
-        }
+    let location = plainDesc;
+    if (dateTime) location = location.replace(dateTime, "").trim();
 
-        tbody.innerHTML = rows.map(i => `
-          <tr>
-            <td class="nowrap">${escapeHtml(i.dateTime || "—")}</td>
-            <td>${escapeHtml(i.type || "—")}</td>
-            <td class="wrap">${escapeHtml(i.location || "—")}</td>
-            <td class="nowrap">${escapeHtml(i.city || "—")}</td>
-          </tr>
-        `).join("");
-      }
+    out.push({
+      type: name || "CHP Incident",
+      dateTime: dateTime || "",
+      location: location || "",
+      latitude,
+      longitude,
+      epochMs: dateTime ? Date.parse(dateTime) : null,
+    });
+  }
+  return out;
+}
 
-      if(active === "CHP"){
-        const rows = lastData.chp.incidents || [];
-        thead.innerHTML = `
-          <tr>
-            <th class="nowrap">Date/Time</th>
-            <th>Type</th>
-            <th>Location</th>
-            <th class="nowrap">Lat</th>
-            <th class="nowrap">Lon</th>
-          </tr>
-        `;
+function getTag(str, tag) {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = str.match(re);
+  return m ? m[1] : "";
+}
 
-        if(!rows.length){
-          tbody.innerHTML = `<tr><td colspan="5" class="muted">No CHP incidents in Ventura County (bbox filter).</td></tr>`;
-          return;
-        }
+function stripHtml(html) {
+  return String(html)
+    .replace(/<!\[CDATA\[/g, "")
+    .replace(/\]\]>/g, "")
+    .replace(/<br\s*\/?\s*>/gi, " ")
+    .replace(/<[^>]*>/g, " ");
+}
 
+function extractDateTime(text) {
+  const patterns = [
+    /\b\d{1,2}\/\d{1,2}\/\d{2,4}\s+\d{1,2}:\d{2}\s*(AM|PM)?\b/i,
+    /\b\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}\b/,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) return m[0];
+  }
+  return "";
+}
+
+async function fetchWithTimeout(url, ms, init={}) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
