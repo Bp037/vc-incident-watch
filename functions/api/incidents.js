@@ -7,38 +7,49 @@ export async function onRequestGet() {
 
   try {
     const [vcfd, chp] = await Promise.all([getVCFD(), getCHP()]);
-    return new Response(JSON.stringify({
-      ok: true,
-      updatedAt: new Date().toISOString(),
-      vcfd,
-      chp
-    }), { status: 200, headers });
-
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        updatedAt: new Date().toISOString(),
+        vcfd,
+        chp,
+      }),
+      { status: 200, headers }
+    );
   } catch (err) {
-    return new Response(JSON.stringify({
-      ok: false,
-      error: err?.message || String(err)
-    }), { status: 500, headers });
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: err?.message || String(err),
+      }),
+      { status: 500, headers }
+    );
   }
 }
 
 // ---------------- VCFD ----------------
-// VCFD feed returns JSON
+// VCFD feed returns JSON (we keep as much as possible incl lat/lon)
 async function getVCFD() {
   const url = "https://firefeeds.venturacounty.gov/api/incidents";
-  const res = await fetch(url, {
-    cf: { cacheTtl: 30, cacheEverything: true }
-  });
+  const res = await fetch(url, { cf: { cacheTtl: 30, cacheEverything: true } });
   if (!res.ok) throw new Error(`VCFD fetch failed: ${res.status}`);
-  const json = await res.json();
 
+  const json = await res.json();
   const incidents = Array.isArray(json) ? json : (json?.incidents || json?.data || []);
-  const normalized = incidents.slice(0, 300).map(x => ({
-    id: x.id || x.incident_id || x.IncidentID || x.IncidentNumber || null,
-    dateTime: x.dateTime || x.datetime || x.time || x.received || x.received_time || x.CallReceived || x.Created || "",
-    type: x.type || x.call_type || x.CallType || x.incidentType || x.IncidentType || x.Type || "",
-    location: x.location || x.address || x.Address || x.Location || "",
-    city: x.city || x.City || "",
+
+  const normalized = incidents.slice(0, 300).map((x) => ({
+    incidentNumber: x.incidentNumber ?? x.IncidentNumber ?? x.id ?? x.IncidentID ?? null,
+    responseDate: x.responseDate ?? x.ResponseDate ?? x.dateTime ?? x.datetime ?? x.time ?? "",
+    block: x.block ?? x.Block ?? "",
+    address: x.address ?? x.Address ?? x.location ?? x.Location ?? "",
+    city: x.city ?? x.City ?? "",
+    incidentType: x.incidentType ?? x.IncidentType ?? x.type ?? x.Type ?? "",
+    status: x.status ?? x.Status ?? "",
+    units: x.units ?? x.Units ?? "",
+    latitude:
+      x.latitude ?? x.Latitude ?? (Number.isFinite(x.lat) ? x.lat : null) ?? null,
+    longitude:
+      x.longitude ?? x.Longitude ?? (Number.isFinite(x.lon) ? x.lon : null) ?? null,
   }));
 
   return { count: normalized.length, incidents: normalized };
@@ -46,27 +57,51 @@ async function getVCFD() {
 
 // ---------------- CHP ----------------
 // CHP feed returns KML; we parse Placemark name/description/coordinates.
-// Ventura County bbox filter is applied.
+// Ventura County POLYGON filter is applied (your uploaded poly, as-is).
 async function getCHP() {
   const url = "https://quickmap.dot.ca.gov/data/chp-only.kml";
-  const res = await fetch(url, {
-    cf: { cacheTtl: 30, cacheEverything: true }
-  });
+  const res = await fetch(url, { cf: { cacheTtl: 30, cacheEverything: true } });
   if (!res.ok) throw new Error(`CHP fetch failed: ${res.status}`);
-  const kml = await res.text();
 
+  const kml = await res.text();
   const incidents = parseCHPKml(kml);
 
-  const VC = { minLat: 33.90, maxLat: 34.95, minLon: -119.80, maxLon: -118.55 };
-  const filtered = incidents.filter(i =>
-    Number.isFinite(i.latitude) && Number.isFinite(i.longitude) &&
-    i.latitude >= VC.minLat && i.latitude <= VC.maxLat &&
-    i.longitude >= VC.minLon && i.longitude <= VC.maxLon
-  ).slice(0, 300);
+  // Ventura County polygon (lon,lat) ring
+  const VC_POLY = [
+    [-118.5300939712794, 34.03185528637208],
+    [-118.6116939741298, 34.17101829902782],
+    [-118.6177474087175, 34.27981381684283],
+    [-118.6632372442538, 34.44835224334707],
+    [-119.4411823124322, 34.88620317325202],
+    [-119.5484842202537, 34.89739469624134],
+    [-119.5958387202233, 34.36956110989777],
+    [-118.9209564383981, 33.94545298049609],
+  ];
 
-  filtered.sort((a,b) => (b.epochMs ?? 0) - (a.epochMs ?? 0));
+  const filtered = incidents
+    .filter((i) => Number.isFinite(i.latitude) && Number.isFinite(i.longitude))
+    .filter((i) => pointInPolygon(i.longitude, i.latitude, VC_POLY))
+    .slice(0, 300);
+
+  filtered.sort((a, b) => (b.epochMs ?? 0) - (a.epochMs ?? 0));
 
   return { count: filtered.length, incidents: filtered };
+}
+
+// Ray-casting point in polygon (lon/lat)
+function pointInPolygon(x, y, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1];
+    const xj = poly[j][0], yj = poly[j][1];
+
+    const intersect =
+      yi > y !== yj > y &&
+      x < ((xj - xi) * (y - yi)) / (yj - yi + 0.0) + xi;
+
+    if (intersect) inside = !inside;
+  }
+  return inside;
 }
 
 function parseCHPKml(kml) {
@@ -84,7 +119,7 @@ function parseCHPKml(kml) {
     const latitude = Number(latStr);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
 
-    // Turn HTML-ish description into plain text without regex weirdness
+    // Turn HTML-ish description into plain text
     const plain = htmlToText(descRaw);
 
     const dateTime = extractDateTime(plain);
@@ -111,11 +146,14 @@ function getTag(str, tag) {
 }
 
 function htmlToText(input) {
-  // Safe-ish: remove CDATA markers and strip tags using non-problematic patterns
   let s = String(input);
+  // Remove CDATA safely (no regex that can break builds)
   s = s.replace("<![CDATA[", "").replace("]]>", "");
+  // Normalize line breaks
   s = s.split("<br>").join(" ").split("<br/>").join(" ").split("<br />").join(" ");
+  // Strip remaining tags
   s = s.replace(/<[^>]*>/g, " ");
+  // Collapse whitespace
   s = s.replace(/\s+/g, " ").trim();
   return decodeXml(s);
 }
