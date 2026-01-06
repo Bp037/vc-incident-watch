@@ -515,11 +515,11 @@
   // =====================================================
   // =============== MARKER ICONS (EMOJI) ================
   // =====================================================
-  function emojiFor(typeText){
+ function emojiFor(typeText){
   const t = (typeText || "").toLowerCase().trim();
 
-  // NEW: 1E = Gas Leak
-  if (t === "1e" || t.includes(" 1e") || t.includes("1e ")) return "⚠️";
+  // Gas leak (1E) - use the warning triangle
+  if (t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
 
   if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
   if(t.includes("rescue")) return "🛟";
@@ -534,6 +534,7 @@
   if(t.includes("public")) return "🧰";
   return "📍";
 }
+
 
 
   // YOU REQUESTED: Fire=RED, Traffic=ORANGE
