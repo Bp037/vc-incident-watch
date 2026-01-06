@@ -826,7 +826,18 @@ chpIncidents = raw.map((x, i) => {
   };
 });
 
-      updatedAt_chp.textContent = data?.chp?.updatedAt ? `Updated ${data.chp.updatedAt}` : (data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —");
+      if (data?.updatedAt) {
+  const d = new Date(data.updatedAt);
+  const formatted = d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  updatedAt_chp.textContent = `Updated ${formatted}`;
+} else {
+  updatedAt_chp.textContent = "Updated —";
+}
 
 
       renderChp();
