@@ -1013,14 +1013,6 @@
     if(m >= 4.0) return "#f97316";
     return "#fbbf24";
   }
-  function eqRingColor(mag){
-  const m = Number(mag || 0);
-  if(m >= 5.0) return "#ef4444";
-  if(m >= 4.0) return "#f97316";
-  if(m >= 3.0) return "#fbbf24";
-  return "#60a5fa";
-}
-
 function eqRadiusKm(mag){
   const m = Number(mag || 0);
   if (m >= 7.0) return 350;
@@ -1109,15 +1101,12 @@ rows_eq.innerHTML = `
     const rKm = eqRadiusKm(ev.mag);
 
     // “Shake area” ring (estimated)
-  const ring = L.circle([ev.lat, ev.lon], {
-  radius: rKm * 1000,
-  weight: 2,
-    color: eqRingColor(ev.mag)
-  opacity: 0.5,
-  fillOpacity: 0.06,
-  dashArray: "6 6"
-});
-
+    const ring = L.circle([ev.lat, ev.lon], {
+      radius: rKm * 1000,
+      weight: 2,
+      opacity: 0.55,
+      fillOpacity: 0.08
+    });
 
     // Epicenter marker
     const m = L.marker([ev.lat, ev.lon], { icon: eqIcon() })
