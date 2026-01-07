@@ -1,12 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  /* Weather severity chip colors */
-.chip.sev-moderate { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.18); }
-.chip.sev-severe   { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.18); }
-.chip.sev-extreme  { border-color: rgba(168,85,247,.55); background: rgba(168,85,247,.18); }
-.chip.sev-minor    { border-color: rgba(234,179,8,.55);  background: rgba(234,179,8,.18); }
-.chip.sev-unknown  { border-color: rgba(148,163,184,.45); background: rgba(148,163,184,.16); }
+
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -39,6 +34,12 @@
       --shadow:rgba(0,0,0,.55);
     }
 
+      /* Weather severity chip colors */
+.chip.sev-moderate { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.18); }
+.chip.sev-severe   { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.18); }
+.chip.sev-extreme  { border-color: rgba(168,85,247,.55); background: rgba(168,85,247,.18); }
+.chip.sev-minor    { border-color: rgba(234,179,8,.55);  background: rgba(234,179,8,.18); }
+.chip.sev-unknown  { border-color: rgba(148,163,184,.45); background: rgba(148,163,184,.16); }
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -1168,12 +1169,16 @@ function sevStyle(sev){
     }
 
     wxAlerts.forEach(a=>{
-   const sentDt = sent ? new Date(sent) : null;
+const sent = a.sent || "";
+const ends = a.ends || a.expires || "";
+
+const sentDt = sent ? new Date(sent) : null;
 const sentDate = sentDt ? sentDt.toLocaleDateString() : "—";
 const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
 
 const endsDt = ends ? new Date(ends) : null;
-const endsStr = endsDt ? endsDt.toLocaleString([], { month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }) : "—";
+const endsStr = endsDt ? endsDt.toLocaleString([], { month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }) : "";
+
 
 const sev = a.severity || "—";
 const sevCls = `sev-${sevKey(sev)}`;
