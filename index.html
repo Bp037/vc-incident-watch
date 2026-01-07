@@ -1245,13 +1245,6 @@ function buildWeatherPopup(a){
 
 async function updateWeatherMap(){
   layer_weather.clearLayers();
-  console.log("wxAlerts:", wxAlerts.length, wxAlerts.map(a => ({
-  event: a.event,
-  sev: a.severity,
-  hasGeom: !!a.geometry,
-  zones: Array.isArray(a.affectedZones) ? a.affectedZones.length : 0
-})));
-
 
   for (const a of wxAlerts) {
     // 1) If API gave geometry directly
@@ -1315,10 +1308,8 @@ async function fetchWeather(){
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-   wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
-console.log("fetchWeather got alerts:", wxAlerts.length, wxAlerts[0]);
-updatedAt_weather.textContent = ...
-
+    wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
+    updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
 
     renderWeather();
     await updateWeatherMap();
