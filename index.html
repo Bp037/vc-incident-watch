@@ -1090,27 +1090,63 @@ chpIncidents = raw.map((x, i) => {
     });
   }
 
-  function updateWeatherMap(){
-    layer_weather.clearLayers();
-    wxAlerts.forEach(a=>{
-      if(!a.geometry) return;
+async function updateWeatherMap(){
+  layer_weather.clearLayers();
+
+  for (const a of wxAlerts) {
+
+    if (a.geometry) {
       const layer = L.geoJSON(a.geometry, {
         style: { weight:2, opacity:0.9, fillOpacity:0.15 }
-      }).bindPopup(`
-        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
-          <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
-          <div style="font-size:12px;color:rgba(0,0,0,.75)">
-            <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
-            <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
-          </div>
-        </div>
-      `);
-      layer.addTo(layer_weather);
+      }).bindPopup(buildWeatherPopup(a));
 
+      layer.addTo(layer_weather);
       try{ a._bounds = layer.getBounds(); }catch(_){}
-    });
+      continue;
+    }
+
+    if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
+      const zoneUrls = a.affectedZones.slice(0, 6);
+
+      try {
+        const zoneGeo = await Promise.all(
+          zoneUrls.map(z =>
+            fetch(z.endsWith(".geojson") ? z : z + ".geojson", {
+              headers: { "Accept": "application/geo+json" }
+            }).then(r => r.json())
+          )
+        );
+
+        const combined = {
+          type: "FeatureCollection",
+          features: zoneGeo.flatMap(z => z.features || []).filter(Boolean)
+        };
+
+        const layer = L.geoJSON(combined, {
+          style: { weight:2, opacity:0.9, fillOpacity:0.15 }
+        }).bindPopup(buildWeatherPopup(a));
+
+        layer.addTo(layer_weather);
+        try{ a._bounds = layer.getBounds(); }catch(_){}
+
+      } catch (e) {
+        console.warn("Failed to fetch zone geometry for alert:", a.event, e);
+      }
+    }
   }
+}
+function buildWeatherPopup(a){
+  return `
+    <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+      <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
+      <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
+      <div style="font-size:12px;color:rgba(0,0,0,.75)">
+        <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
+        <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
+      </div>
+    </div>
+  `;
+}
 
   async function fetchWeather(){
     setStatus("wait","Refreshing…");
