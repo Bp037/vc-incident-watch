@@ -1040,17 +1040,22 @@ chpIncidents = raw.map((x, i) => {
   }
 // Expanded coverage: SLO-ish down to Mexico + east to NV/AZ border
 const EQ_BBOX = {
-  minLat: 32.40,
-  maxLat: 36.05,
-  minLon: -121.80,
-  maxLon: -114.00
+  minLat: 32.00,   // a bit more south (SD/TJ region)
+  maxLat: 38.00,   // captures Deep Springs / Owens Valley / Ridgecrest area
+  minLon: -122.50, // includes more coast / offshore
+  maxLon: -113.00  // includes farther east (Colorado River / AZ border)
 };
 
 function eqInBbox(lat, lon){
   return lat >= EQ_BBOX.minLat && lat <= EQ_BBOX.maxLat &&
          lon >= EQ_BBOX.minLon && lon <= EQ_BBOX.maxLon;
 }
-const EQ_MIN_MAG = 3.0;
+function eqMinMagForWindow(){
+  if(eqWindow === "week") return 2.5;
+  return 2.0;
+}
+
+const EQ_MIN_MAG = 2.0;
 const EQ_USE_BBOX = true; // set false temporarily to test
 
 async function fetchEarthquakes(){
