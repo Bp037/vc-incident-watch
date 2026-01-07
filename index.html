@@ -297,12 +297,13 @@
     }
 
     /* Earthquakes: responsive table */
-    .eqTbl{
-      display:grid;
-      grid-template-columns: 160px 90px 1fr 140px; /* date | mag | place | id */
-      gap:10px;
-      align-items:center;
-    }
+  .eqTbl {
+  display: grid;
+  grid-template-columns: 120px auto 1fr; /* date/time | magnitude | location */
+  gap: 12px;
+  align-items: center;
+}
+
     @media (max-width: 520px){
       .eqTbl{
         grid-template-columns: 120px 80px 1fr; /* hide ID on small screens */
@@ -1005,7 +1006,6 @@ function renderEq(){
           <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
         </div>
 
-        <div class="mono">${escapeHtml(ev.id || "")}</div>
       </div>
     `;
 
