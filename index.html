@@ -1191,6 +1191,7 @@ function renderWeather(){
     // severity chip class
     const sev = a.severity || "—";
     const sevCls = `sev-${sevKey(sev)}`;
+const hasPolyHint = a.geometry ? "Polygon: yes" : (Array.isArray(a.affectedZones) && a.affectedZones.length ? "Polygon: via zones" : "Polygon: none");
 
     // IMPORTANT: create the row (your broken version didn’t)
     const row = document.createElement("div");
@@ -1206,6 +1207,7 @@ function renderWeather(){
         <div class="addr">
           <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
           <div class="typeText">${escapeHtml(area)}</div>
+          <div class="typeText" style="opacity:.65;margin-top:4px">${escapeHtml(hasPolyHint)}</div>
         </div>
         <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
         <div class="desktopStatus">
@@ -1214,17 +1216,17 @@ function renderWeather(){
       </div>
     `;
 
-    row.addEventListener("click", ()=>{
-      // makes Leaflet behave when the map is inside a tab/card
-      setTimeout(() => map_weather.invalidateSize(true), 0);
+   row.addEventListener("click", ()=>{
+  setTimeout(() => map_weather.invalidateSize(true), 0);
 
-      if(a._bounds){
-        map_weather.fitBounds(a._bounds, { padding:[20,20] });
-        document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
-      } else {
-        console.warn("No polygon bounds for this alert (some alerts have no geometry).", a);
-      }
-    });
+  if(a._bounds){
+    map_weather.fitBounds(a._bounds, { padding:[20,20] });
+    document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
+  } else {
+    alert("No polygon loaded for this alert yet.");
+  }
+});
+
 
     rows_weather.appendChild(row);
   });
