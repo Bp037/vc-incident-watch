@@ -1038,28 +1038,77 @@ chpIncidents = raw.map((x, i) => {
       m.addTo(layer_eq);
     });
   }
+// Expanded coverage: SLO-ish down to Mexico + east to NV/AZ border
+const EQ_BBOX = {
+  minLat: 32.40,
+  maxLat: 36.05,
+  minLon: -121.80,
+  maxLon: -114.00
+};
 
-  async function fetchEarthquakes(){
-    setStatus("wait","Refreshing…");
-    try{
-      const res = await fetch(`/api/earthquakes?window=${encodeURIComponent(eqWindow)}`, { cache:"no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+function eqInBbox(lat, lon){
+  return lat >= EQ_BBOX.minLat && lat <= EQ_BBOX.maxLat &&
+         lon >= EQ_BBOX.minLon && lon <= EQ_BBOX.maxLon;
+}
+ async function fetchEarthquakes(){
+  setStatus("wait","Refreshing…");
+  try{
+    // Pick USGS feed based on window
+    // hour: past hour; day: past day; week: past 7 days
+    const feed =
+      eqWindow === "hour" ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson" :
+      eqWindow === "day"  ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"  :
+                            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson";
 
-      eqEvents = Array.isArray(data?.events) ? data.events : [];
-      updatedAt_eq.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
+    const res = await fetch(feed, { cache:"no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const geo = await res.json();
 
-      renderEq();
-      updateEqMarkers();
-      setStatus("ok","Updated");
-    }catch(e){
-      console.error(e);
-      setStatus("err","Error");
-      updatedAt_eq.textContent = "Updated —";
-      rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load earthquakes right now.</div>`;
-    }
+    const feats = Array.isArray(geo?.features) ? geo.features : [];
+
+    // Convert to your expected format + filter:
+    // - M3.0+
+    // - inside expanded bbox
+    eqEvents = feats
+      .map(f => {
+        const mag = f?.properties?.mag;
+        const place = f?.properties?.place;
+        const time = f?.properties?.time;
+        const id = f?.id;
+        const coords = f?.geometry?.coordinates; // [lon, lat, depthKm]
+        const lon = Array.isArray(coords) ? coords[0] : null;
+        const lat = Array.isArray(coords) ? coords[1] : null;
+        const depthKm = Array.isArray(coords) ? coords[2] : null;
+
+        return {
+          id,
+          mag,
+          place,
+          time,
+          lat: lat != null ? Number(lat) : null,
+          lon: lon != null ? Number(lon) : null,
+          depthKm: depthKm != null ? Number(depthKm) : null
+        };
+      })
+      .filter(ev =>
+        ev.mag != null && Number(ev.mag) >= 3.0 &&
+        ev.lat != null && ev.lon != null &&
+        eqInBbox(ev.lat, ev.lon)
+      )
+      .sort((a,b) => (b.time || 0) - (a.time || 0));
+
+    updatedAt_eq.textContent = `Updated ${new Date().toLocaleString()}`;
+
+    renderEq();
+    updateEqMarkers();
+    setStatus("ok","Updated");
+  }catch(e){
+    console.error(e);
+    setStatus("err","Error");
+    updatedAt_eq.textContent = "Updated —";
+    rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load earthquakes right now.</div>`;
   }
-
+}
   // =====================================================
   // =================== WEATHER ALERTS ==================
   // =====================================================
