@@ -1056,7 +1056,7 @@ const EQ_USE_BBOX = true; // set false temporarily to test
 async function fetchEarthquakes(){
   // Don't let missing setStatus break the whole feature
   if (typeof setStatus === "function") setStatus("wait","Refreshing…");
-
+  
   try{
     // Use all_* feeds so you actually get results consistently
     const feed =
