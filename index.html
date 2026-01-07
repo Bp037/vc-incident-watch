@@ -1111,11 +1111,16 @@ rows_eq.innerHTML = `
     }
   }
 
-  // =====================================================
-  // =================== WEATHER ALERTS ==================
-  // =====================================================
-  let map_weather, layer_weather;
-  let wxAlerts = [];
+ // =====================================================
+// =================== WEATHER ALERTS ==================
+// =====================================================
+let map_weather, layer_weather;
+let wxAlerts = [];
+
+const rows_weather = document.getElementById("rows_weather");
+const updatedAt_weather = document.getElementById("updatedAt_weather");
+const activeCount_weather = document.getElementById("activeCount_weather");
+
 function sevKey(sev){
   const s = (sev || "unknown").toLowerCase();
   if (s === "moderate") return "moderate";
@@ -1134,176 +1139,188 @@ function sevStyle(sev){
   return { color:"#94a3b8", weight:2, opacity:0.9, fillOpacity:0.14 };
 }
 
-  const rows_weather = document.getElementById("rows_weather");
-  const updatedAt_weather = document.getElementById("updatedAt_weather");
-  const activeCount_weather = document.getElementById("activeCount_weather");
+function initWeatherMap(){
+  map_weather = L.map("map_weather", { zoomControl:true }).setView([34.278, -119.293], 8.5);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map_weather);
 
-  function initWeatherMap(){
-    map_weather = L.map("map_weather", { zoomControl:true }).setView([34.278, -119.293], 8.5);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map_weather);
-    layer_weather = L.layerGroup().addTo(map_weather);
-    document.getElementById("fitBtn_weather").addEventListener("click", fitWeatherMap);
+  layer_weather = L.layerGroup().addTo(map_weather);
+
+  document.getElementById("fitBtn_weather").addEventListener("click", fitWeatherMap);
+}
+
+function fitWeatherMap(){
+  const bounds = [];
+  layer_weather.eachLayer(l=>{
+    if(l.getBounds) bounds.push(l.getBounds());
+  });
+  if(bounds.length){
+    const b = bounds.reduce((acc,bb)=> acc.extend(bb), bounds[0]);
+    map_weather.fitBounds(b, { padding:[20,20] });
+  }
+}
+
+function renderWeather(){
+  rows_weather.innerHTML = "";
+  activeCount_weather.textContent = `${wxAlerts.length} alerts`;
+
+  if(!wxAlerts.length){
+    rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No active Ventura-related alerts found right now.</div>`;
+    return;
   }
 
-  function fitWeatherMap(){
-    const bounds = [];
-    layer_weather.eachLayer(l=>{
-      if(l.getBounds) bounds.push(l.getBounds());
-    });
-    if(bounds.length){
-      const b = bounds.reduce((acc,bb)=> acc.extend(bb), bounds[0]);
-      map_weather.fitBounds(b, { padding:[20,20] });
-    }
-  }
+  wxAlerts.forEach(a=>{
+    // define these (your broken version was missing them)
+    const headline = a.headline || a.event || "Alert";
+    const area = a.areaDesc || "";
+    const sent = a.sent || "";
+    const ends = a.ends || a.expires || "";
 
-  function renderWeather(){
-    rows_weather.innerHTML = "";
-    activeCount_weather.textContent = `${wxAlerts.length} alerts`;
+    // date/time display
+    const sentDt = sent ? new Date(sent) : null;
+    const sentDate = sentDt ? sentDt.toLocaleDateString() : "—";
+    const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
 
-    if(!wxAlerts.length){
-      rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No active Ventura-related alerts found right now.</div>`;
-      return;
-    }
+    const endsDt = ends ? new Date(ends) : null;
+    const endsStr = endsDt ? endsDt.toLocaleString([], {
+      month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"
+    }) : "—";
 
-    wxAlerts.forEach(a=>{
-const sent = a.sent || "";
-const ends = a.ends || a.expires || "";
+    // severity chip class
+    const sev = a.severity || "—";
+    const sevCls = `sev-${sevKey(sev)}`;
 
-const sentDt = sent ? new Date(sent) : null;
-const sentDate = sentDt ? sentDt.toLocaleDateString() : "—";
-const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
+    // IMPORTANT: create the row (your broken version didn’t)
+    const row = document.createElement("div");
+    row.className = "row";
 
-const endsDt = ends ? new Date(ends) : null;
-const endsStr = endsDt ? endsDt.toLocaleString([], { month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }) : "";
-
-
-const sev = a.severity || "—";
-const sevCls = `sev-${sevKey(sev)}`;
-
-row.innerHTML = `
-  <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
-    <div class="date">
-      <div>${escapeHtml(sentDate)}</div>
-      <div style="opacity:.8;margin-top:4px">${escapeHtml(sentTime)}</div>
-    </div>
-    <div class="icon">⚠️</div>
-    <div class="addr">
-      <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
-      <div class="typeText">${escapeHtml(area)}</div>
-    </div>
-    <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
-    <div class="desktopStatus">
-      <span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span>
-    </div>
-  </div>
-`;
-
-   row.addEventListener("click", ()=>{
-  setTimeout(() => map_weather.invalidateSize(true), 0);
-
-  if(a._bounds){
-    map_weather.fitBounds(a._bounds, { padding:[20,20] });
-    document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
-  }
-});
-
-
-      rows_weather.appendChild(row);
-    });
-  }
-
-  function buildWeatherPopup(a){
-    return `
-      <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-        <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
-        <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
-        <div style="font-size:12px;color:rgba(0,0,0,.75)">
-          <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
-          <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
+    row.innerHTML = `
+      <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
+        <div class="date">
+          <div>${escapeHtml(sentDate)}</div>
+          <div style="opacity:.8;margin-top:4px">${escapeHtml(sentTime)}</div>
+        </div>
+        <div class="icon">⚠️</div>
+        <div class="addr">
+          <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
+          <div class="typeText">${escapeHtml(area)}</div>
+        </div>
+        <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
+        <div class="desktopStatus">
+          <span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span>
         </div>
       </div>
     `;
-  }
 
-  async function updateWeatherMap(){
-    layer_weather.clearLayers();
+    row.addEventListener("click", ()=>{
+      // makes Leaflet behave when the map is inside a tab/card
+      setTimeout(() => map_weather.invalidateSize(true), 0);
 
-    for (const a of wxAlerts) {
-      if (a.geometry) {
-        const feature = (a.geometry.type === "Feature" || a.geometry.type === "FeatureCollection")
-          ? a.geometry
-          : { type: "Feature", properties: {}, geometry: a.geometry };
+      if(a._bounds){
+        map_weather.fitBounds(a._bounds, { padding:[20,20] });
+        document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
+      } else {
+        console.warn("No polygon bounds for this alert (some alerts have no geometry).", a);
+      }
+    });
 
-        const layer = L.geoJSON(feature, {
-          style: { weight:2, opacity:0.9, fillOpacity:0.15 }
+    rows_weather.appendChild(row);
+  });
+}
+
+function buildWeatherPopup(a){
+  return `
+    <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+      <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
+      <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
+      <div style="font-size:12px;color:rgba(0,0,0,.75)">
+        <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
+        <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
+      </div>
+    </div>
+  `;
+}
+
+async function updateWeatherMap(){
+  layer_weather.clearLayers();
+
+  for (const a of wxAlerts) {
+    // 1) If API gave geometry directly
+    if (a.geometry) {
+      const feature = (a.geometry.type === "Feature" || a.geometry.type === "FeatureCollection")
+        ? a.geometry
+        : { type: "Feature", properties: {}, geometry: a.geometry };
+
+      const layer = L.geoJSON(feature, {
+        style: sevStyle(a.severity)
+      }).bindPopup(buildWeatherPopup(a));
+
+      layer.addTo(layer_weather);
+      try { a._bounds = layer.getBounds(); } catch(_) {}
+      continue;
+    }
+
+    // 2) Else try affectedZones -> fetch zone geojson
+    if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
+      const zoneUrls = a.affectedZones.slice(0, 20);
+
+      try {
+        const zoneGeo = await Promise.all(
+          zoneUrls.map(z =>
+            fetch(z, { headers: { "Accept": "application/geo+json" } })
+              .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+          )
+        );
+
+        const combined = {
+          type: "FeatureCollection",
+          features: zoneGeo.flatMap(z => {
+            if (!z) return [];
+            if (z.type === "FeatureCollection" && Array.isArray(z.features)) return z.features;
+            if (z.type === "Feature") return [z];
+            if (z.type && z.coordinates) return [{ type:"Feature", properties:{}, geometry:z }];
+            return [];
+          })
+        };
+
+        if (!combined.features.length) continue;
+
+        const layer = L.geoJSON(combined, {
+          style: sevStyle(a.severity)
         }).bindPopup(buildWeatherPopup(a));
 
         layer.addTo(layer_weather);
         try { a._bounds = layer.getBounds(); } catch(_) {}
-        continue;
-      }
 
-      if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
-        const zoneUrls = a.affectedZones.slice(0, 20);
-
-        try {
-          const zoneGeo = await Promise.all(
-            zoneUrls.map(z =>
-              fetch(z, { headers: { "Accept": "application/geo+json" } })
-                .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-            )
-          );
-
-          const combined = {
-            type: "FeatureCollection",
-            features: zoneGeo.flatMap(z => {
-              if (!z) return [];
-              if (z.type === "FeatureCollection" && Array.isArray(z.features)) return z.features;
-              if (z.type === "Feature") return [z];
-              if (z.type && z.coordinates) return [{ type:"Feature", properties:{}, geometry:z }];
-              return [];
-            })
-          };
-
-          if (!combined.features.length) continue;
-
-          const layer = L.geoJSON(combined, {
-            style: { weight:2, opacity:0.9, fillOpacity:0.15 }
-          }).bindPopup(buildWeatherPopup(a));
-
-          layer.addTo(layer_weather);
-          try { a._bounds = layer.getBounds(); } catch(_) {}
-
-        } catch (e) {
-          console.warn("Weather zone geometry fetch failed:", e);
-        }
+      } catch (e) {
+        console.warn("Weather zone geometry fetch failed:", e);
       }
     }
   }
+}
 
-  async function fetchWeather(){
-    setStatus("wait","Refreshing…");
-    try{
-      const res = await fetch("/api/weather", { cache:"no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+async function fetchWeather(){
+  setStatus("wait","Refreshing…");
+  try{
+    const res = await fetch("/api/weather", { cache:"no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
 
-      wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
-      updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
+    wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
+    updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
 
-      renderWeather();
-      await updateWeatherMap();
-      setStatus("ok","Updated");
-    }catch(e){
-      console.error(e);
-      setStatus("err","Error");
-      updatedAt_weather.textContent = "Updated —";
-      rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
-    }
+    renderWeather();
+    await updateWeatherMap();
+    setStatus("ok","Updated");
+  }catch(e){
+    console.error(e);
+    setStatus("err","Error");
+    updatedAt_weather.textContent = "Updated —";
+    rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
   }
+}
 
   // ===== INIT ALL MAPS =====
   initFireMap();
