@@ -1,3 +1,7 @@
+Here is all my code
+
+Please review
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -19,7 +23,7 @@
       --muted2:rgba(255,255,255,.45);
       --link:#60a5fa;
 
-      --hdr:#8c1111;
+      --hdr:#8c1111;   /* red header */
       --hdrOutline:#000;
 
       --card:rgba(255,255,255,.03);
@@ -99,7 +103,7 @@
       box-shadow: 0 10px 30px rgba(0,0,0,.5);
     }
 
-    /* Section bar */
+    /* Active Calls bar */
     .sectionBar{
       background:#0d1c2f;
       border-bottom:1px solid rgba(255,255,255,.10);
@@ -112,7 +116,7 @@
     .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
     .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
-    /* Table heading */
+    /* table headings (desktop) */
     .tblHead{
       background:#060607;
       border-top:1px solid rgba(255,255,255,.08);
@@ -124,9 +128,10 @@
       text-transform:uppercase;
     }
 
+    /* grid */
     .tbl{
       display:grid;
-      grid-template-columns: 140px 64px 1fr 240px 140px;
+      grid-template-columns: 140px 64px 1fr 240px 140px; /* date | icon | address | units | status */
       gap:12px;
       align-items:center;
       padding:0 16px;
@@ -202,7 +207,7 @@
 
     #map_fire, #map_chp, #map_eq, #map_weather{ height:360px; background:#111; }
 
-    /* Mobile: Fire/Medical meta */
+    /* ===== MOBILE: Fire/Medical show everything (units + status under address) ===== */
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
       .tblHead{ display:none; }
@@ -235,7 +240,7 @@
       background:#1f2937;
     }
 
-    /* CHP */
+    /* CHP compact table */
     .chpGridHead{
       display:grid;
       grid-template-columns: 160px 220px 1fr 90px 90px;
@@ -266,6 +271,7 @@
     .chpLoc{ font-size:13px; color:rgba(255,255,255,.86); white-space:pre-wrap; word-break:break-word; }
     .chpMono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; font-size:12px; color:rgba(255,255,255,.80); }
 
+    /* Mobile CHP cards */
     @media (max-width: 760px){
       .chpGridHead{ display:none; }
       .chpRow{
@@ -280,7 +286,7 @@
       .v{ font-size:13px; color:rgba(255,255,255,.9); }
     }
 
-    /* Earthquake */
+    /* Earthquake magnitude chip */
     .magChip{
       display:inline-flex;align-items:center;justify-content:center;
       padding:6px 10px;border-radius:999px;
@@ -290,6 +296,7 @@
       color:rgba(255,255,255,.95);
       white-space:nowrap;
     }
+
     .segBtn{
       appearance:none;
       border:1px solid rgba(255,255,255,.14);
@@ -305,79 +312,32 @@
       background:rgba(255,255,255,.12);
       border-color:rgba(255,255,255,.28);
     }
+    /* Fix weather alert text being cut off in the list */
+.weather-alert-row, .alert-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 
-    /* ===== WEATHER LIST (Fix cut-off) ===== */
-    .wxRowInner{
-      display:flex;
-      gap:12px;
-      align-items:flex-start;
-      padding:0 16px;
-    }
-    .wxLeft{
-      width:170px;
-      flex:0 0 auto;
-    }
-    .wxIcon{
-      width:64px;
-      flex:0 0 64px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:20px;
-      line-height:1;
-      padding-top:2px;
-    }
-    .wxMain{
-      flex:1 1 auto;
-      min-width:0;
-    }
-    .wxTitle{
-      font-weight:900;
-      font-size:14px;
-      line-height:1.15;
-      white-space:normal;         /* allow wrap */
-      word-break:break-word;
-    }
-    .wxArea{
-      margin-top:4px;
-      font-size:12px;
-      color:rgba(255,255,255,.55);
-      white-space:normal;         /* allow wrap */
-      word-break:break-word;
-    }
-    .wxRight{
-      width:220px;
-      flex:0 0 auto;
-      min-width:0;
-    }
-    .wxEnds{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-      font-size:12px;
-      color:rgba(255,255,255,.85);
-      white-space:normal;         /* allow wrap on small screens */
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .wxSev{
-      width:140px;
-      flex:0 0 auto;
-      display:flex;
-      justify-content:flex-end;
-    }
-    @media (max-width: 760px){
-      .wxRowInner{
-        display:grid;
-        grid-template-columns: 118px 44px 1fr;
-        gap:10px;
-        align-items:start;
-        padding:0 16px;
-      }
-      .wxLeft{ width:auto; }
-      .wxIcon{ width:auto; }
-      .wxRight{ grid-column: 1 / 4; width:auto; }
-      .wxSev{ grid-column: 1 / 4; width:auto; justify-content:flex-start; }
-      .wxEnds{ white-space:normal; }
-    }
+.weather-alert-text, .alert-text {
+  min-width: 0;   /* CRITICAL: allows text to wrap/clamp inside flex */
+  flex: 1 1 auto;
+}
+
+.weather-alert-title, .alert-title {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* show up to 2 lines, then truncate */
+}
+
+.weather-alert-subtitle, .alert-subtitle {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
   </style>
 </head>
 
@@ -405,7 +365,7 @@
   </header>
 
   <main>
-    <!-- FIRE / MEDICAL -->
+    <!-- ================= FIRE / MEDICAL ================= -->
     <div class="tabPanel active" id="tab_fire">
       <section class="card" aria-label="Active Calls">
         <div class="sectionBar">
@@ -439,7 +399,7 @@
       </section>
     </div>
 
-    <!-- CHP -->
+    <!-- ================= CHP ================= -->
     <div class="tabPanel" id="tab_chp">
       <section class="card" aria-label="CHP Incidents">
         <div class="sectionBar">
@@ -467,7 +427,7 @@
       </section>
     </div>
 
-    <!-- EARTHQUAKES -->
+    <!-- ================= EARTHQUAKES ================= -->
     <div class="tabPanel" id="tab_eq">
       <section class="card" aria-label="Earthquakes">
         <div class="sectionBar">
@@ -496,7 +456,7 @@
       </section>
     </div>
 
-    <!-- WEATHER -->
+    <!-- ================= WEATHER ALERTS ================= -->
     <div class="tabPanel" id="tab_weather">
       <section class="card" aria-label="Weather Alerts">
         <div class="sectionBar">
@@ -508,7 +468,7 @@
         </div>
 
         <div id="rows_weather"></div>
-        <div class="helper">Tap an alert to zoom to its polygon (if available).</div>
+        <div class="helper">Tap an alert to zoom to its polygon.</div>
       </section>
 
       <section class="card mapCard" aria-label="Weather Map">
@@ -523,21 +483,21 @@
 
 <script>
   function formatUpdatedLikeVCFD(iso) {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    if (isNaN(d)) return "—";
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return "—";
 
-    const m = d.getMonth() + 1;
-    const day = d.getDate();
-    const yr = String(d.getFullYear()).slice(-2);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const yr = String(d.getFullYear()).slice(-2);
 
-    let h = d.getHours();
-    const min = String(d.getMinutes()).padStart(2, "0");
-    const ampm = h >= 12 ? "pm" : "am";
-    h = h % 12 || 12;
+  let h = d.getHours();
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ampm = h >= 12 ? "pm" : "am";
+  h = h % 12 || 12;
 
-    return `${m}/${day}/${yr} ${h}:${min}${ampm}`;
-  }
+  return `${m}/${day}/${yr} ${h}:${min}${ampm}`;
+}
 
   // ===== GLOBAL STATUS DOT =====
   const dot = document.getElementById("dot");
@@ -585,31 +545,37 @@
   // =====================================================
   // =============== MARKER ICONS (EMOJI) ================
   // =====================================================
-  function emojiFor(typeText){
-    const t = (typeText || "").toLowerCase().trim();
-    if (t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
-    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
-    if(t.includes("rescue")) return "🛟";
-    if(t.includes("water")) return "🌊";
-    if(t.includes("structure")) return "🏠🔥";
-    if(t.includes("fire")) return "🔥";
-    if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
-    if(t.includes("haz") || t.includes("hazmat")) return "☣️";
-    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
-    if(t.includes("alarm")) return "🔔";
-    if(t.includes("investig")) return "🔎";
-    if(t.includes("public")) return "🧰";
-    return "📍";
-  }
+ function emojiFor(typeText){
+  const t = (typeText || "").toLowerCase().trim();
 
+  // Gas leak (1E) - use the warning triangle
+  if (t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
+
+  if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
+  if(t.includes("rescue")) return "🛟";
+  if(t.includes("water")) return "🌊";
+  if(t.includes("structure")) return "🏠🔥";
+  if(t.includes("fire")) return "🔥";
+  if(t.includes("vegetation") || t.includes("brush")) return "🌿🔥";
+  if(t.includes("haz") || t.includes("hazmat")) return "☣️";
+  if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "🚗💥";
+  if(t.includes("alarm")) return "🔔";
+  if(t.includes("investig")) return "🔎";
+  if(t.includes("public")) return "🧰";
+  return "📍";
+}
+
+
+
+  // YOU REQUESTED: Fire=RED, Traffic=ORANGE
   function colorForFireMedical(typeText){
     const t = (typeText || "").toLowerCase();
-    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "#2563eb";
-    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "#f97316";
-    if(t.includes("fire") || t.includes("structure") || t.includes("vegetation") || t.includes("brush")) return "#ef4444";
-    if(t.includes("haz") || t.includes("hazmat")) return "#a855f7";
-    if(t.includes("rescue")) return "#22c55e";
-    return "#64748b";
+    if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "#2563eb"; // blue
+    if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "#f97316"; // ORANGE (traffic)
+    if(t.includes("fire") || t.includes("structure") || t.includes("vegetation") || t.includes("brush")) return "#ef4444"; // RED (fire)
+    if(t.includes("haz") || t.includes("hazmat")) return "#a855f7"; // purple
+    if(t.includes("rescue")) return "#22c55e"; // green
+    return "#64748b"; // gray
   }
 
   function markerIcon(typeText, colorHex){
@@ -657,12 +623,11 @@
     const year = yy < 100 ? (2000+yy) : yy;
     return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
   }
-
-  function normalizeTypeLabel(typeText){
-    const t = (typeText || "").trim();
-    if (t.toLowerCase() === "1e") return "Gas Leak";
-    return t;
-  }
+function normalizeTypeLabel(typeText){
+  const t = (typeText || "").trim();
+  if (t.toLowerCase() === "1e") return "Gas Leak";
+  return t;
+}
 
   function normalizeFire(raw){
     const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
@@ -673,8 +638,8 @@
     const city = raw?.city ? String(raw.city).trim() : "";
     const street = [block, addr].filter(Boolean).join(" ").trim();
     const fullAddress = [street, city].filter(Boolean).join(", ").trim();
+const type = normalizeTypeLabel(raw?.incidentType || raw?.IncidentType || "");
 
-    const type = normalizeTypeLabel(raw?.incidentType || raw?.IncidentType || "");
     const status = raw?.status || raw?.Status || "";
     const units = raw?.units || raw?.Units || "";
 
@@ -702,7 +667,9 @@
       row.innerHTML = `
         <div class="tbl">
           <div class="date">${escapeHtml(x.dateStr)}</div>
+
           <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+
           <div class="addr">
             <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
             <div class="typeText">${escapeHtml(x.type || "")}</div>
@@ -712,6 +679,7 @@
               <div>${statusChip}</div>
             </div>
           </div>
+
           <div class="desktopUnits mono">${unitsText}</div>
           <div class="desktopStatus">${statusChip}</div>
         </div>
@@ -900,25 +868,30 @@
 
       const raw = Array.isArray(data?.chp?.incidents) ? data.chp.incidents : [];
 
-      chpIncidents = raw.map((x, i) => {
-        const lat = x?.latitude ?? x?.lat ?? null;
-        const lon = x?.longitude ?? x?.lon ?? null;
-        return {
-          id: x?.id ?? `${x?.type || "CHP"}-${i}`,
-          dateStr: x?.dateStr ?? x?.dateTime ?? "—",
-          type: x?.type || "CHP",
-          location: x?.location || "—",
-          lat: lat != null ? Number(lat) : null,
-          lon: lon != null ? Number(lon) : null,
-        };
-      });
+chpIncidents = raw.map((x, i) => {
+  const lat = x?.latitude ?? x?.lat ?? null;
+  const lon = x?.longitude ?? x?.lon ?? null;
 
-      if (data?.updatedAt) {
-        const formatted = formatUpdatedLikeVCFD(data.updatedAt);
-        updatedAt_chp.textContent = `Updated ${formatted}`;
-      } else {
-        updatedAt_chp.textContent = "Updated —";
-      }
+  return {
+    id: x?.id ?? `${x?.type || "CHP"}-${i}`,
+    // the table expects dateStr
+    dateStr: x?.dateStr ?? x?.dateTime ?? "—",
+    type: x?.type || "CHP",
+    location: x?.location || "—",
+    // the map expects lat/lon numbers
+    lat: lat != null ? Number(lat) : null,
+    lon: lon != null ? Number(lon) : null,
+  };
+});
+
+  if (data?.updatedAt) {
+  const formatted = formatUpdatedLikeVCFD(data.updatedAt);
+  updatedAt_chp.textContent = `Updated ${formatted}`;
+} else {
+  updatedAt_chp.textContent = "Updated —";
+}
+
+
 
       renderChp();
       updateChpMarkers();
@@ -936,7 +909,7 @@
   // =====================================================
   let map_eq, layer_eq;
   let eqEvents = [];
-  let eqWindow = "hour";
+  let eqWindow = "hour"; // hour | day | week
 
   const rows_eq = document.getElementById("rows_eq");
   const updatedAt_eq = document.getElementById("updatedAt_eq");
@@ -975,15 +948,17 @@
     if(pts.length) map_eq.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
+  // Color by magnitude (A)
   function eqColor(mag){
     const m = Number(mag || 0);
-    if(m >= 5.0) return "#ef4444";
-    if(m >= 4.0) return "#f97316";
-    return "#fbbf24";
+    if(m >= 5.0) return "#ef4444";     // red
+    if(m >= 4.0) return "#f97316";     // orange
+    return "#fbbf24";                  // yellow
   }
 
   function eqIcon(mag){
     const color = eqColor(mag);
+    // size bumps slightly with magnitude
     const size = Math.max(30, Math.min(44, 26 + (Number(mag || 0) * 4)));
     return L.divIcon({
       className:"",
@@ -1083,12 +1058,6 @@
   const updatedAt_weather = document.getElementById("updatedAt_weather");
   const activeCount_weather = document.getElementById("activeCount_weather");
 
-  // Ventura County-ish bounds (fallback)
-  const VC_BOUNDS = L.latLngBounds(
-    L.latLng(33.98, -119.98),
-    L.latLng(34.90, -118.55)
-  );
-
   function initWeatherMap(){
     map_weather = L.map("map_weather", { zoomControl:true }).setView([34.278, -119.293], 8.5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -1107,22 +1076,7 @@
     if(bounds.length){
       const b = bounds.reduce((acc,bb)=> acc.extend(bb), bounds[0]);
       map_weather.fitBounds(b, { padding:[20,20] });
-    } else {
-      map_weather.fitBounds(VC_BOUNDS, { padding:[20,20] });
     }
-  }
-
-  function buildWeatherPopup(a){
-    return `
-      <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-        <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
-        <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
-        <div style="font-size:12px;color:rgba(0,0,0,.75)">
-          <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
-          <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
-        </div>
-      </div>
-    `;
   }
 
   function renderWeather(){
@@ -1143,100 +1097,104 @@
       const row = document.createElement("div");
       row.className = "row";
       row.innerHTML = `
-        <div class="wxRowInner">
-          <div class="wxLeft date">${escapeHtml(sent ? new Date(sent).toLocaleString() : "—")}</div>
-          <div class="wxIcon">⚠️</div>
-          <div class="wxMain">
-            <div class="wxTitle">${escapeHtml(headline)}</div>
-            <div class="wxArea">${escapeHtml(area)}</div>
+        <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
+          <div class="date">${escapeHtml(sent ? new Date(sent).toLocaleString() : "—")}</div>
+          <div class="icon">⚠️</div>
+          <div class="addr">
+            <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
+            <div class="typeText">${escapeHtml(area)}</div>
           </div>
-          <div class="wxRight">
-            <div class="wxEnds">${escapeHtml(ends ? ("Ends: " + new Date(ends).toLocaleString()) : "—")}</div>
-          </div>
-          <div class="wxSev"><span class="chip slate">${escapeHtml(a.severity || "—")}</span></div>
+          <div class="mono">${escapeHtml(ends ? ("Ends: " + new Date(ends).toLocaleString()) : "—")}</div>
+          <div class="desktopStatus"><span class="chip slate">${escapeHtml(a.severity || "—")}</span></div>
         </div>
       `;
 
       row.addEventListener("click", ()=>{
-        if(a._bounds && map_weather){
+        if(a._bounds){
           map_weather.fitBounds(a._bounds, { padding:[20,20] });
-        } else if (map_weather) {
-          map_weather.fitBounds(VC_BOUNDS, { padding:[20,20] });
+          document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
         }
-        document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
-        if (a._layer && a._layer.openPopup) a._layer.openPopup();
       });
 
       rows_weather.appendChild(row);
     });
   }
 
-  async function updateWeatherMap(){
-    layer_weather.clearLayers();
+async function updateWeatherMap(){
+  layer_weather.clearLayers();
 
-    for (const a of wxAlerts) {
-      a._bounds = null;
-      a._layer = null;
+  for (const a of wxAlerts) {
 
-      // Case 1: alert has geometry
-      if (a.geometry) {
-        const layer = L.geoJSON(a.geometry, {
+    // DEBUG (temporary): tells us if zones exist
+    console.log("[WX]", a.event, "geometry?", !!a.geometry, "zones:", a.affectedZones?.length, a.affectedZones?.[0]);
+
+    // Case 1: geometry exists
+    if (a.geometry) {
+      const layer = L.geoJSON(a.geometry, {
+        style: { weight:2, opacity:0.9, fillOpacity:0.15 }
+      }).bindPopup(buildWeatherPopup(a));
+
+      layer.addTo(layer_weather);
+      try { a._bounds = layer.getBounds(); } catch(_) {}
+      continue;
+    }
+
+    // Case 2: no geometry, use affectedZones fallback
+    if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
+      const zoneUrls = a.affectedZones.slice(0, 6);
+
+      try {
+        const zoneGeo = await Promise.all(
+          zoneUrls.map(z =>
+            fetch(z.endsWith(".geojson") ? z : z + ".geojson", {
+              headers: { "Accept": "application/geo+json" }
+            }).then(r => {
+              if (!r.ok) throw new Error("HTTP " + r.status);
+              return r.json();
+            })
+          )
+        );
+
+        const combined = {
+          type: "FeatureCollection",
+          features: zoneGeo.flatMap(z => {
+            if (!z) return [];
+            if (z.type === "FeatureCollection" && Array.isArray(z.features)) return z.features;
+            if (z.type === "Feature") return [z];
+            return [];
+          })
+        };
+
+        if (!combined.features.length) {
+          console.warn("Zone geojson returned no features for:", a.event, zoneUrls);
+          continue;
+        }
+
+        const layer = L.geoJSON(combined, {
           style: { weight:2, opacity:0.9, fillOpacity:0.15 }
         }).bindPopup(buildWeatherPopup(a));
 
         layer.addTo(layer_weather);
-        a._layer = layer;
-
         try { a._bounds = layer.getBounds(); } catch(_) {}
-        continue;
-      }
 
-      // Case 2: no geometry -> fetch affectedZones geojson
-      if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
-        const zoneUrls = a.affectedZones.slice(0, 8);
-
-        try {
-          const zoneGeo = await Promise.all(
-            zoneUrls.map(z =>
-              fetch(z.endsWith(".geojson") ? z : (z + ".geojson"), {
-                method: "GET",
-                mode: "cors",
-                cache: "no-store",
-                headers: { "Accept": "application/geo+json" }
-              }).then(r => {
-                if (!r.ok) throw new Error("HTTP " + r.status);
-                return r.json();
-              })
-            )
-          );
-
-          const combined = {
-            type: "FeatureCollection",
-            features: zoneGeo.flatMap(z => {
-              if (!z) return [];
-              if (z.type === "FeatureCollection" && Array.isArray(z.features)) return z.features;
-              if (z.type === "Feature") return [z];
-              return [];
-            })
-          };
-
-          if (!combined.features.length) continue;
-
-          const layer = L.geoJSON(combined, {
-            style: { weight:2, opacity:0.9, fillOpacity:0.15 }
-          }).bindPopup(buildWeatherPopup(a));
-
-          layer.addTo(layer_weather);
-          a._layer = layer;
-
-          try { a._bounds = layer.getBounds(); } catch(_) {}
-
-        } catch (e) {
-          console.warn("Weather zone polygon fetch failed:", a.event, e);
-        }
+      } catch (e) {
+        console.warn("Failed to fetch zone geometry for:", a.event, a.affectedZones, e);
       }
     }
   }
+}
+function buildWeatherPopup(a){
+  return `
+    <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+      <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
+      <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
+      <div style="font-size:12px;color:rgba(0,0,0,.75)">
+        <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
+        <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
+      </div>
+    </div>
+  `;
+}
 
   async function fetchWeather(){
     setStatus("wait","Refreshing…");
@@ -1249,7 +1207,7 @@
       updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
 
       renderWeather();
-      await updateWeatherMap();            // IMPORTANT: await so bounds/layers exist
+      updateWeatherMap();
       setStatus("ok","Updated");
     }catch(e){
       console.error(e);
@@ -1259,31 +1217,23 @@
     }
   }
 
-  // =====================================================
-  // ====================== INIT =========================
-  // =====================================================
-  let map_eq, layer_eq, map_chp, layer_chp; // declared earlier in sections
-  try {
-    initFireMap();
-    initChpMap();
-    initEqMap();
-    initWeatherMap();
-  } catch (e) {
-    console.error("Init error:", e);
-    setStatus("err","Error");
-  }
+  // ===== INIT ALL MAPS =====
+  initFireMap();
+  initChpMap();
+  initEqMap();
+  initWeatherMap();
 
-  // First load
+  // ===== FIRST LOAD =====
   fetchFire();
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
 
-  // Refresh cadence
-  setInterval(fetchFire, 60000);
-  setInterval(fetchChp, 60000);
-  setInterval(fetchEarthquakes, 300000);
-  setInterval(fetchWeather, 300000);
+  // ===== REFRESH CADENCE =====
+  setInterval(fetchFire, 60000);        // 60s
+  setInterval(fetchChp, 60000);         // 60s
+  setInterval(fetchEarthquakes, 300000);// 5m
+  setInterval(fetchWeather, 300000);    // 5m
 </script>
 </body>
 </html>
