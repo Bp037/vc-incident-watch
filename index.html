@@ -308,6 +308,32 @@
       background:rgba(255,255,255,.12);
       border-color:rgba(255,255,255,.28);
     }
+    /* Fix weather alert text being cut off in the list */
+.weather-alert-row, .alert-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.weather-alert-text, .alert-text {
+  min-width: 0;   /* CRITICAL: allows text to wrap/clamp inside flex */
+  flex: 1 1 auto;
+}
+
+.weather-alert-title, .alert-title {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* show up to 2 lines, then truncate */
+}
+
+.weather-alert-subtitle, .alert-subtitle {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
   </style>
 </head>
 
@@ -1095,16 +1121,21 @@ async function updateWeatherMap(){
 
   for (const a of wxAlerts) {
 
+    // DEBUG (temporary): tells us if zones exist
+    console.log("[WX]", a.event, "geometry?", !!a.geometry, "zones:", a.affectedZones?.length, a.affectedZones?.[0]);
+
+    // Case 1: geometry exists
     if (a.geometry) {
       const layer = L.geoJSON(a.geometry, {
         style: { weight:2, opacity:0.9, fillOpacity:0.15 }
       }).bindPopup(buildWeatherPopup(a));
 
       layer.addTo(layer_weather);
-      try{ a._bounds = layer.getBounds(); }catch(_){}
+      try { a._bounds = layer.getBounds(); } catch(_) {}
       continue;
     }
 
+    // Case 2: no geometry, use affectedZones fallback
     if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
       const zoneUrls = a.affectedZones.slice(0, 6);
 
@@ -1113,24 +1144,37 @@ async function updateWeatherMap(){
           zoneUrls.map(z =>
             fetch(z.endsWith(".geojson") ? z : z + ".geojson", {
               headers: { "Accept": "application/geo+json" }
-            }).then(r => r.json())
+            }).then(r => {
+              if (!r.ok) throw new Error("HTTP " + r.status);
+              return r.json();
+            })
           )
         );
 
         const combined = {
           type: "FeatureCollection",
-          features: zoneGeo.flatMap(z => z.features || []).filter(Boolean)
+          features: zoneGeo.flatMap(z => {
+            if (!z) return [];
+            if (z.type === "FeatureCollection" && Array.isArray(z.features)) return z.features;
+            if (z.type === "Feature") return [z];
+            return [];
+          })
         };
+
+        if (!combined.features.length) {
+          console.warn("Zone geojson returned no features for:", a.event, zoneUrls);
+          continue;
+        }
 
         const layer = L.geoJSON(combined, {
           style: { weight:2, opacity:0.9, fillOpacity:0.15 }
         }).bindPopup(buildWeatherPopup(a));
 
         layer.addTo(layer_weather);
-        try{ a._bounds = layer.getBounds(); }catch(_){}
+        try { a._bounds = layer.getBounds(); } catch(_) {}
 
       } catch (e) {
-        console.warn("Failed to fetch zone geometry for alert:", a.event, e);
+        console.warn("Failed to fetch zone geometry for:", a.event, a.affectedZones, e);
       }
     }
   }
