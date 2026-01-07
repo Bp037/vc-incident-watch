@@ -1227,7 +1227,7 @@ function renderWeather(){
     // severity chip class
     const sev = a.severity || "—";
     const sevCls = `sev-${sevKey(sev)}`;
-
+const hasPolyHint = a.geometry ? "Polygon: yes" : (Array.isArray(a.affectedZones) && a.affectedZones.length ? "Polygon: via zones" : "Polygon: none");
 
     // IMPORTANT: create the row (your broken version didn’t)
     const row = document.createElement("div");
