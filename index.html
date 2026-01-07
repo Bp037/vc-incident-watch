@@ -1,6 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
+  /* Weather severity chip colors */
+.chip.sev-moderate { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.18); }
+.chip.sev-severe   { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.18); }
+.chip.sev-extreme  { border-color: rgba(168,85,247,.55); background: rgba(168,85,247,.18); }
+.chip.sev-minor    { border-color: rgba(234,179,8,.55);  background: rgba(234,179,8,.18); }
+.chip.sev-unknown  { border-color: rgba(148,163,184,.45); background: rgba(148,163,184,.16); }
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VC Incident Watch</title>
@@ -1108,6 +1115,23 @@ rows_eq.innerHTML = `
   // =====================================================
   let map_weather, layer_weather;
   let wxAlerts = [];
+function sevKey(sev){
+  const s = (sev || "unknown").toLowerCase();
+  if (s === "moderate") return "moderate";
+  if (s === "severe") return "severe";
+  if (s === "extreme") return "extreme";
+  if (s === "minor") return "minor";
+  return "unknown";
+}
+
+function sevStyle(sev){
+  const k = sevKey(sev);
+  if (k === "moderate") return { color:"#22c55e", weight:2, opacity:0.95, fillOpacity:0.18 };
+  if (k === "severe")   return { color:"#ef4444", weight:2, opacity:0.95, fillOpacity:0.18 };
+  if (k === "extreme")  return { color:"#a855f7", weight:2, opacity:0.95, fillOpacity:0.18 };
+  if (k === "minor")    return { color:"#eab308", weight:2, opacity:0.95, fillOpacity:0.16 };
+  return { color:"#94a3b8", weight:2, opacity:0.9, fillOpacity:0.14 };
+}
 
   const rows_weather = document.getElementById("rows_weather");
   const updatedAt_weather = document.getElementById("updatedAt_weather");
@@ -1144,32 +1168,43 @@ rows_eq.innerHTML = `
     }
 
     wxAlerts.forEach(a=>{
-      const headline = a.headline || a.event || "Alert";
-      const area = a.areaDesc || "";
-      const ends = a.ends || a.expires || "";
-      const sent = a.sent || "";
+   const sentDt = sent ? new Date(sent) : null;
+const sentDate = sentDt ? sentDt.toLocaleDateString() : "—";
+const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
 
-      const row = document.createElement("div");
-      row.className = "row";
-      row.innerHTML = `
-        <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
-          <div class="date">${escapeHtml(sent ? new Date(sent).toLocaleString() : "—")}</div>
-          <div class="icon">⚠️</div>
-          <div class="addr">
-            <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
-            <div class="typeText">${escapeHtml(area)}</div>
-          </div>
-          <div class="mono">${escapeHtml(ends ? ("Ends: " + new Date(ends).toLocaleString()) : "—")}</div>
-          <div class="desktopStatus"><span class="chip slate">${escapeHtml(a.severity || "—")}</span></div>
-        </div>
-      `;
+const endsDt = ends ? new Date(ends) : null;
+const endsStr = endsDt ? endsDt.toLocaleString([], { month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }) : "—";
 
-      row.addEventListener("click", ()=>{
-        if(a._bounds){
-          map_weather.fitBounds(a._bounds, { padding:[20,20] });
-          document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
-        }
-      });
+const sev = a.severity || "—";
+const sevCls = `sev-${sevKey(sev)}`;
+
+row.innerHTML = `
+  <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
+    <div class="date">
+      <div>${escapeHtml(sentDate)}</div>
+      <div style="opacity:.8;margin-top:4px">${escapeHtml(sentTime)}</div>
+    </div>
+    <div class="icon">⚠️</div>
+    <div class="addr">
+      <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
+      <div class="typeText">${escapeHtml(area)}</div>
+    </div>
+    <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
+    <div class="desktopStatus">
+      <span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span>
+    </div>
+  </div>
+`;
+
+   row.addEventListener("click", ()=>{
+  setTimeout(() => map_weather.invalidateSize(true), 0);
+
+  if(a._bounds){
+    map_weather.fitBounds(a._bounds, { padding:[20,20] });
+    document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+});
+
 
       rows_weather.appendChild(row);
     });
@@ -1207,7 +1242,7 @@ rows_eq.innerHTML = `
       }
 
       if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
-        const zoneUrls = a.affectedZones.slice(0, 6);
+        const zoneUrls = a.affectedZones.slice(0, 20);
 
         try {
           const zoneGeo = await Promise.all(
