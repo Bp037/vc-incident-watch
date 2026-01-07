@@ -1013,6 +1013,15 @@
     if(m >= 4.0) return "#f97316";
     return "#fbbf24";
   }
+function eqRadiusKm(mag){
+  const m = Number(mag || 0);
+  if (m >= 7.0) return 350;
+  if (m >= 6.0) return 220;
+  if (m >= 5.0) return 140;
+  if (m >= 4.0) return 80;
+  if (m >= 3.0) return 35;
+  return 15; // M2.x
+}
 
   function eqIcon(){
     const size = 26;
@@ -1084,22 +1093,40 @@ rows_eq.innerHTML = `
 
 
   function updateEqMarkers(){
-    layer_eq.clearLayers();
-    eqEvents.forEach(ev=>{
-      if(ev.lat==null || ev.lon==null) return;
-      const m = L.marker([ev.lat, ev.lon], { icon: eqIcon() })
-        .bindPopup(`
-          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-            <div style="font-weight:900;margin-bottom:6px">M ${escapeHtml(ev.mag ?? "—")} — ${escapeHtml(ev.place || "")}</div>
-            <div style="font-size:12px;color:rgba(0,0,0,.75)">
-              <div><b>Time:</b> ${escapeHtml(ev.time ? new Date(ev.time).toLocaleString() : "—")}</div>
-              <div><b>Depth:</b> ${escapeHtml(ev.depthKm != null ? (ev.depthKm + " km") : "—")}</div>
-            </div>
-          </div>
-        `);
-      m.addTo(layer_eq);
+  layer_eq.clearLayers();
+
+  eqEvents.forEach(ev=>{
+    if(ev.lat==null || ev.lon==null) return;
+
+    const rKm = eqRadiusKm(ev.mag);
+
+    // “Shake area” ring (estimated)
+    const ring = L.circle([ev.lat, ev.lon], {
+      radius: rKm * 1000,
+      weight: 2,
+      opacity: 0.55,
+      fillOpacity: 0.08
     });
-  }
+
+    // Epicenter marker
+    const m = L.marker([ev.lat, ev.lon], { icon: eqIcon() })
+      .bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:900;margin-bottom:6px">M ${escapeHtml(ev.mag ?? "—")} — ${escapeHtml(ev.place || "")}</div>
+          <div style="font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Time:</b> ${escapeHtml(ev.time ? new Date(ev.time).toLocaleString() : "—")}</div>
+            <div><b>Depth:</b> ${escapeHtml(ev.depthKm != null ? (ev.depthKm + " km") : "—")}</div>
+            <div><b>Estimated area:</b> ~${escapeHtml(rKm)} km radius</div>
+          </div>
+        </div>
+      `);
+
+    // Add both to the same layer group
+    ring.addTo(layer_eq);
+    m.addTo(layer_eq);
+  });
+}
+
 
   async function fetchEarthquakes(){
     if (typeof setStatus === "function") setStatus("wait","Refreshing…");
