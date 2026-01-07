@@ -1050,61 +1050,60 @@ function eqInBbox(lat, lon){
   return lat >= EQ_BBOX.minLat && lat <= EQ_BBOX.maxLat &&
          lon >= EQ_BBOX.minLon && lon <= EQ_BBOX.maxLon;
 }
- async function fetchEarthquakes(){
-  setStatus("wait","Refreshing…");
+const EQ_MIN_MAG = 3.0;
+const EQ_USE_BBOX = true; // set false temporarily to test
+
+async function fetchEarthquakes(){
+  // Don't let missing setStatus break the whole feature
+  if (typeof setStatus === "function") setStatus("wait","Refreshing…");
+
   try{
-    // Pick USGS feed based on window
-    // hour: past hour; day: past day; week: past 7 days
+    // Use all_* feeds so you actually get results consistently
     const feed =
-      eqWindow === "hour" ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson" :
-      eqWindow === "day"  ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"  :
-                            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson";
+      eqWindow === "hour" ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson" :
+      eqWindow === "day"  ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"  :
+                            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
 
     const res = await fetch(feed, { cache:"no-store" });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    if(!res.ok) throw new Error(`USGS HTTP ${res.status}`);
     const geo = await res.json();
 
     const feats = Array.isArray(geo?.features) ? geo.features : [];
 
-    // Convert to your expected format + filter:
-    // - M3.0+
-    // - inside expanded bbox
     eqEvents = feats
       .map(f => {
-        const mag = f?.properties?.mag;
-        const place = f?.properties?.place;
-        const time = f?.properties?.time;
-        const id = f?.id;
         const coords = f?.geometry?.coordinates; // [lon, lat, depthKm]
-        const lon = Array.isArray(coords) ? coords[0] : null;
-        const lat = Array.isArray(coords) ? coords[1] : null;
-        const depthKm = Array.isArray(coords) ? coords[2] : null;
+        const lon = Array.isArray(coords) ? Number(coords[0]) : null;
+        const lat = Array.isArray(coords) ? Number(coords[1]) : null;
 
         return {
-          id,
-          mag,
-          place,
-          time,
-          lat: lat != null ? Number(lat) : null,
-          lon: lon != null ? Number(lon) : null,
-          depthKm: depthKm != null ? Number(depthKm) : null
+          id: f?.id || "",
+          mag: f?.properties?.mag,
+          place: f?.properties?.place,
+          time: f?.properties?.time,
+          lat,
+          lon,
+          depthKm: Array.isArray(coords) ? Number(coords[2]) : null
         };
       })
-      .filter(ev =>
-        ev.mag != null && Number(ev.mag) >= 3.0 &&
-        ev.lat != null && ev.lon != null &&
-        eqInBbox(ev.lat, ev.lon)
-      )
+      .filter(ev => {
+        const magOk = ev.mag != null && Number(ev.mag) >= EQ_MIN_MAG;
+        const locOk = ev.lat != null && ev.lon != null;
+        const boxOk = !EQ_USE_BBOX || eqInBbox(ev.lat, ev.lon);
+        return magOk && locOk && boxOk;
+      })
       .sort((a,b) => (b.time || 0) - (a.time || 0));
 
     updatedAt_eq.textContent = `Updated ${new Date().toLocaleString()}`;
 
     renderEq();
     updateEqMarkers();
-    setStatus("ok","Updated");
+
+    if (typeof setStatus === "function") setStatus("ok","Updated");
   }catch(e){
-    console.error(e);
-    setStatus("err","Error");
+    console.error("EQ fetch failed:", e);
+
+    if (typeof setStatus === "function") setStatus("err","Error");
     updatedAt_eq.textContent = "Updated —";
     rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load earthquakes right now.</div>`;
   }
