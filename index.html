@@ -312,6 +312,55 @@
       .eqTbl .typeText{ white-space:normal; overflow:visible; text-overflow:unset; }
     }
     .eqPin{ filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+    /* --- Earthquake row layout fix --- */
+.eq-row {
+  display: grid;
+  grid-template-columns: 120px auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.eq-dt {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.eq-date {
+  font-size: 0.95rem;
+}
+
+.eq-time {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+.eq-mag {
+  font-weight: 800;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.eq-dt {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.eq-date {
+  font-size: 0.95rem;
+}
+
+.eq-time {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
   </style>
 </head>
 
@@ -925,42 +974,52 @@
     return `<span class="magChip" style="background:${c};border-color:rgba(255,255,255,.22)">M ${escapeHtml(mag)}</span>`;
   }
 
-  function renderEq(){
-    rows_eq.innerHTML = "";
-    activeCount_eq.textContent = `${eqEvents.length} events`;
+function renderEq(){
+  rows_eq.innerHTML = "";
+  activeCount_eq.textContent = `${eqEvents.length} events`;
 
-    if(!eqEvents.length){
-      rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No SoCal earthquakes M${EQ_MIN_MAG.toFixed(1)}+ found in the past 24 hours.</div>`;
-      return;
-    }
-
-    eqEvents.forEach(ev=>{
-      const row = document.createElement("div");
-      row.className = "row";
-      const when = ev.time ? new Date(ev.time).toLocaleString() : "—";
-
-      row.innerHTML = `
-        <div class="eqTbl" style="padding:0 16px;">
-          <div class="date">${escapeHtml(when)}</div>
-          <div>${magChip(ev.mag ?? "—")}</div>
-          <div class="addr">
-            <div style="font-weight:800;font-size:14px">${escapeHtml(ev.place || "—")}</div>
-            <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
-          </div>
-          <div class="mono">${escapeHtml(ev.id || "")}</div>
-        </div>
-      `;
-
-      row.addEventListener("click", ()=>{
-        if(ev.lat!=null && ev.lon!=null){
-          map_eq.setView([ev.lat, ev.lon], Math.max(map_eq.getZoom(), 9), { animate:true });
-          document.getElementById("map_eq").scrollIntoView({ behavior:"smooth", block:"start" });
-        }
-      });
-
-      rows_eq.appendChild(row);
-    });
+  if(!eqEvents.length){
+    rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No SoCal earthquakes M${EQ_MIN_MAG.toFixed(1)}+ found in the past 24 hours.</div>`;
+    return;
   }
+
+  eqEvents.forEach(ev=>{
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const dt = ev.time ? new Date(ev.time) : null;
+    const dateStr = dt ? dt.toLocaleDateString([], { month:"numeric", day:"numeric", year:"numeric" }) : "--";
+    const timeStr = dt ? dt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
+
+    row.innerHTML = `
+      <div class="eqTbl" style="padding:0 16px;">
+        <div class="eq-dt">
+          <div class="eq-date">${escapeHtml(dateStr)}</div>
+          <div class="eq-time">${escapeHtml(timeStr)}</div>
+        </div>
+
+        <div>${magChip(ev.mag ?? "--")}</div>
+
+        <div class="addr">
+          <div style="font-weight:800;font-size:14px">${escapeHtml(ev.place || "--")}</div>
+          <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
+        </div>
+
+        <div class="mono">${escapeHtml(ev.id || "")}</div>
+      </div>
+    `;
+
+    row.addEventListener("click", ()=>{
+      if(ev.lat!=null && ev.lon!=null){
+        map_eq.setView([ev.lat, ev.lon], Math.max(map_eq.getZoom(), 9), { animate:true });
+        document.getElementById("map_eq").scrollIntoView({ behavior:"smooth", block:"start" });
+      }
+    });
+
+    rows_eq.appendChild(row);
+  });
+}
+
 
   function updateEqMarkers(){
     layer_eq.clearLayers();
