@@ -1219,9 +1219,10 @@ function buildWeatherPopup(a){
       wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
       updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
 
-      renderWeather();
-      updateWeatherMap();
-      setStatus("ok","Updated");
+    renderWeather();
+await updateWeatherMap();
+setStatus("ok","Updated");
+
     }catch(e){
       console.error(e);
       setStatus("err","Error");
