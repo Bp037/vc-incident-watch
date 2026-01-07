@@ -361,6 +361,17 @@
   opacity: 0.8;
   margin-top: 4px;
 }
+.eq-header {
+  display: grid;
+  grid-template-columns: 120px auto 1fr;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
 
   </style>
 </head>
@@ -978,6 +989,13 @@
 function renderEq(){
   rows_eq.innerHTML = "";
   activeCount_eq.textContent = `${eqEvents.length} events`;
+rows_eq.innerHTML = `
+  <div class="eq-header">
+    <div>Date / Time</div>
+    <div>Magnitude</div>
+    <div>Location / Depth</div>
+  </div>
+`;
 
   if(!eqEvents.length){
     rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No SoCal earthquakes M${EQ_MIN_MAG.toFixed(1)}+ found in the past 24 hours.</div>`;
