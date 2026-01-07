@@ -1315,8 +1315,10 @@ async function fetchWeather(){
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
-    updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
+   wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
+console.log("fetchWeather got alerts:", wxAlerts.length, wxAlerts[0]);
+updatedAt_weather.textContent = ...
+
 
     renderWeather();
     await updateWeatherMap();
