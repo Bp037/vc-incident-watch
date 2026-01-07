@@ -592,6 +592,19 @@
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
     }[m]));
   }
+function parseDateTime(dt) {
+  if (!dt) return 0;
+
+  const parts = String(dt).trim().split(" ");
+  if (parts.length < 2) return 0;
+
+  const [date, time] = parts;
+  const [m, d, y] = date.split("/");
+
+  if (!m || !d || !y || !time) return 0;
+
+  return new Date(`20${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}T${time}`).getTime();
+}
 
   // ===== TABS =====
   const tabBtns = document.querySelectorAll(".tabBtn");
@@ -825,7 +838,7 @@
         .map(normalizeFire)
         .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
-      updatedAt_fire.textContent = fireIncidents[0]?.dateStr ? `Updated ${fireIncidents[0].dateStr}` : "Updated —";
+   updatedAt_fire.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
       renderFire();
       updateFireMarkers();
       setStatus("ok","Updated");
