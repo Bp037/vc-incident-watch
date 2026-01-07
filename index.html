@@ -1101,12 +1101,14 @@ rows_eq.innerHTML = `
     const rKm = eqRadiusKm(ev.mag);
 
     // “Shake area” ring (estimated)
-    const ring = L.circle([ev.lat, ev.lon], {
-      radius: rKm * 1000,
-      weight: 2,
-      opacity: 0.55,
-      fillOpacity: 0.08
-    });
+  const ring = L.circle([ev.lat, ev.lon], {
+  radius: rKm * 1000,
+  weight: 2,
+  opacity: 0.5,
+  fillOpacity: 0.06,
+  dashArray: "6 6"
+});
+
 
     // Epicenter marker
     const m = L.marker([ev.lat, ev.lon], { icon: eqIcon() })
