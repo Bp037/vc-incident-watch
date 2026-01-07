@@ -1245,6 +1245,13 @@ function buildWeatherPopup(a){
 
 async function updateWeatherMap(){
   layer_weather.clearLayers();
+  console.log("wxAlerts:", wxAlerts.length, wxAlerts.map(a => ({
+  event: a.event,
+  sev: a.severity,
+  hasGeom: !!a.geometry,
+  zones: Array.isArray(a.affectedZones) ? a.affectedZones.length : 0
+})));
+
 
   for (const a of wxAlerts) {
     // 1) If API gave geometry directly
