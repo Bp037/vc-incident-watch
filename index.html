@@ -350,6 +350,30 @@
   display: block;
   word-break: break-word;
 }
+/* Earthquakes table responsive */
+.eqTbl{
+  display:grid;
+  grid-template-columns: 160px 90px 1fr;
+  gap:10px;
+  align-items:center;
+}
+
+@media (max-width: 520px){
+  .eqTbl{
+    grid-template-columns: 120px 80px 1fr;
+  }
+  .eqTbl .mono{
+    display:none; /* hide ID column on phones */
+  }
+  .eqTbl .addr > div:first-child{
+    font-size:13px;
+  }
+}
+
+/* Simple pin look (optional tiny shadow) */
+.eqPin{
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
+}
   </style>
 </head>
 
@@ -921,28 +945,14 @@ chpIncidents = raw.map((x, i) => {
   // =====================================================
   let map_eq, layer_eq;
   let eqEvents = [];
-  let eqWindow = "hour"; // hour | day | week
+  let eqWindow = "day"; // locked to day
 
   const rows_eq = document.getElementById("rows_eq");
   const updatedAt_eq = document.getElementById("updatedAt_eq");
   const activeCount_eq = document.getElementById("activeCount_eq");
 
-  const eqBtnHour = document.getElementById("eqBtn_hour");
-  const eqBtnDay = document.getElementById("eqBtn_day");
-  const eqBtnWeek = document.getElementById("eqBtn_week");
-
-  function setEqWindow(w){
-    eqWindow = w;
-    [eqBtnHour, eqBtnDay, eqBtnWeek].forEach(b=>b.classList.remove("active"));
-    if(w==="hour") eqBtnHour.classList.add("active");
-    if(w==="day") eqBtnDay.classList.add("active");
-    if(w==="week") eqBtnWeek.classList.add("active");
-    fetchEarthquakes();
-  }
-
-  eqBtnHour.addEventListener("click", ()=>setEqWindow("hour"));
-  eqBtnDay.addEventListener("click", ()=>setEqWindow("day"));
-  eqBtnWeek.addEventListener("click", ()=>setEqWindow("week"));
+  // Earthquakes: locked to Past 24h only
+eqWindow = "day";
 
   function initEqMap(){
     map_eq = L.map("map_eq", { zoomControl:true }).setView([34.1, -118.4], 7.5);
@@ -968,18 +978,16 @@ chpIncidents = raw.map((x, i) => {
     return "#fbbf24";                  // yellow
   }
 
-  function eqIcon(mag){
-    const color = eqColor(mag);
-    // size bumps slightly with magnitude
-    const size = Math.max(30, Math.min(44, 26 + (Number(mag || 0) * 4)));
-    return L.divIcon({
-      className:"",
-      iconSize:[size,size],
-      iconAnchor:[size/2,size/2],
-      popupAnchor:[0,-14],
-      html:`<div class="emojiPin" style="width:${size}px;height:${size}px;background:${color};font-size:16px">🌎</div>`
-    });
-  }
+ function eqIcon(mag){
+  const size = 26; // simple + consistent
+  return L.divIcon({
+    className:"",
+    iconSize:[size,size],
+    iconAnchor:[size/2,size],
+    popupAnchor:[0,-18],
+    html:`<div class="eqPin" style="font-size:22px;line-height:22px;">📍</div>`
+  });
+}
 
   function magChip(mag){
     const c = eqColor(mag);
@@ -1000,7 +1008,7 @@ chpIncidents = raw.map((x, i) => {
       row.className = "row";
       const when = ev.time ? new Date(ev.time).toLocaleString() : "—";
       row.innerHTML = `
-        <div class="tbl" style="grid-template-columns: 170px 110px 1fr 140px 0; padding:0 16px;">
+        <div <div class="tbl eqTbl" style="padding:0 16px;">
           <div class="date">${escapeHtml(when)}</div>
           <div>${magChip(ev.mag ?? "—")}</div>
           <div class="addr">
@@ -1040,10 +1048,10 @@ chpIncidents = raw.map((x, i) => {
   }
 // Expanded coverage: SLO-ish down to Mexico + east to NV/AZ border
 const EQ_BBOX = {
-  minLat: 32.00,   // a bit more south (SD/TJ region)
-  maxLat: 38.00,   // captures Deep Springs / Owens Valley / Ridgecrest area
-  minLon: -122.50, // includes more coast / offshore
-  maxLon: -113.00  // includes farther east (Colorado River / AZ border)
+  minLat: 32.0,   // San Diego / border
+  maxLat: 35.8,   // just north of Bakersfield-ish
+  minLon: -120.9, // Central coast edge
+  maxLon: -114.0  // AZ border
 };
 
 function eqInBbox(lat, lon){
@@ -1065,9 +1073,7 @@ async function fetchEarthquakes(){
   try{
     // Use all_* feeds so you actually get results consistently
     const feed =
-      eqWindow === "hour" ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson" :
-      eqWindow === "day"  ? "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"  :
-                            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
+   const feed = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
 
     const res = await fetch(feed, { cache:"no-store" });
     if(!res.ok) throw new Error(`USGS HTTP ${res.status}`);
