@@ -760,7 +760,7 @@
   // =====================================================
   function emojiFor(typeText){
     const t = (typeText || "").toLowerCase().trim();
-    if (t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
+    if (t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
     if(t.includes("rescue")) return "🛟";
     if(t.includes("water")) return "🌊";
@@ -835,8 +835,10 @@
     return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
   }
 
-function normalizeTypeLabel(typeText){
-  return (typeText || "").trim();
+ function normalizeTypeLabel(typeText){
+  const t = (typeText || "").trim();
+  if (t.toLowerCase() === "1e") return "Investigation";
+  return t;
 }
 
   function normalizeFire(raw){
