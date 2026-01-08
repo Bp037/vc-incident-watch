@@ -1,8 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-
-
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VC Incident Watch</title>
@@ -34,12 +32,13 @@
       --shadow:rgba(0,0,0,.55);
     }
 
-      /* Weather severity chip colors */
-.chip.sev-moderate { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.18); }
-.chip.sev-severe   { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.18); }
-.chip.sev-extreme  { border-color: rgba(168,85,247,.55); background: rgba(168,85,247,.18); }
-.chip.sev-minor    { border-color: rgba(234,179,8,.55);  background: rgba(234,179,8,.18); }
-.chip.sev-unknown  { border-color: rgba(148,163,184,.45); background: rgba(148,163,184,.16); }
+    /* Weather severity chip colors */
+    .chip.sev-moderate { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.18); }
+    .chip.sev-severe   { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.18); }
+    .chip.sev-extreme  { border-color: rgba(168,85,247,.55); background: rgba(168,85,247,.18); }
+    .chip.sev-minor    { border-color: rgba(234,179,8,.55);  background: rgba(234,179,8,.18); }
+    .chip.sev-unknown  { border-color: rgba(148,163,184,.45); background: rgba(148,163,184,.16); }
+
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -204,7 +203,7 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-    #map_fire, #map_chp, #map_eq, #map_weather{ height:360px; background:#111; }
+    #map_fire, #map_chp, #map_eq, #map_weather, #map_helis{ height:360px; background:#111; }
 
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
@@ -220,7 +219,7 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
-      #map_fire, #map_chp, #map_eq, #map_weather{ height:420px; }
+      #map_fire, #map_chp, #map_eq, #map_weather, #map_helis{ height:420px; }
     }
 
     .tabPanel{ display:none; }
@@ -305,118 +304,228 @@
     }
 
     /* Earthquakes: responsive table */
-  .eqTbl {
-  display: grid;
-  grid-template-columns: 120px auto 1fr; /* date/time | magnitude | location */
-  gap: 12px;
-  align-items: center;
-}
-
+    .eqTbl {
+      display: grid;
+      grid-template-columns: 120px auto 1fr;
+      gap: 12px;
+      align-items: center;
+    }
     @media (max-width: 520px){
       .eqTbl{
-        grid-template-columns: 120px 80px 1fr; /* hide ID on small screens */
+        grid-template-columns: 120px 80px 1fr;
       }
       .eqTbl .mono{ display:none; }
       .eqTbl .addr > div:first-child{ font-size:13px; }
       .eqTbl .typeText{ white-space:normal; overflow:visible; text-overflow:unset; }
     }
     .eqPin{ filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
-    /* --- Earthquake row layout fix --- */
-.eq-row {
-  display: grid;
-  grid-template-columns: 120px auto 1fr;
-  gap: 12px;
-  align-items: center;
-}
 
-.eq-dt {
-  display: flex;
-  flex-direction: column;
-  font-weight: 600;
-  line-height: 1.1;
-}
+    .eq-row {
+      display: grid;
+      grid-template-columns: 120px auto 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .eq-dt {
+      display: flex;
+      flex-direction: column;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+    .eq-date { font-size: 0.95rem; }
+    .eq-time {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+    .eq-mag {
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .eq-header {
+      display: grid;
+      grid-template-columns: 120px auto 1fr;
+      gap: 12px;
+      padding: 8px 16px;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.65;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
 
-.eq-date {
-  font-size: 0.95rem;
-}
+    /* ===== Mobile layout for Weather rows (SCOPED TO WEATHER ONLY) ===== */
+    @media (max-width: 720px) {
+      #tab_weather .tbl {
+        grid-template-columns: 1fr !important;
+        row-gap: 10px;
+      }
+      #tab_weather .tbl .date { font-size: 13px; opacity: 0.85; }
+      #tab_weather .tbl .icon { display: none; } /* only hide icons in Weather */
+      #tab_weather .tbl .addr { font-size: 14px; line-height: 1.35; }
+      #tab_weather .tbl .mono { font-size: 12px; opacity: 0.75; }
+      #tab_weather .tbl .desktopStatus { justify-self: start; margin-top: 6px; }
+      #tab_weather .row { padding: 12px 14px; }
+    }
 
-.eq-time {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  margin-top: 4px;
-}
+    /* ===================== HELISPOTS ===================== */
+    .helisControls{
+      display:flex; gap:10px; flex-wrap:wrap;
+      padding:12px 16px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      align-items:center;
+    }
+    .helisSearch{
+      flex: 1 1 220px;
+      display:flex; gap:10px; align-items:center;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.25);
+      border-radius:12px;
+      padding:10px 12px;
+    }
+    .helisSearch input{
+      width:100%;
+      border:0; outline:none;
+      background:transparent;
+      color:rgba(255,255,255,.92);
+      font-size:14px;
+    }
+    .helisSelect{
+      display:flex; gap:8px; align-items:center;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.25);
+      border-radius:12px;
+      padding:8px 10px;
+      font-size:12px;
+      color:rgba(255,255,255,.85);
+    }
+    .helisSelect select{
+      border:0; outline:none;
+      background:transparent;
+      color:rgba(255,255,255,.92);
+      font-weight:800;
+      font-size:12px;
+    }
 
-.eq-mag {
-  font-weight: 800;
-  font-size: 0.9rem;
-  padding: 6px 12px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.eq-dt {
-  display: flex;
-  flex-direction: column;
-  font-weight: 600;
-  line-height: 1.1;
-}
+    .helisGrid{
+      display:grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap:14px;
+      padding:14px 16px 16px;
+    }
+    .helisTableWrap{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      overflow:auto;
+    }
+    table.helisTable{
+      width:100%;
+      border-collapse:collapse;
+      min-width:560px;
+      background: rgba(0,0,0,.20);
+    }
+    .helisTable thead th{
+      text-align:left;
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:rgba(255,255,255,.72);
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background:#060607;
+      white-space:nowrap;
+    }
+    .helisTable tbody td{
+      padding:11px 12px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:middle;
+      font-size:13px;
+    }
+    .helisTable tbody tr{ cursor:pointer; }
+    .helisTable tbody tr:nth-child(odd){ background:rgba(255,255,255,.02); }
+    .helisTable tbody tr:nth-child(even){ background:rgba(255,255,255,.04); }
+    .helisTable tbody tr:hover{ background:rgba(255,255,255,.06); }
+    .helisTable tbody tr.active{ background: rgba(255,0,0,.18); }
+    .right{ text-align:right; }
+    .center{ text-align:center; }
 
-.eq-date {
-  font-size: 0.95rem;
-}
+    .typePill{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:850;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      white-space:nowrap;
+    }
+    .pill-helispot{ color:#e7e7e7; }
+    .pill-medevac{ color:#ffb6b6; }
+    .pill-snorkel{ color:#ffe08a; }
 
-.eq-time {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  margin-top: 4px;
-}
-.eq-header {
-  display: grid;
-  grid-template-columns: 120px auto 1fr;
-  gap: 12px;
-  padding: 8px 16px;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.65;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
-}
-/* ===== Mobile layout for Weather rows ===== */
-@media (max-width: 720px) {
+    .emoji-pin{ background:transparent; border:none; }
 
-  .tbl {
-    grid-template-columns: 1fr !important;
-    row-gap: 10px;
-  }
+    @media (max-width: 900px){
+      .helisGrid{ grid-template-columns: 1fr; }
+      table.helisTable{ min-width: 520px; }
+    }
 
-  .tbl .date {
-    font-size: 13px;
-    opacity: 0.85;
-  }
-
-  .tbl .icon {
-    display: none; /* hide ⚠️ icon on mobile to save space */
-  }
-
-  .tbl .addr {
-    font-size: 14px;
-    line-height: 1.35;
-  }
-
-  .tbl .mono {
-    font-size: 12px;
-    opacity: 0.75;
-  }
-
-  .tbl .desktopStatus {
-    justify-self: start;
-    margin-top: 6px;
-  }
-
-  .row {
-    padding: 12px 14px;
-  }
-}
-
+    /* ===================== PASSWORD MODAL ===================== */
+    .modalOverlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.70);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:9999;
+    }
+    .modalOverlay.show{ display:flex; }
+    .modal{
+      width:min(520px, 100%);
+      background: rgba(16,16,18,.92);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.65);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding:14px 16px;
+      background: rgba(255,255,255,.04);
+      border-bottom:1px solid rgba(255,255,255,.10);
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px;
+    }
+    .modalHead .t{ font-weight:900; }
+    .modalBody{ padding:16px; }
+    .modalBody p{ margin:0 0 12px; color: rgba(255,255,255,.78); font-size:13px; line-height:1.35; }
+    .modalRow{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    .modalRow input{
+      flex:1 1 240px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      color: rgba(255,255,255,.92);
+      outline:none;
+      font-size:14px;
+    }
+    .modalFoot{
+      padding:12px 16px;
+      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+      gap:10px;
+      border-top:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .miniNote{ color: rgba(255,255,255,.55); font-size:12px; }
+    .errText{ color:#fb7185; font-size:12px; margin-top:10px; display:none; }
+    .errText.show{ display:block; }
   </style>
 </head>
 
@@ -439,6 +548,7 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
+        <button class="tabBtn" data-tab="helis">Helispots</button>
       </div>
     </div>
   </header>
@@ -555,23 +665,110 @@
         <div id="map_weather"></div>
       </section>
     </div>
+
+    <!-- ================= HELISPOTS (PASSWORD-GATED) ================= -->
+    <div class="tabPanel" id="tab_helis">
+      <section class="card" aria-label="Helispots">
+        <div class="sectionBar">
+          <div class="left">
+            <div class="label">Helispots</div>
+            <div class="sub">Known helicopter landing zones and medevac LZs in Ventura County</div>
+          </div>
+          <div class="right">
+            <span id="activeCount_helis">— sites</span>
+            <span class="chip slate" id="updatedAt_helis">Manual</span>
+          </div>
+        </div>
+
+        <div class="helisControls">
+          <div class="helisSearch">
+            <span style="opacity:.8">🔎</span>
+            <input id="helisSearch" type="search" placeholder="Search (name or number)..." autocomplete="off" />
+          </div>
+
+          <label class="helisSelect">
+            <span>Type:</span>
+            <select id="helisType">
+              <option value="all">All</option>
+              <option value="helispot">Helispot</option>
+              <option value="medevac">Medevac</option>
+              <option value="snorkel">Snorkel</option>
+            </select>
+          </label>
+
+          <label class="helisSelect">
+            <span>Night Ops:</span>
+            <select id="helisNight">
+              <option value="all">All</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="helisGrid">
+          <div class="helisTableWrap">
+            <table class="helisTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th class="right">Location (Lat, Lon)</th>
+                  <th class="center">Batt.</th>
+                </tr>
+              </thead>
+              <tbody id="rows_helis"></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin:0; border-radius:14px; overflow:hidden;">
+            <div class="mapTop">
+              <div class="label">Map</div>
+              <button class="btn" id="fitBtn_helis" type="button">Fit Map</button>
+            </div>
+            <div id="map_helis"></div>
+          </div>
+        </div>
+
+        <div class="helper">Tap a row to zoom on the map. (Source: VCFD Helispot Manual.)</div>
+      </section>
+    </div>
   </main>
+
+  <!-- PASSWORD MODAL (client-side gate) -->
+  <div class="modalOverlay" id="heliModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Helispots Access">
+      <div class="modalHead">
+        <div class="t">Helispots Access</div>
+        <button class="btn" id="heliModalClose" type="button">Close</button>
+      </div>
+      <div class="modalBody">
+        <p>This tab is restricted. Enter the password to view Helispots.</p>
+        <div class="modalRow">
+          <input id="heliPass" type="password" placeholder="Password" />
+          <button class="btn" id="heliPassBtn" type="button">Unlock</button>
+        </div>
+        <div class="errText" id="heliErr">Wrong password.</div>
+      </div>
+      <div class="modalFoot">
+        <div class="miniNote">Tip: “Remembered” for this browser session.</div>
+        <button class="btn" id="heliLogoutBtn" type="button">Lock Tab</button>
+      </div>
+    </div>
+  </div>
 
 <script>
   function formatUpdatedLikeVCFD(iso) {
     if (!iso) return "—";
     const d = new Date(iso);
     if (isNaN(d)) return "—";
-
     const m = d.getMonth() + 1;
     const day = d.getDate();
     const yr = String(d.getFullYear()).slice(-2);
-
     let h = d.getHours();
     const min = String(d.getMinutes()).padStart(2, "0");
     const ampm = h >= 12 ? "pm" : "am";
     h = h % 12 || 12;
-
     return `${m}/${day}/${yr} ${h}:${min}${ampm}`;
   }
 
@@ -592,19 +789,16 @@
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
     }[m]));
   }
-function parseDateTime(dt) {
-  if (!dt) return 0;
 
-  const parts = String(dt).trim().split(" ");
-  if (parts.length < 2) return 0;
-
-  const [date, time] = parts;
-  const [m, d, y] = date.split("/");
-
-  if (!m || !d || !y || !time) return 0;
-
-  return new Date(`20${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}T${time}`).getTime();
-}
+  function parseDateTime(dt) {
+    if (!dt) return 0;
+    const parts = String(dt).trim().split(" ");
+    if (parts.length < 2) return 0;
+    const [date, time] = parts;
+    const [m, d, y] = date.split("/");
+    if (!m || !d || !y || !time) return 0;
+    return new Date(`20${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}T${time}`).getTime();
+  }
 
   // ===== TABS =====
   const tabBtns = document.querySelectorAll(".tabBtn");
@@ -613,21 +807,94 @@ function parseDateTime(dt) {
     chp: document.getElementById("tab_chp"),
     eq: document.getElementById("tab_eq"),
     weather: document.getElementById("tab_weather"),
+    helis: document.getElementById("tab_helis"),
   };
+
+  // ----------------- Helispots password gate (client-side) -----------------
+  const HELI_PASSWORD = "VC2025"; // <-- change this anytime
+  const heliModal = document.getElementById("heliModal");
+  const heliModalClose = document.getElementById("heliModalClose");
+  const heliPass = document.getElementById("heliPass");
+  const heliPassBtn = document.getElementById("heliPassBtn");
+  const heliErr = document.getElementById("heliErr");
+  const heliLogoutBtn = document.getElementById("heliLogoutBtn");
+  const HELI_SESSION_KEY = "helis_ok";
+
+  function helisAuthed(){
+    return sessionStorage.getItem(HELI_SESSION_KEY) === "1";
+  }
+  function showHeliModal(){
+    heliErr.classList.remove("show");
+    heliPass.value = "";
+    heliModal.classList.add("show");
+    setTimeout(()=>heliPass.focus(), 50);
+  }
+  function hideHeliModal(){
+    heliModal.classList.remove("show");
+  }
+  function lockHelis(){
+    sessionStorage.removeItem(HELI_SESSION_KEY);
+  }
+  function unlockHelis(){
+    const val = heliPass.value || "";
+    if(val === HELI_PASSWORD){
+      sessionStorage.setItem(HELI_SESSION_KEY, "1");
+      hideHeliModal();
+      // now actually show the helis tab
+      activateTab("helis", true);
+    } else {
+      heliErr.classList.add("show");
+    }
+  }
+
+  heliModalClose.addEventListener("click", ()=>{
+    hideHeliModal();
+    // bounce back to Fire tab if they tried to access helis
+    activateTab("fire", true);
+  });
+  heliPassBtn.addEventListener("click", unlockHelis);
+  heliPass.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") unlockHelis();
+    if(e.key === "Escape") heliModalClose.click();
+  });
+  heliLogoutBtn.addEventListener("click", ()=>{
+    lockHelis();
+    hideHeliModal();
+    activateTab("fire", true);
+  });
+  heliModal.addEventListener("click", (e)=>{
+    if(e.target === heliModal) heliModalClose.click();
+  });
+
+  function activateTab(key, skipGate=false){
+    // gate helis unless authed
+    if(key === "helis" && !skipGate && !helisAuthed()){
+      showHeliModal();
+      return;
+    }
+
+    tabBtns.forEach(b=>b.classList.toggle("active", b.dataset.tab === key));
+    Object.keys(panels).forEach(k=>panels[k].classList.toggle("active", k===key));
+
+    setTimeout(()=>{
+      if(key==="fire" && map_fire) map_fire.invalidateSize();
+      if(key==="chp" && map_chp) map_chp.invalidateSize();
+      if(key==="eq" && map_eq) map_eq.invalidateSize();
+      if(key==="weather" && map_weather) map_weather.invalidateSize();
+      if(key==="helis" && map_helis) map_helis.invalidateSize();
+    }, 50);
+
+    if(key === "helis"){
+      // init on first open
+      if(!map_helis) initHelisMap();
+      renderHelis();
+      updateHelisMarkers();
+    }
+  }
 
   tabBtns.forEach(btn=>{
     btn.addEventListener("click", ()=>{
-      tabBtns.forEach(b=>b.classList.remove("active"));
-      btn.classList.add("active");
-      const key = btn.dataset.tab;
-      Object.keys(panels).forEach(k=>panels[k].classList.toggle("active", k===key));
-
-      setTimeout(()=>{
-        if(key==="fire" && map_fire) map_fire.invalidateSize();
-        if(key==="chp" && map_chp) map_chp.invalidateSize();
-        if(key==="eq" && map_eq) map_eq.invalidateSize();
-        if(key==="weather" && map_weather) map_weather.invalidateSize();
-      }, 50);
+      activateTab(btn.dataset.tab);
     });
   });
 
@@ -838,7 +1105,7 @@ function parseDateTime(dt) {
         .map(normalizeFire)
         .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
-   updatedAt_fire.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
+      updatedAt_fire.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
       renderFire();
       updateFireMarkers();
       setStatus("ok","Updated");
@@ -990,18 +1257,11 @@ function parseDateTime(dt) {
   const updatedAt_eq = document.getElementById("updatedAt_eq");
   const activeCount_eq = document.getElementById("activeCount_eq");
 
-  // SoCal-focused bbox (tighter than before)
-  const EQ_BBOX = {
-    minLat: 32.0,
-    maxLat: 35.8,
-    minLon: -120.9,
-    maxLon: -114.0
-  };
+  const EQ_BBOX = { minLat: 32.0, maxLat: 35.8, minLon: -120.9, maxLon: -114.0 };
   function eqInBbox(lat, lon){
     return lat >= EQ_BBOX.minLat && lat <= EQ_BBOX.maxLat &&
            lon >= EQ_BBOX.minLon && lon <= EQ_BBOX.maxLon;
   }
-
   const EQ_MIN_MAG = 2.0;
 
   function initEqMap(){
@@ -1026,16 +1286,15 @@ function parseDateTime(dt) {
     if(m >= 4.0) return "#f97316";
     return "#fbbf24";
   }
-function eqRadiusKm(mag){
-  const m = Number(mag || 0);
-  if (m >= 7.0) return 350;
-  if (m >= 6.0) return 220;
-  if (m >= 5.0) return 140;
-  if (m >= 4.0) return 80;
-  if (m >= 3.0) return 35;
-  return 15; // M2.x
-}
-
+  function eqRadiusKm(mag){
+    const m = Number(mag || 0);
+    if (m >= 7.0) return 350;
+    if (m >= 6.0) return 220;
+    if (m >= 5.0) return 140;
+    if (m >= 4.0) return 80;
+    if (m >= 3.0) return 35;
+    return 15;
+  }
   function eqIcon(){
     const size = 26;
     return L.divIcon({
@@ -1046,108 +1305,98 @@ function eqRadiusKm(mag){
       html:`<div class="eqPin" style="font-size:22px;line-height:22px;">📍</div>`
     });
   }
-
   function magChip(mag){
     const c = eqColor(mag);
     return `<span class="magChip" style="background:${c};border-color:rgba(255,255,255,.22)">M ${escapeHtml(mag)}</span>`;
   }
 
-function renderEq(){
-  rows_eq.innerHTML = "";
-  activeCount_eq.textContent = `${eqEvents.length} events`;
-rows_eq.innerHTML = `
-  <div class="eq-header">
-    <div>Date / Time</div>
-    <div>Magnitude</div>
-    <div>Location / Depth</div>
-  </div>
-`;
-
-  if(!eqEvents.length){
-    rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No SoCal earthquakes M${EQ_MIN_MAG.toFixed(1)}+ found in the past 24 hours.</div>`;
-    return;
-  }
-
-  eqEvents.forEach(ev=>{
-    const row = document.createElement("div");
-    row.className = "row";
-
-    const dt = ev.time ? new Date(ev.time) : null;
-    const dateStr = dt ? dt.toLocaleDateString([], { month:"numeric", day:"numeric", year:"numeric" }) : "--";
-    const timeStr = dt ? dt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
-
-    row.innerHTML = `
-      <div class="eqTbl" style="padding:0 16px;">
-        <div class="eq-dt">
-          <div class="eq-date">${escapeHtml(dateStr)}</div>
-          <div class="eq-time">${escapeHtml(timeStr)}</div>
-        </div>
-
-        <div>${magChip(ev.mag ?? "--")}</div>
-
-        <div class="addr">
-          <div style="font-weight:800;font-size:14px">${escapeHtml(ev.place || "--")}</div>
-          <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
-        </div>
-
+  function renderEq(){
+    rows_eq.innerHTML = "";
+    activeCount_eq.textContent = `${eqEvents.length} events`;
+    rows_eq.innerHTML = `
+      <div class="eq-header">
+        <div>Date / Time</div>
+        <div>Magnitude</div>
+        <div>Location / Depth</div>
       </div>
     `;
 
-    row.addEventListener("click", ()=>{
-      if(ev.lat!=null && ev.lon!=null){
-        map_eq.setView([ev.lat, ev.lon], Math.max(map_eq.getZoom(), 9), { animate:true });
-        document.getElementById("map_eq").scrollIntoView({ behavior:"smooth", block:"start" });
-      }
-    });
+    if(!eqEvents.length){
+      rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No SoCal earthquakes M${EQ_MIN_MAG.toFixed(1)}+ found in the past 24 hours.</div>`;
+      return;
+    }
 
-    rows_eq.appendChild(row);
-  });
-}
+    eqEvents.forEach(ev=>{
+      const row = document.createElement("div");
+      row.className = "row";
 
+      const dt = ev.time ? new Date(ev.time) : null;
+      const dateStr = dt ? dt.toLocaleDateString([], { month:"numeric", day:"numeric", year:"numeric" }) : "--";
+      const timeStr = dt ? dt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
 
-  function updateEqMarkers(){
-  layer_eq.clearLayers();
+      row.innerHTML = `
+        <div class="eqTbl" style="padding:0 16px;">
+          <div class="eq-dt">
+            <div class="eq-date">${escapeHtml(dateStr)}</div>
+            <div class="eq-time">${escapeHtml(timeStr)}</div>
+          </div>
 
-  eqEvents.forEach(ev=>{
-    if(ev.lat==null || ev.lon==null) return;
+          <div>${magChip(ev.mag ?? "--")}</div>
 
-    const rKm = eqRadiusKm(ev.mag);
-
-    // “Shake area” ring (estimated)
-  const ring = L.circle([ev.lat, ev.lon], {
-  radius: rKm * 1000,
-  weight: 2,
-  opacity: 0.5,
-  fillOpacity: 0.06,
-  dashArray: "6 6"
-});
-
-
-    // Epicenter marker
-    const m = L.marker([ev.lat, ev.lon], { icon: eqIcon() })
-      .bindPopup(`
-        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-          <div style="font-weight:900;margin-bottom:6px">M ${escapeHtml(ev.mag ?? "—")} — ${escapeHtml(ev.place || "")}</div>
-          <div style="font-size:12px;color:rgba(0,0,0,.75)">
-            <div><b>Time:</b> ${escapeHtml(ev.time ? new Date(ev.time).toLocaleString() : "—")}</div>
-            <div><b>Depth:</b> ${escapeHtml(ev.depthKm != null ? (ev.depthKm + " km") : "—")}</div>
-            <div><b>Estimated area:</b> ~${escapeHtml(rKm)} km radius</div>
+          <div class="addr">
+            <div style="font-weight:800;font-size:14px">${escapeHtml(ev.place || "--")}</div>
+            <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
           </div>
         </div>
-      `);
+      `;
 
-    // Add both to the same layer group
-    ring.addTo(layer_eq);
-    m.addTo(layer_eq);
-  });
-}
+      row.addEventListener("click", ()=>{
+        if(ev.lat!=null && ev.lon!=null){
+          map_eq.setView([ev.lat, ev.lon], Math.max(map_eq.getZoom(), 9), { animate:true });
+          document.getElementById("map_eq").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
 
+      rows_eq.appendChild(row);
+    });
+  }
+
+  function updateEqMarkers(){
+    layer_eq.clearLayers();
+    eqEvents.forEach(ev=>{
+      if(ev.lat==null || ev.lon==null) return;
+
+      const rKm = eqRadiusKm(ev.mag);
+
+      const ring = L.circle([ev.lat, ev.lon], {
+        radius: rKm * 1000,
+        weight: 2,
+        opacity: 0.5,
+        fillOpacity: 0.06,
+        dashArray: "6 6"
+      });
+
+      const m = L.marker([ev.lat, ev.lon], { icon: eqIcon() })
+        .bindPopup(`
+          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+            <div style="font-weight:900;margin-bottom:6px">M ${escapeHtml(ev.mag ?? "—")} — ${escapeHtml(ev.place || "")}</div>
+            <div style="font-size:12px;color:rgba(0,0,0,.75)">
+              <div><b>Time:</b> ${escapeHtml(ev.time ? new Date(ev.time).toLocaleString() : "—")}</div>
+              <div><b>Depth:</b> ${escapeHtml(ev.depthKm != null ? (ev.depthKm + " km") : "—")}</div>
+              <div><b>Estimated area:</b> ~${escapeHtml(rKm)} km radius</div>
+            </div>
+          </div>
+        `);
+
+      ring.addTo(layer_eq);
+      m.addTo(layer_eq);
+    });
+  }
 
   async function fetchEarthquakes(){
-    if (typeof setStatus === "function") setStatus("wait","Refreshing…");
+    setStatus("wait","Refreshing…");
     try{
       const feed = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
-
       const res = await fetch(feed, { cache:"no-store" });
       if(!res.ok) throw new Error(`USGS HTTP ${res.status}`);
       const geo = await res.json();
@@ -1180,227 +1429,353 @@ rows_eq.innerHTML = `
       updatedAt_eq.textContent = `Updated ${new Date().toLocaleString()}`;
       renderEq();
       updateEqMarkers();
-      if (typeof setStatus === "function") setStatus("ok","Updated");
+      setStatus("ok","Updated");
     }catch(e){
       console.error("EQ fetch failed:", e);
-      if (typeof setStatus === "function") setStatus("err","Error");
+      setStatus("err","Error");
       updatedAt_eq.textContent = "Updated —";
       rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load earthquakes right now.</div>`;
     }
   }
 
- // =====================================================
-// =================== WEATHER ALERTS ==================
-// =====================================================
-let map_weather, layer_weather;
-let wxAlerts = [];
+  // =====================================================
+  // =================== WEATHER ALERTS ==================
+  // =====================================================
+  let map_weather, layer_weather;
+  let wxAlerts = [];
 
-const rows_weather = document.getElementById("rows_weather");
-const updatedAt_weather = document.getElementById("updatedAt_weather");
-const activeCount_weather = document.getElementById("activeCount_weather");
+  const rows_weather = document.getElementById("rows_weather");
+  const updatedAt_weather = document.getElementById("updatedAt_weather");
+  const activeCount_weather = document.getElementById("activeCount_weather");
 
-function sevKey(sev){
-  const s = (sev || "unknown").toLowerCase();
-  if (s === "moderate") return "moderate";
-  if (s === "severe") return "severe";
-  if (s === "extreme") return "extreme";
-  if (s === "minor") return "minor";
-  return "unknown";
-}
-
-function sevStyle(sev){
-  const k = sevKey(sev);
-  if (k === "moderate") return { color:"#22c55e", weight:2, opacity:0.95, fillOpacity:0.18 };
-  if (k === "severe")   return { color:"#ef4444", weight:2, opacity:0.95, fillOpacity:0.18 };
-  if (k === "extreme")  return { color:"#a855f7", weight:2, opacity:0.95, fillOpacity:0.18 };
-  if (k === "minor")    return { color:"#eab308", weight:2, opacity:0.95, fillOpacity:0.16 };
-  return { color:"#94a3b8", weight:2, opacity:0.9, fillOpacity:0.14 };
-}
-
-function initWeatherMap(){
-  map_weather = L.map("map_weather", { zoomControl:true }).setView([34.278, -119.293], 8.5);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map_weather);
-
-  layer_weather = L.layerGroup().addTo(map_weather);
-
-  document.getElementById("fitBtn_weather").addEventListener("click", fitWeatherMap);
-}
-
-function fitWeatherMap(){
-  const bounds = [];
-  layer_weather.eachLayer(l=>{
-    if(l.getBounds) bounds.push(l.getBounds());
-  });
-  if(bounds.length){
-    const b = bounds.reduce((acc,bb)=> acc.extend(bb), bounds[0]);
-    map_weather.fitBounds(b, { padding:[20,20] });
+  function sevKey(sev){
+    const s = (sev || "unknown").toLowerCase();
+    if (s === "moderate") return "moderate";
+    if (s === "severe") return "severe";
+    if (s === "extreme") return "extreme";
+    if (s === "minor") return "minor";
+    return "unknown";
   }
-}
-
-function renderWeather(){
-  rows_weather.innerHTML = "";
-  activeCount_weather.textContent = `${wxAlerts.length} alerts`;
-
-  if(!wxAlerts.length){
-    rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No active Ventura-related alerts found right now.</div>`;
-    return;
+  function sevStyle(sev){
+    const k = sevKey(sev);
+    if (k === "moderate") return { color:"#22c55e", weight:2, opacity:0.95, fillOpacity:0.18 };
+    if (k === "severe")   return { color:"#ef4444", weight:2, opacity:0.95, fillOpacity:0.18 };
+    if (k === "extreme")  return { color:"#a855f7", weight:2, opacity:0.95, fillOpacity:0.18 };
+    if (k === "minor")    return { color:"#eab308", weight:2, opacity:0.95, fillOpacity:0.16 };
+    return { color:"#94a3b8", weight:2, opacity:0.9, fillOpacity:0.14 };
   }
 
-  wxAlerts.forEach(a=>{
-    // define these (your broken version was missing them)
-    const headline = a.headline || a.event || "Alert";
-    const area = a.areaDesc || "";
-    const sent = a.sent || "";
-    const ends = a.ends || a.expires || "";
+  function initWeatherMap(){
+    map_weather = L.map("map_weather", { zoomControl:true }).setView([34.278, -119.293], 8.5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map_weather);
 
-    // date/time display
-    const sentDt = sent ? new Date(sent) : null;
-    const sentDate = sentDt ? sentDt.toLocaleDateString() : "—";
-    const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
+    layer_weather = L.layerGroup().addTo(map_weather);
+    document.getElementById("fitBtn_weather").addEventListener("click", fitWeatherMap);
+  }
 
-    const endsDt = ends ? new Date(ends) : null;
-    const endsStr = endsDt ? endsDt.toLocaleString([], {
-      month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"
-    }) : "—";
+  function fitWeatherMap(){
+    const bounds = [];
+    layer_weather.eachLayer(l=>{
+      if(l.getBounds) bounds.push(l.getBounds());
+    });
+    if(bounds.length){
+      const b = bounds.reduce((acc,bb)=> acc.extend(bb), bounds[0]);
+      map_weather.fitBounds(b, { padding:[20,20] });
+    }
+  }
 
-    // severity chip class
-    const sev = a.severity || "—";
-    const sevCls = `sev-${sevKey(sev)}`;
-const hasPolyHint = a.geometry ? "Polygon: yes" : (Array.isArray(a.affectedZones) && a.affectedZones.length ? "Polygon: via zones" : "Polygon: none");
+  function renderWeather(){
+    rows_weather.innerHTML = "";
+    activeCount_weather.textContent = `${wxAlerts.length} alerts`;
 
-    // IMPORTANT: create the row (your broken version didn’t)
-    const row = document.createElement("div");
-    row.className = "row";
+    if(!wxAlerts.length){
+      rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No active Ventura-related alerts found right now.</div>`;
+      return;
+    }
 
-    row.innerHTML = `
-      <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
-        <div class="date">
-          <div>${escapeHtml(sentDate)}</div>
-          <div style="opacity:.8;margin-top:4px">${escapeHtml(sentTime)}</div>
+    wxAlerts.forEach(a=>{
+      const headline = a.headline || a.event || "Alert";
+      const area = a.areaDesc || "";
+      const sent = a.sent || "";
+      const ends = a.ends || a.expires || "";
+
+      const sentDt = sent ? new Date(sent) : null;
+      const sentDate = sentDt ? sentDt.toLocaleDateString() : "—";
+      const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
+
+      const endsDt = ends ? new Date(ends) : null;
+      const endsStr = endsDt ? endsDt.toLocaleString([], { month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }) : "—";
+
+      const sev = a.severity || "—";
+      const sevCls = `sev-${sevKey(sev)}`;
+      const hasPolyHint = a.geometry ? "Polygon: yes" : (Array.isArray(a.affectedZones) && a.affectedZones.length ? "Polygon: via zones" : "Polygon: none");
+
+      const row = document.createElement("div");
+      row.className = "row";
+
+      row.innerHTML = `
+        <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
+          <div class="date">
+            <div>${escapeHtml(sentDate)}</div>
+            <div style="opacity:.8;margin-top:4px">${escapeHtml(sentTime)}</div>
+          </div>
+          <div class="icon">⚠️</div>
+          <div class="addr">
+            <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
+            <div class="typeText">${escapeHtml(area)}</div>
+            <div class="typeText" style="opacity:.65;margin-top:4px">${escapeHtml(hasPolyHint)}</div>
+          </div>
+          <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
+          <div class="desktopStatus">
+            <span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span>
+          </div>
         </div>
-        <div class="icon">⚠️</div>
-        <div class="addr">
-          <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
-          <div class="typeText">${escapeHtml(area)}</div>
-          <div class="typeText" style="opacity:.65;margin-top:4px">${escapeHtml(hasPolyHint)}</div>
-        </div>
-        <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
-        <div class="desktopStatus">
-          <span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span>
+      `;
+
+      row.addEventListener("click", ()=>{
+        setTimeout(() => map_weather.invalidateSize(true), 0);
+        if(a._bounds){
+          map_weather.fitBounds(a._bounds, { padding:[20,20] });
+          document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
+        } else {
+          alert("No polygon loaded for this alert yet.");
+        }
+      });
+
+      rows_weather.appendChild(row);
+    });
+  }
+
+  function buildWeatherPopup(a){
+    return `
+      <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+        <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
+        <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
+        <div style="font-size:12px;color:rgba(0,0,0,.75)">
+          <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
+          <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
         </div>
       </div>
     `;
-
-   row.addEventListener("click", ()=>{
-  setTimeout(() => map_weather.invalidateSize(true), 0);
-
-  if(a._bounds){
-    map_weather.fitBounds(a._bounds, { padding:[20,20] });
-    document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
-  } else {
-    alert("No polygon loaded for this alert yet.");
   }
-});
 
+  async function updateWeatherMap(){
+    layer_weather.clearLayers();
 
-    rows_weather.appendChild(row);
-  });
-}
+    for (const a of wxAlerts) {
+      if (a.geometry) {
+        const feature = (a.geometry.type === "Feature" || a.geometry.type === "FeatureCollection")
+          ? a.geometry
+          : { type: "Feature", properties: {}, geometry: a.geometry };
 
-function buildWeatherPopup(a){
-  return `
-    <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-      <div style="font-weight:900;margin-bottom:6px">${escapeHtml(a.event || "Weather Alert")}</div>
-      <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(a.headline || "")}</div>
-      <div style="font-size:12px;color:rgba(0,0,0,.75)">
-        <div><b>Severity:</b> ${escapeHtml(a.severity || "—")}</div>
-        <div><b>Areas:</b> ${escapeHtml(a.areaDesc || "—")}</div>
-      </div>
-    </div>
-  `;
-}
-
-async function updateWeatherMap(){
-  layer_weather.clearLayers();
-
-  for (const a of wxAlerts) {
-    // 1) If API gave geometry directly
-    if (a.geometry) {
-      const feature = (a.geometry.type === "Feature" || a.geometry.type === "FeatureCollection")
-        ? a.geometry
-        : { type: "Feature", properties: {}, geometry: a.geometry };
-
-      const layer = L.geoJSON(feature, {
-        style: sevStyle(a.severity)
-      }).bindPopup(buildWeatherPopup(a));
-
-      layer.addTo(layer_weather);
-      try { a._bounds = layer.getBounds(); } catch(_) {}
-      continue;
-    }
-
-    // 2) Else try affectedZones -> fetch zone geojson
-    if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
-      const zoneUrls = a.affectedZones.slice(0, 20);
-
-      try {
-        const zoneGeo = await Promise.all(
-          zoneUrls.map(z =>
-            fetch(z, { headers: { "Accept": "application/geo+json" } })
-              .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-          )
-        );
-
-        const combined = {
-          type: "FeatureCollection",
-          features: zoneGeo.flatMap(z => {
-            if (!z) return [];
-            if (z.type === "FeatureCollection" && Array.isArray(z.features)) return z.features;
-            if (z.type === "Feature") return [z];
-            if (z.type && z.coordinates) return [{ type:"Feature", properties:{}, geometry:z }];
-            return [];
-          })
-        };
-
-        if (!combined.features.length) continue;
-
-        const layer = L.geoJSON(combined, {
-          style: sevStyle(a.severity)
-        }).bindPopup(buildWeatherPopup(a));
-
+        const layer = L.geoJSON(feature, { style: sevStyle(a.severity) }).bindPopup(buildWeatherPopup(a));
         layer.addTo(layer_weather);
         try { a._bounds = layer.getBounds(); } catch(_) {}
+        continue;
+      }
 
-      } catch (e) {
-        console.warn("Weather zone geometry fetch failed:", e);
+      if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
+        const zoneUrls = a.affectedZones.slice(0, 20);
+
+        try {
+          const zoneGeo = await Promise.all(
+            zoneUrls.map(z =>
+              fetch(z, { headers: { "Accept": "application/geo+json" } })
+                .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+            )
+          );
+
+          const combined = {
+            type: "FeatureCollection",
+            features: zoneGeo.flatMap(z => {
+              if (!z) return [];
+              if (z.type === "FeatureCollection" && Array.isArray(z.features)) return z.features;
+              if (z.type === "Feature") return [z];
+              if (z.type && z.coordinates) return [{ type:"Feature", properties:{}, geometry:z }];
+              return [];
+            })
+          };
+
+          if (!combined.features.length) continue;
+
+          const layer = L.geoJSON(combined, { style: sevStyle(a.severity) }).bindPopup(buildWeatherPopup(a));
+          layer.addTo(layer_weather);
+          try { a._bounds = layer.getBounds(); } catch(_) {}
+
+        } catch (e) {
+          console.warn("Weather zone geometry fetch failed:", e);
+        }
       }
     }
   }
-}
 
-async function fetchWeather(){
-  setStatus("wait","Refreshing…");
-  try{
-    const res = await fetch("/api/weather", { cache:"no-store" });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+  async function fetchWeather(){
+    setStatus("wait","Refreshing…");
+    try{
+      const res = await fetch("/api/weather", { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
 
-    wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
-    updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
+      wxAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
+      updatedAt_weather.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : "Updated —";
 
-    renderWeather();
-    await updateWeatherMap();
-    setStatus("ok","Updated");
-  }catch(e){
-    console.error(e);
-    setStatus("err","Error");
-    updatedAt_weather.textContent = "Updated —";
-    rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
+      renderWeather();
+      await updateWeatherMap();
+      setStatus("ok","Updated");
+    }catch(e){
+      console.error(e);
+      setStatus("err","Error");
+      updatedAt_weather.textContent = "Updated —";
+      rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
+    }
   }
-}
+
+  // =====================================================
+  // ===================== HELISPOTS =====================
+  // =====================================================
+  let map_helis, layer_helis;
+  let helisActiveId = null;
+
+  const rows_helis = document.getElementById("rows_helis");
+  const helisSearch = document.getElementById("helisSearch");
+  const helisType = document.getElementById("helisType");
+  const helisNight = document.getElementById("helisNight");
+  const activeCount_helis = document.getElementById("activeCount_helis");
+
+  // Helper: degrees/minutes to decimal
+  function dmToDec(deg, minutes){ return Number(deg) + (Number(minutes) / 60); }
+
+  // From the VCFD Helispot Manual pages where lat/long are clearly printed on the helispot cards. :contentReference[oaicite:1]{index=1}
+  const HELISPOTS = [
+    // Battalion 1
+    { id:"50-A", name:"Point Mugu NAS", type:"helispot", batt:1, night:"no",  lat: dmToDec(34, 7.050),  lon: -(dmToDec(119, 6.377)) },
+    { id:"56-A", name:"Yerba Buena Rd", type:"helispot", batt:1, night:"yes", lat: dmToDec(34, 6.289),  lon: -(dmToDec(118,56.182)) },
+
+    { id:"SV",   name:"Solana Verde LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34,18.262), lon: -(dmToDec(118,59.896)) },
+    { id:"SR",   name:"Shooting Range LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34, 5.417), lon: -(dmToDec(119, 4.001)) },
+    { id:"MD",   name:"Mansdorf LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34, 4.033), lon: -(dmToDec(119,59.400)) },
+    { id:"ST56", name:"Station 56 LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34, 3.026), lon: -(dmToDec(118,57.270)) },
+
+    // Battalion 2
+    { id:"20-A", name:"Old Walnut Rd", type:"helispot", batt:2, night:"no",  lat: dmToDec(34,25.208), lon: -(dmToDec(119,10.614)) },
+    { id:"20-B", name:"Thomas Aquinas College", type:"helispot", batt:2, night:"yes", lat: dmToDec(34,25.716), lon: -(dmToDec(119, 5.059)) },
+    { id:"22-A", name:"Lake Casitas", type:"helispot", batt:2, night:"no",  lat: dmToDec(34,25.311), lon: -(dmToDec(119,19.715)) },
+    { id:"22-C", name:"Rose Valley", type:"helispot", batt:2, night:"no",  lat: dmToDec(34,32.475), lon: -(dmToDec(119,11.128)) },
+    { id:"22-B", name:"Country Drive", type:"helispot", batt:2, night:"yes", lat: dmToDec(34,25.320), lon: -(dmToDec(119,17.068)) },
+    { id:"HF",   name:"Honor Farm LZ (Medevac Only)", type:"medevac", batt:2, night:"—", lat: dmToDec(34,25.642), lon: -(dmToDec(119,17.707)) }
+  ];
+
+  function helisTypePill(t){
+    if(t === "helispot") return `<span class="typePill pill-helispot">Helispot</span>`;
+    if(t === "medevac") return `<span class="typePill pill-medevac">LZ Medevac</span>`;
+    if(t === "snorkel") return `<span class="typePill pill-snorkel">Snorkel</span>`;
+    return `<span class="typePill">—</span>`;
+  }
+
+  function helisMarkerIcon(t){
+    const emoji = (t === "medevac") ? "🩺" : (t === "snorkel" ? "⚠️" : "🚁");
+    return L.divIcon({
+      className:"emoji-pin",
+      iconSize:[1,1],
+      iconAnchor:[0,0],
+      popupAnchor:[0,-10],
+      html:`<div style="font-size:20px; transform: translate(-50%,-50%);">${emoji}</div>`
+    });
+  }
+
+  function initHelisMap(){
+    map_helis = L.map("map_helis", { zoomControl:true }).setView([34.278, -119.293], 9.5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map_helis);
+    layer_helis = L.layerGroup().addTo(map_helis);
+    document.getElementById("fitBtn_helis").addEventListener("click", fitHelisMap);
+  }
+
+  function fitHelisMap(){
+    const pts = [];
+    layer_helis.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
+    if(pts.length) map_helis.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  function helisFiltered(){
+    const q = (helisSearch.value || "").toLowerCase().trim();
+    const t = helisType.value;
+    const n = helisNight.value;
+
+    return HELISPOTS.filter(h=>{
+      const hit = !q || (`${h.id} ${h.name}`.toLowerCase().includes(q));
+      const typeOk = (t === "all") || (h.type === t);
+      const nightOk = (n === "all") || ((h.night || "").toLowerCase() === n);
+      return hit && typeOk && nightOk;
+    });
+  }
+
+  function renderHelis(){
+    const items = helisFiltered();
+    activeCount_helis.textContent = `${items.length} sites`;
+
+    rows_helis.innerHTML = items.map(h => `
+      <tr data-id="${escapeHtml(h.id)}" class="${h.id === helisActiveId ? "active" : ""}">
+        <td><strong>${escapeHtml(h.id)}</strong> — ${escapeHtml(h.name)}</td>
+        <td>${helisTypePill(h.type)}</td>
+        <td class="right">${h.lat.toFixed(4)}, ${h.lon.toFixed(4)}</td>
+        <td class="center">${escapeHtml(h.batt ?? "—")}</td>
+      </tr>
+    `).join("");
+
+    rows_helis.querySelectorAll("tr").forEach(tr=>{
+      tr.addEventListener("click", ()=>{
+        const id = tr.getAttribute("data-id");
+        focusHeli(id);
+      });
+    });
+  }
+
+  function updateHelisMarkers(){
+    if(!layer_helis) return;
+    layer_helis.clearLayers();
+
+    const items = helisFiltered();
+
+    items.forEach(h=>{
+      const m = L.marker([h.lat, h.lon], { icon: helisMarkerIcon(h.type), heliId:h.id })
+        .bindPopup(`
+          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+            <div style="font-weight:900;margin-bottom:6px">${escapeHtml(h.id)} — ${escapeHtml(h.name)}</div>
+            <div style="opacity:.85;margin-bottom:6px">${h.type === "medevac" ? "LZ Medevac" : (h.type === "snorkel" ? "Snorkel Site" : "Helispot")}</div>
+            <div style="opacity:.85">Battalion: ${escapeHtml(h.batt ?? "—")}</div>
+            <div style="opacity:.85">${h.lat.toFixed(4)}, ${h.lon.toFixed(4)}</div>
+          </div>
+        `);
+      m.addTo(layer_helis);
+    });
+  }
+
+  function focusHeli(id){
+    helisActiveId = id;
+    renderHelis();
+
+    const h = HELISPOTS.find(x => x.id === id);
+    if(!h || !map_helis) return;
+
+    map_helis.setView([h.lat, h.lon], Math.max(map_helis.getZoom(), 12), { animate:true });
+
+    // open popup
+    layer_helis.eachLayer(layer=>{
+      if(layer?.options?.heliId === id) layer.openPopup();
+    });
+
+    document.getElementById("map_helis").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+
+  helisSearch.addEventListener("input", ()=>{ renderHelis(); updateHelisMarkers(); });
+  helisType.addEventListener("change", ()=>{ renderHelis(); updateHelisMarkers(); });
+  helisNight.addEventListener("change", ()=>{ renderHelis(); updateHelisMarkers(); });
 
   // ===== INIT ALL MAPS =====
   initFireMap();
@@ -1419,6 +1794,9 @@ async function fetchWeather(){
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
+
+  // Default render helis table (map initializes on first open)
+  renderHelis();
 </script>
 </body>
 </html>
