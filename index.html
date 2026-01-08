@@ -1585,10 +1585,8 @@
     }
   }
 // =====================================================
-// ======================== TFR ========================
-// =====================================================
-let map_tfr, layer_tfr;
-let tfrItems = [];
+// ======================== TFR (front-end) ========================
+let tfrList = [];
 
 const rows_tfr = document.getElementById("rows_tfr");
 const updatedAt_tfr = document.getElementById("updatedAt_tfr");
@@ -1596,121 +1594,76 @@ const activeCount_tfr = document.getElementById("activeCount_tfr");
 const tfrSearch = document.getElementById("tfrSearch");
 const tfrType = document.getElementById("tfrType");
 
-// Best-effort “SoCal counties” keyword filter
-const SOCAL_COUNTIES = [
-  "SAN LUIS OBISPO","SANTA BARBARA","VENTURA","LOS ANGELES","ORANGE",
-  "RIVERSIDE","SAN BERNARDINO","SAN DIEGO","IMPERIAL","KERN"
-];
-
-function initTfrMap(){
-  map_tfr = L.map("map_tfr", { zoomControl:true }).setView([34.1, -118.25], 7.5);
-  addBasemapToggle(map_tfr);
-  layer_tfr = L.layerGroup().addTo(map_tfr);
-  document.getElementById("fitBtn_tfr").addEventListener("click", fitTfrMap);
+function tfrEmoji(type){
+  const t = (type||"").toUpperCase();
+  if(t.includes("SEC")) return "🛑";
+  if(t.includes("VIP")) return "⭐";
+  if(t.includes("SPACE")) return "🚀";
+  if(t.includes("AIR")) return "✈️";
+  if(t.includes("UAS")) return "🛰️";
+  return "⚠️";
 }
 
-function fitTfrMap(){
-  const pts = [];
-  layer_tfr.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
-  if(pts.length) map_tfr.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
-}
+function getTfrFiltered(){
+  const q = (tfrSearch?.value || "").trim().toLowerCase();
+  const typ = tfrType?.value || "all";
 
-// We usually don’t get geometry centers from the “list” feed reliably,
-// so we don’t draw shapes — we show a small “SoCal center” marker per item as a placeholder.
-// (Main action is opening FAA details link.)
-function tfrPlaceholderMarker(){
-  return L.marker([34.1, -118.25], { icon: markerIcon("🚫", "#ef4444") });
-}
-
-function normalizeTfr(x){
-  // Handles common keys seen in FAA exports + older packages
-  const notam = x?.notam_id || x?.notam || x?.notamId || "";
-  const type = x?.type || "";
-  const state = x?.state || "";
-  const facility = x?.facility || "";
-  const date = x?.date || x?.effective || "";
-  const description = x?.description || x?.desc || "";
-
-  const links = x?.links || {};
-  const details = links?.details || x?.details || "";
-  const zoom = links?.zoom || "";
-
-  return { notam, type, state, facility, date, description, details, zoom, raw:x };
-}
-
-function isSoCalTfr(t){
-  const st = (t.state || "").toUpperCase();
-  const desc = (t.description || "").toUpperCase();
-
-  // Prefer official state when present
-  if(st === "CA") return true;
-
-  // Fallback: look for “, CA” or SoCal county names
-  if(desc.includes(", CA")) return true;
-  return SOCAL_COUNTIES.some(c => desc.includes(c));
+  return (tfrList || [])
+    .filter(x => {
+      if (typ === "all") return true;
+      return String(x.type || "").toUpperCase() === String(typ).toUpperCase();
+    })
+    .filter(x => {
+      if(!q) return true;
+      const hay = [
+        x.notam_id, x.type, x.desc, x.description, x.facility, x.state, x.city
+      ].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    });
 }
 
 function renderTfr(){
-  const q = (tfrSearch.value || "").trim().toLowerCase();
-  const typ = (tfrType.value || "all").toUpperCase();
+  if(!rows_tfr) return;
 
-  const filtered = tfrItems
-    .filter(isSoCalTfr)
-    .filter(t => (typ === "ALL" ? true : (String(t.type || "").toUpperCase() === typ)))
-    .filter(t => {
-      if(!q) return true;
-      const hay = `${t.notam} ${t.type} ${t.state} ${t.facility} ${t.date} ${t.description}`.toLowerCase();
-      return hay.includes(q);
-    });
-
-  activeCount_tfr.textContent = `${filtered.length} TFRs`;
+  const items = getTfrFiltered();
+  activeCount_tfr.textContent = `${items.length} TFRs`;
   rows_tfr.innerHTML = "";
 
-  if(!filtered.length){
-    rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No matching SoCal TFRs found.</div>`;
-    layer_tfr.clearLayers();
+  if(!items.length){
+    rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No matching TFRs found.</div>`;
     return;
   }
 
-  // Map: placeholder pins (keeps the tab consistent with your layout)
-  layer_tfr.clearLayers();
-  filtered.forEach(t => {
-    const m = tfrPlaceholderMarker();
-    m.bindPopup(`
-      <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-        <div style="font-weight:900;margin-bottom:6px">${escapeHtml(t.type || "TFR")}</div>
-        <div style="color:rgba(0,0,0,.75);margin-bottom:6px">${escapeHtml(t.description || "")}</div>
-        <div style="font-size:12px;color:rgba(0,0,0,.75)">
-          <div><b>NOTAM:</b> ${escapeHtml(t.notam || "—")}</div>
-          ${t.details ? `<div style="margin-top:6px"><a href="${escapeHtml(t.details)}" target="_blank" rel="noopener noreferrer">Open FAA Details</a></div>` : ""}
-        </div>
-      </div>
-    `);
-    m.addTo(layer_tfr);
-  });
+  items.forEach(x=>{
+    const notam = x.notam_id || x.NOTAMID || "TFR";
+    const type  = x.type || x.Type || "";
+    const desc  = x.desc || x.description || x.Descr || "";
+    const date  = x.date || x.Date || "";
+    const url   = x.url || x.detailsUrl || "";
 
-  filtered.forEach(t => {
     const row = document.createElement("div");
     row.className = "row";
-    const detailsLink = t.details || "";
-
     row.innerHTML = `
-      <div class="tbl" style="grid-template-columns: 140px 140px 1fr 160px;">
-        <div class="date">${escapeHtml(t.date || "—")}</div>
-        <div class="mono" style="font-weight:900">${escapeHtml(t.type || "—")}</div>
+      <div class="tbl" style="grid-template-columns: 140px 64px 1fr 220px 140px;">
+        <div class="date">${escapeHtml(date || "—")}</div>
+        <div class="icon">${tfrEmoji(type)}</div>
         <div class="addr">
-          <a href="${escapeHtml(detailsLink || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(t.description || "Open FAA Details")}</a>
-          <div class="typeText">${escapeHtml((t.state ? (t.state + " • ") : "") + (t.facility || ""))}</div>
+          ${url
+            ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(notam)}</a>`
+            : `<div style="font-weight:800;color:rgba(255,255,255,.9)">${escapeHtml(notam)}</div>`
+          }
+          <div class="typeText">${escapeHtml(type)}</div>
+          <div class="typeText" style="opacity:.85;margin-top:4px">${escapeHtml(desc)}</div>
         </div>
-        <div class="mono">${escapeHtml(t.notam || "—")}</div>
+        <div class="mono">${escapeHtml((x.facility || "") + " " + (x.state || "")) || "—"}</div>
+        <div class="desktopStatus"><span class="chip slate">View</span></div>
       </div>
     `;
 
     row.addEventListener("click", (ev)=>{
       const tag = ev.target?.tagName?.toLowerCase?.() || "";
       if(tag === "a" || tag === "button" || tag === "select" || tag === "input") return;
-      // Keep behavior consistent: scroll to map
-      document.getElementById("map_tfr").scrollIntoView({ behavior:"smooth", block:"start" });
+      if(url) window.open(url, "_blank", "noopener,noreferrer");
     });
 
     rows_tfr.appendChild(row);
@@ -1724,11 +1677,17 @@ async function fetchTfr(){
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    // Worker returns: { updatedAt, tfrs: [...] }
-    const raw = Array.isArray(data?.tfrs) ? data.tfrs : (Array.isArray(data) ? data : []);
-    tfrItems = raw.map(normalizeTfr);
+    // ✅ support multiple shapes
+    tfrList = Array.isArray(data) ? data : (Array.isArray(data?.tfrs) ? data.tfrs : []);
+    const count = data?.count ?? tfrList.length;
 
-    updatedAt_tfr.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : `Updated ${new Date().toLocaleString()}`;
+    updatedAt_tfr.textContent = data?.updatedAt
+      ? `Updated ${formatUpdatedLikeVCFD(data.updatedAt)}`
+      : `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
+
+    // quick sanity: show count even if filtering removes items
+    activeCount_tfr.textContent = `${count} TFRs`;
+
     renderTfr();
     setStatus("ok","Updated");
   }catch(e){
@@ -1736,7 +1695,6 @@ async function fetchTfr(){
     setStatus("err","Error");
     updatedAt_tfr.textContent = "Updated —";
     rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load TFRs right now.</div>`;
-    if(layer_tfr) layer_tfr.clearLayers();
   }
 }
 
