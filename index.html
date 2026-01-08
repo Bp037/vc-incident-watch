@@ -760,7 +760,7 @@
   // =====================================================
   function emojiFor(typeText){
     const t = (typeText || "").toLowerCase().trim();
-    if (t.includes("gas leak")) return "⚠️";
+    if (t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
     if(t.includes("rescue")) return "🛟";
     if(t.includes("water")) return "🌊";
@@ -835,30 +835,9 @@
     return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
   }
 
-function normalizeTypeLabel(typeText, unitsText = ""){
+ function normalizeTypeLabel(typeText){
   const t = (typeText || "").trim();
-  const s = t.toLowerCase();
-  const u = (unitsText || "").toLowerCase();
-
-  // Explicit keywords win
-  if (
-    s.includes("gas") ||
-    s.includes("odor") ||
-    s.includes("smell") ||
-    s.includes("pipeline")
-  ) return "Gas Leak";
-
-  // Smoke Investigation is not Gas Leak
-  if (s.includes("smoke")) return "Smoke Investigation";
-
-  // Medical should stay medical
-  if (s.includes("medical")) return t;
-
-  // Investigation + engine/ME only often = utility investigation (gas, odor, power)
-  if (s === "investigation" && (u.startsWith("me") || u.startsWith("e"))) {
-    return "Investigation";
-  }
-
+  if (t.toLowerCase() === "1e") return "Investigation";
   return t;
 }
 
@@ -871,11 +850,10 @@ function normalizeTypeLabel(typeText, unitsText = ""){
     const city = raw?.city ? String(raw.city).trim() : "";
     const street = [block, addr].filter(Boolean).join(" ").trim();
     const fullAddress = [street, city].filter(Boolean).join(", ").trim();
-   const type = normalizeTypeLabel(
-  raw?.incidentType || raw?.IncidentType || "",
-  raw?.units || raw?.Units || ""
-);
+    const type = normalizeTypeLabel(raw?.incidentType || raw?.IncidentType || "");
 
+    const status = raw?.status || raw?.Status || "";
+    const units = raw?.units || raw?.Units || "";
 
     const lat = raw?.latitude ?? raw?.Latitude ?? null;
     const lon = raw?.longitude ?? raw?.Longitude ?? null;
