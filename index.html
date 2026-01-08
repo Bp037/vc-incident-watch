@@ -473,6 +473,22 @@
       }
       .heliLoc a{ white-space:normal; }
     }
+   /* --- Force severity badge to appear on mobile --- */
+@media (max-width: 640px) {
+  .alert-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .severity {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
   </style>
 </head>
 
