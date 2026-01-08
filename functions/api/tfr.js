@@ -1,8 +1,9 @@
 export async function onRequestGet() {
   try {
-    const url = "https://tfr.faa.gov/tfr3/export/json";
+    // Official FAA TFR export (JSON)
+    const FAA_URL = "https://tfr.faa.gov/tfr3/export/json";
 
-    const res = await fetch(url, {
+    const res = await fetch(FAA_URL, {
       headers: {
         "Accept": "application/json,text/plain,*/*",
         "User-Agent": "vc-incident-watch/1.0"
@@ -10,67 +11,44 @@ export async function onRequestGet() {
     });
 
     if (!res.ok) {
-      return new Response(JSON.stringify({ error: `FAA TFR HTTP ${res.status}` }), {
+      return new Response(JSON.stringify({ error: `FAA HTTP ${res.status}` }), {
         status: 502,
-        headers: { "content-type": "application/json" }
+        headers: { "content-type": "application/json; charset=utf-8" }
       });
     }
 
-    // IMPORTANT: endpoint may not return application/json reliably
+    // IMPORTANT: treat as text first (FAA sometimes serves it oddly)
     const txt = await res.text();
-    let list;
+
+    let tfrs;
     try {
-      list = JSON.parse(txt);
+      tfrs = JSON.parse(txt);
     } catch (e) {
-      // If FAA ever wraps it in HTML, this will fail—return diagnostic
+      // Upstream returned HTML or non-JSON
       return new Response(JSON.stringify({
-        error: "FAA TFR response was not JSON",
-        hint: "The upstream returned HTML or malformed JSON",
-        sample: txt.slice(0, 200)
+        error: "Upstream did not return JSON",
+        upstreamSample: txt.slice(0, 160)
       }), {
         status: 502,
-        headers: { "content-type": "application/json" }
+        headers: { "content-type": "application/json; charset=utf-8" }
       });
     }
-
-    // SoCal-ish filter: start with CA + ZLA/ZOA (best-effort from FAA list fields)
-    const socalFacilities = new Set(["ZLA", "ZOA"]);
-    const filtered = (Array.isArray(list) ? list : [])
-      .filter(x => {
-        const stateOk = (x?.state || "").toUpperCase() === "CA";
-        const facOk = socalFacilities.has((x?.facility || "").toUpperCase());
-        // If state is missing (rare), facility can still help
-        return stateOk || facOk;
-      })
-      .map(x => {
-        const notamId = String(x?.notam_id || x?.notam || "").trim(); // e.g. "5/4029"
-        const safe = notamId.replace("/", "_"); // "5_4029"
-        return {
-          date: x?.date || "",
-          notam_id: notamId,
-          facility: x?.facility || "",
-          state: x?.state || "",
-          type: x?.type || "",
-          description: x?.description || "",
-          // best-effort detail link pattern used by FAA TFR3 UI
-          detailsUrl: notamId ? `https://tfr.faa.gov/tfr3/?page=detail_${safe}` : ""
-        };
-      });
 
     return new Response(JSON.stringify({
       updatedAt: new Date().toISOString(),
-      count: filtered.length,
-      tfrs: filtered
+      tfrs: Array.isArray(tfrs) ? tfrs : []
     }), {
+      status: 200,
       headers: {
         "content-type": "application/json; charset=utf-8",
         "cache-control": "no-store"
       }
     });
+
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e?.message || e) }), {
       status: 500,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json; charset=utf-8" }
     });
   }
-} 
+}
