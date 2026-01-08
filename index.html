@@ -203,8 +203,7 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-   #map_fire, #map_chp, #map_eq, #map_weather, #map_heli, #map_tfr { height:360px; background:#111; 
-    }
+    #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:360px; background:#111; }
 
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
@@ -220,8 +219,9 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
-     #map_fire, #map_chp, #map_eq, #map_weather, #map_heli, #map_tfr { height:420px; 
-      }
+      #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:420px; }
+    }
+
     .tabPanel{ display:none; }
     .tabPanel.active{ display:block; }
 
@@ -545,7 +545,6 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
-        <button class="tabBtn" data-tab="tfr">TFR</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
     </div>
@@ -663,43 +662,7 @@
         <div id="map_weather"></div>
       </section>
     </div>
-<!-- ================= TFR ================= -->
-<div class="tabPanel" id="tab_tfr">
-  <section class="card" aria-label="TFRs">
-    <div class="sectionBar">
-      <div class="left">
-        <div class="label">TFRs (SoCal)</div>
-        <div class="sub" id="updatedAt_tfr">Updated —</div>
-      </div>
-      <div class="right" id="activeCount_tfr">— TFRs</div>
-    </div>
 
-    <div class="controlsRow">
-      <input class="input" id="tfrSearch" placeholder="Search (NOTAM, city, event, type)..." />
-      <select class="select" id="tfrType">
-        <option value="all">Type: All</option>
-        <option value="SECURITY">SECURITY</option>
-        <option value="VIP">VIP</option>
-        <option value="HAZARDS">HAZARDS</option>
-        <option value="SPACE OPERATIONS">SPACE OPERATIONS</option>
-        <option value="AIRSHOW">AIRSHOW</option>
-      </select>
-    </div>
-
-    <div id="rows_tfr"></div>
-    <div class="helper">
-      Tap a row to open FAA details. Always verify official NOTAM/TFR text.
-    </div>
-  </section>
-
-  <section class="card mapCard" aria-label="TFR Map">
-    <div class="mapTop">
-      <div class="label">Map</div>
-      <button class="btn" id="fitBtn_tfr" type="button">Fit Map</button>
-    </div>
-    <div id="map_tfr"></div>
-  </section>
-</div>
     <!-- ================= HELISPOTS ================= -->
 
 </script>
@@ -797,7 +760,6 @@
     chp: document.getElementById("tab_chp"),
     eq: document.getElementById("tab_eq"),
     weather: document.getElementById("tab_weather"),
-    tfr: document.getElementById("tab_tfr"),
     heli: document.getElementById("tab_heli"),
   };
 
@@ -813,7 +775,6 @@
         if(key==="chp" && map_chp) map_chp.invalidateSize();
         if(key==="eq" && map_eq) map_eq.invalidateSize();
         if(key==="weather" && map_weather) map_weather.invalidateSize();
-        if(key==="tfr" && map_tfr) map_tfr.invalidateSize();
         if(key==="heli" && map_heli) map_heli.invalidateSize();
       }, 50);
     });
@@ -1572,246 +1533,7 @@
       rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
     }
   }
-// =====================================================
-// ======================== TFR ========================
-// =====================================================
-let map_tfr, layer_tfr;
-let tfrList = [];
 
-const rows_tfr = document.getElementById("rows_tfr");
-const updatedAt_tfr = document.getElementById("updatedAt_tfr");
-const activeCount_tfr = document.getElementById("activeCount_tfr");
-const tfrSearch = document.getElementById("tfrSearch");
-const tfrType = document.getElementById("tfrType");
-
-function initTfrMap(){
-  map_tfr = L.map("map_tfr", { zoomControl:true }).setView([34.1, -118.25], 7.5);
-  addBasemapToggle(map_tfr);
-  layer_tfr = L.layerGroup().addTo(map_tfr);
-
-  const btn = document.getElementById("fitBtn_tfr");
-  if(btn) btn.addEventListener("click", fitTfrMap);
-}
-
-function fitTfrMap(){
-  const bounds = [];
-  layer_tfr.eachLayer(l=>{
-    if(l.getBounds) bounds.push(l.getBounds());
-  });
-  if(bounds.length){
-    const b = bounds.reduce((acc,bb)=>acc.extend(bb), bounds[0]);
-    map_tfr.fitBounds(b, { padding:[20,20] });
-  }
-}
-
-function tfrEmoji(type){
-  const t = (type||"").toUpperCase();
-  if(t.includes("SEC")) return "🛑";
-  if(t.includes("VIP")) return "⭐";
-  if(t.includes("SPACE")) return "🚀";
-  if(t.includes("AIRSHOW")) return "✈️";
-  if(t.includes("HAZ")) return "⚠️";
-  return "📍";
-}
-
-function tfrStyle(type){
-  const t = (type||"").toUpperCase();
-  if(t.includes("SEC")) return { color:"#ef4444", weight:2, opacity:0.95, fillOpacity:0.12 };
-  if(t.includes("VIP")) return { color:"#a855f7", weight:2, opacity:0.95, fillOpacity:0.12 };
-  if(t.includes("SPACE")) return { color:"#22c55e", weight:2, opacity:0.95, fillOpacity:0.12 };
-  return { color:"#fbbf24", weight:2, opacity:0.95, fillOpacity:0.10 };
-}
-
-function getTfrFiltered(){
-  const q = (tfrSearch?.value || "").trim().toLowerCase();
-  const typ = (tfrType?.value || "all").toLowerCase();
-
-  return (tfrList || []).filter(x=>{
-    const type = String(x.type || "").toLowerCase();
-    const desc = String(x.desc || "").toLowerCase();
-    const notam = String(x.notam_id || "").toLowerCase();
-    const fac = String(x.facility || "").toLowerCase();
-    const st = String(x.state || "").toLowerCase();
-
-    if(typ !== "all" && type !== typ) return false;
-    if(!q) return true;
-
-    return (
-      type.includes(q) ||
-      desc.includes(q) ||
-      notam.includes(q) ||
-      fac.includes(q) ||
-      st.includes(q)
-    );
-  });
-}
-
-function renderTfr(){
-  if(!rows_tfr) return;
-
-  const items = getTfrFiltered();
-  activeCount_tfr.textContent = `${items.length} TFRs`;
-  rows_tfr.innerHTML = "";
-
-  if(!items.length){
-    rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No matching TFRs found.</div>`;
-  } else {
-    items.forEach(x=>{
-      const row = document.createElement("div");
-      row.className = "row";
-
-      const notam = x.notam_id || "—";
-      const type  = x.type || "—";
-      const desc  = x.desc || "—";
-      const date  = x.date || "—";
-      const url   = x.url || "";
-
-      row.innerHTML = `
-        <div class="tbl" style="grid-template-columns: 140px 64px 1fr 220px 140px;">
-          <div class="date">${escapeHtml(date)}</div>
-          <div class="icon">${tfrEmoji(type)}</div>
-          <div class="addr">
-            ${url
-              ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(notam)}</a>`
-              : `<div style="font-weight:800;color:rgba(255,255,255,.9)">${escapeHtml(notam)}</div>`
-            }
-            <div class="typeText">${escapeHtml(type)}</div>
-            <div class="typeText" style="opacity:.85;margin-top:4px">${escapeHtml(desc)}</div>
-          </div>
-          <div class="mono">${escapeHtml(((x.facility||"") + " " + (x.state||"")).trim() || "—")}</div>
-          <div class="desktopStatus"><span class="chip slate">View</span></div>
-        </div>
-      `;
-
-      row.addEventListener("click", (ev)=>{
-        const tag = ev.target?.tagName?.toLowerCase?.() || "";
-        if(tag === "a" || tag === "button" || tag === "select" || tag === "input") return;
-        if(url) window.open(url, "_blank", "noopener,noreferrer");
-      });
-
-      rows_tfr.appendChild(row);
-    });
-  }
-
-  updateTfrMap(items);
-}
-
-function updateTfrMap(items){
-  if(!layer_tfr) return;
-  layer_tfr.clearLayers();
-
-  (items || []).forEach(x=>{
-    const geo = x.geometry;
-    if(!geo) return;
-
-    const feature =
-      (geo.type === "Feature" || geo.type === "FeatureCollection")
-        ? geo
-        : { type:"Feature", properties:{}, geometry: geo };
-
-    try{
-      const layer = L.geoJSON(feature, { style: tfrStyle(x.type) })
-        .bindPopup(`
-          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-            <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.notam_id || "TFR")}</div>
-            <div style="margin-bottom:6px;color:rgba(0,0,0,.75)">${escapeHtml(x.type || "")}</div>
-            <div style="font-size:12px;color:rgba(0,0,0,.75)">${escapeHtml(x.desc || "")}</div>
-            ${x.url ? `<div style="margin-top:8px"><a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Open FAA details</a></div>` : ""}
-          </div>
-        `);
-
-      layer.addTo(layer_tfr);
-    }catch(e){
-      // ignore bad geometry
-    }
-  });
-}
-
-async function fetchTfr(){
-  setStatus("wait","Refreshing…");
-  try{
-    // Direct FAA export (client-side)
-    const url = "https://tfr.faa.gov/tfr3/export/json?cb=" + Date.now();
-    const res = await fetch(url, { cache:"no-store" });
-    const text = await res.text();
-
-    // Sometimes it returns HTML wrapper; extract JSON array if needed
-    let jsonStr = text.trim();
-    if (jsonStr.startsWith("<") || !jsonStr.startsWith("[")) {
-      const a = jsonStr.indexOf("[");
-      const b = jsonStr.lastIndexOf("]");
-      if (a === -1 || b === -1 || b <= a) throw new Error("FAA did not return JSON array");
-      jsonStr = jsonStr.slice(a, b + 1);
-    }
-
-    const raw = JSON.parse(jsonStr);
-    if(!Array.isArray(raw)) throw new Error("FAA JSON not an array");
-
-    // --- SoCal filter (best-effort) ---
-    const SOCAL = { minLat:32.0, maxLat:35.8, minLon:-121.5, maxLon:-114.0 };
-    const inBbox = (lat, lon) =>
-      lat >= SOCAL.minLat && lat <= SOCAL.maxLat && lon >= SOCAL.minLon && lon <= SOCAL.maxLon;
-
-    const pick = (o, keys) => {
-      for (const k of keys) if (o && o[k] != null && o[k] !== "") return o[k];
-      return null;
-    };
-    const toNum = (v) => (v == null ? null : Number(v));
-
-    tfrList = raw.map(t=>{
-      const notam = pick(t, ["notam_id","notamId","NOTAMID","NOTAM_ID"]) || "";
-      const id = String(notam).replace("/", "_");
-      const url = notam ? `https://tfr.faa.gov/tfr3/?page=detail_${id}` : "https://tfr.faa.gov/tfr3/";
-
-      const lat = toNum(pick(t, ["lat","latitude","center_lat","centerLatitude","CENT_LAT"]));
-      const lon = toNum(pick(t, ["lon","lng","longitude","center_lon","centerLongitude","CENT_LON"]));
-
-      const type = pick(t, ["type","Type","tfr_type","TFR_TYPE"]) || "";
-      const facility = pick(t, ["facility","Facility","artcc","ARTCC"]) || "";
-      const state = pick(t, ["state","State","STATE"]) || "";
-
-      return {
-        notam_id: notam,
-        type,
-        facility,
-        state,
-        desc: pick(t, ["description","Description","desc"]) || "",
-        date: pick(t, ["date","Date","issued"]) || "—",
-        lat, lon,
-        url
-      };
-    })
-    .filter(x=>{
-      // prefer bbox if coords exist; otherwise keep CA/ZLA as fallback
-      const bboxOk = (x.lat!=null && x.lon!=null) ? inBbox(x.lat, x.lon) : false;
-      const caOk = String(x.state||"").toUpperCase() === "CA";
-      const zlaOk = String(x.facility||"").toUpperCase().includes("ZLA");
-      return bboxOk || caOk || zlaOk;
-    });
-
-    updatedAt_tfr.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
-    renderTfr();
-    setStatus("ok","Updated");
-  }catch(e){
-    console.error("TFR fetch failed:", e);
-    setStatus("err","Error");
-    updatedAt_tfr.textContent = "Updated —";
-    rows_tfr.innerHTML = `
-      <div style="padding:16px;color:rgba(255,255,255,.7)">
-        Could not load TFRs (FAA blocked browser request or CORS).
-        <div style="margin-top:8px">
-          <a href="https://tfr.faa.gov/tfr3/export/json" target="_blank" rel="noopener noreferrer">Open FAA TFR JSON</a>
-          &nbsp;•&nbsp;
-          <a href="https://tfr.faa.gov/tfr3/" target="_blank" rel="noopener noreferrer">Open FAA TFR site</a>
-        </div>
-      </div>
-    `;
-  }
-}
-
-// wire controls
-tfrSearch?.addEventListener("input", renderTfr);
-tfrType?.addEventListener("change", renderTfr);
   // =====================================================
   // ===================== HELISPOTS =====================
   // =====================================================
@@ -2044,7 +1766,6 @@ function typeEmoji(t){
   initChpMap();
   initEqMap();
   initWeatherMap();
-  initTfrMap();
   initHeliMap();
 
   // Initial render for helis
@@ -2055,14 +1776,12 @@ function typeEmoji(t){
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
-  fetchTfr();
 
   // ===== REFRESH CADENCE =====
   setInterval(fetchFire, 60000);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
-  setInterval(fetchTfr, 300000);
 // ================= HELISPOTS PASSWORD (tab-only, robust) =================
 (function heliAuthObserver(){
   const KEY = "heliAuth";
