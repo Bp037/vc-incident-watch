@@ -664,23 +664,7 @@
     </div>
 
     <!-- ================= HELISPOTS ================= -->
-    <script>
-(function protectHelispots(){
-  const KEY = "heliAuth";
-  const PASSWORD = "VC2025";
 
-  // already unlocked in this browser session
-  if (sessionStorage.getItem(KEY) === "yes") return;
-
-  const p = prompt("Enter password to access Helispots:");
-  if (p === PASSWORD) {
-    sessionStorage.setItem(KEY, "yes");
-  } else {
-    alert("Access denied");
-    // remove the helispots panel so it can't be viewed
-    document.getElementById("tab_heli")?.remove();
-  }
-})();
 </script>
     <div class="tabPanel" id="tab_heli">
       <section class="card" aria-label="Helispots">
@@ -1798,6 +1782,48 @@ function typeEmoji(t){
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
+  // ================= HELISPOTS PASSWORD (tab-only) =================
+(function heliAuthSetup(){
+  const KEY = "heliAuth";
+  const PASSWORD = "VC2025";
+
+  function ensureHeliAuth(){
+    if (sessionStorage.getItem(KEY) === "yes") return true;
+
+    const p = prompt("Enter password to access Helispots:");
+    if (p === PASSWORD) {
+      sessionStorage.setItem(KEY, "yes");
+      return true;
+    }
+    alert("Access denied");
+    return false;
+  }
+
+  // Hook into your existing tab switcher
+  const originalShowTab = window.showTab;
+  if (typeof originalShowTab === "function") {
+    window.showTab = function(tabId){
+      if (tabId === "tab_heli" && !ensureHeliAuth()) return;
+      return originalShowTab(tabId);
+    };
+  } else {
+    // Fallback: intercept clicks on tab buttons that use data-tab="tab_heli"
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-tab]");
+      if (!btn) return;
+      if (btn.getAttribute("data-tab") !== "tab_heli") return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!ensureHeliAuth()) return;
+
+      // manually activate panel
+      document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
+      document.getElementById("tab_heli")?.classList.add("active");
+    }, true);
+  }
+})();
 </script>
 </body>
 </html>
