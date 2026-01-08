@@ -1,9 +1,11 @@
+// /functions/api/tfr.js
 export async function onRequestGet() {
   const FAA_XML = "https://tfr.faa.gov/tfr3/export/xml";
 
   // hard timeout so the function never hangs into a CF 502
   const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 8000);
+  const timeoutMs = 8000;
+  const t = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(FAA_XML, {
@@ -20,17 +22,17 @@ export async function onRequestGet() {
 
     const xml = await res.text();
 
-    // Minimal XML parsing (no libs) for this known structure:
-    // <TFR><Date>...</Date><NOTAMID>...</NOTAMID><Facility>...</Facility><State>...</State><Type>...</Type>...</TFR>
+    // Parse each <TFR>...</TFR> block (simple + reliable for this feed)
     const blocks = xml.match(/<TFR>[\s\S]*?<\/TFR>/g) || [];
 
     const tfrs = blocks.map(b => {
       const get = (tag) => {
         const m = b.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-        return m ? decode(m[1].trim()) : "";
+        return m ? decodeXml(m[1].trim()) : "";
       };
 
-      const notamId = get("NOTAMID"); // ex: 5/0160
+      // Common tags in FAA export (some may be blank depending on record)
+      const notamId = get("NOTAMID");
       const safe = notamId ? notamId.replace("/", "_") : "";
 
       return {
@@ -44,23 +46,16 @@ export async function onRequestGet() {
       };
     });
 
-    // Best-effort SoCal bounds: CA + (ZLA/ZOA) tends to cover SoCal/CA centers
-    const socalFacilities = new Set(["ZLA", "ZOA"]);
-    const filtered = tfrs.filter(x => {
-      const st = (x.state || "").toUpperCase();
-      const fac = (x.facility || "").toUpperCase();
-      return st === "CA" || socalFacilities.has(fac);
-    });
-
+    // IMPORTANT: return ALL records (no filtering yet)
     return json({
       updatedAt: new Date().toISOString(),
-      count: filtered.length,
-      tfrs: filtered
+      count: tfrs.length,
+      tfrs
     }, 200);
 
   } catch (e) {
     const msg =
-      e?.name === "AbortError" ? "Upstream timeout (FAA)" : String(e?.message || e);
+      e?.name === "AbortError" ? `Upstream timeout (FAA) after ${timeoutMs}ms` : String(e?.message || e);
     return json({ error: msg }, 502);
   } finally {
     clearTimeout(t);
@@ -78,7 +73,7 @@ function json(obj, status = 200) {
   });
 }
 
-function decode(s) {
+function decodeXml(s) {
   // basic XML entity decode
   return String(s || "")
     .replace(/&amp;/g, "&")
