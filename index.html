@@ -203,7 +203,8 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-    #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:360px; background:#111; }
+#map_fire, #map_chp, #map_eq, #map_weather, #map_tfr, #map_heli { height:360px; background:#111; 
+  }
 
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
@@ -219,7 +220,8 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
-      #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:420px; }
+     #map_fire, #map_chp, #map_eq, #map_weather, #map_tfr, #map_heli { height:420px; 
+      
     }
 
     .tabPanel{ display:none; }
@@ -546,6 +548,7 @@
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
+        <button class="tabBtn" data-tab="tfr">TFR</button>
       </div>
     </div>
   </header>
@@ -663,7 +666,53 @@
       </section>
     </div>
 
-    <!-- ================= HELISPOTS ================= -->
+<!-- ================= TFR ================= -->
+<div class="tabPanel" id="tab_tfr">
+  <section class="card" aria-label="TFRs">
+    <div class="sectionBar">
+      <div class="left">
+        <div class="label">TFRs (SoCal)</div>
+        <div class="sub" id="updatedAt_tfr">Updated —</div>
+      </div>
+      <div class="right" id="activeCount_tfr">— TFRs</div>
+    </div>
+
+    <div class="controlsRow">
+      <input class="input" id="tfrSearch" placeholder="Search (NOTAM, city, event, type)..." />
+      <select class="select" id="tfrType">
+        <option value="all">Type: All</option>
+        <option value="HAZARDS">HAZARDS</option>
+        <option value="SECURITY">SECURITY</option>
+        <option value="VIP">VIP</option>
+        <option value="SPACE OPERATIONS">SPACE OPERATIONS</option>
+        <option value="SPECIAL">SPECIAL</option>
+        <option value="AIR SHOWS/SPORTS">AIR SHOWS/SPORTS</option>
+        <option value="UAS PUBLIC GATHERING">UAS PUBLIC GATHERING</option>
+      </select>
+    </div>
+
+    <div class="tblHead">
+      <div class="tbl" style="padding:0; grid-template-columns: 140px 140px 1fr 160px;">
+        <div>DATE</div>
+        <div>TYPE</div>
+        <div>DESCRIPTION</div>
+        <div>NOTAM</div>
+      </div>
+    </div>
+
+    <div id="rows_tfr"></div>
+    <div class="helper">Tap a row to open FAA details. “SoCal” filtering is best-effort; always verify official NOTAM/TFR details.</div>
+  </section>
+
+  <section class="card mapCard" aria-label="TFR Map">
+    <div class="mapTop">
+      <div class="label">Map</div>
+      <button class="btn" id="fitBtn_tfr" type="button">Fit Map</button>
+    </div>
+    <div id="map_tfr"></div>
+  </section>
+</div>
+  <!-- ================= HELISPOTS ================= -->
 
 </script>
     <div class="tabPanel" id="tab_heli">
@@ -761,6 +810,7 @@
     eq: document.getElementById("tab_eq"),
     weather: document.getElementById("tab_weather"),
     heli: document.getElementById("tab_heli"),
+    tfr: document.getElementById("tab_tfr"),
   };
 
   tabBtns.forEach(btn=>{
@@ -776,6 +826,7 @@
         if(key==="eq" && map_eq) map_eq.invalidateSize();
         if(key==="weather" && map_weather) map_weather.invalidateSize();
         if(key==="heli" && map_heli) map_heli.invalidateSize();
+        if(key==="tfr" && map_tfr) map_tfr.invalidateSize();
       }, 50);
     });
   });
@@ -1533,7 +1584,164 @@
       rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
     }
   }
+// =====================================================
+// ======================== TFR ========================
+// =====================================================
+let map_tfr, layer_tfr;
+let tfrItems = [];
 
+const rows_tfr = document.getElementById("rows_tfr");
+const updatedAt_tfr = document.getElementById("updatedAt_tfr");
+const activeCount_tfr = document.getElementById("activeCount_tfr");
+const tfrSearch = document.getElementById("tfrSearch");
+const tfrType = document.getElementById("tfrType");
+
+// Best-effort “SoCal counties” keyword filter
+const SOCAL_COUNTIES = [
+  "SAN LUIS OBISPO","SANTA BARBARA","VENTURA","LOS ANGELES","ORANGE",
+  "RIVERSIDE","SAN BERNARDINO","SAN DIEGO","IMPERIAL","KERN"
+];
+
+function initTfrMap(){
+  map_tfr = L.map("map_tfr", { zoomControl:true }).setView([34.1, -118.25], 7.5);
+  addBasemapToggle(map_tfr);
+  layer_tfr = L.layerGroup().addTo(map_tfr);
+  document.getElementById("fitBtn_tfr").addEventListener("click", fitTfrMap);
+}
+
+function fitTfrMap(){
+  const pts = [];
+  layer_tfr.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
+  if(pts.length) map_tfr.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+}
+
+// We usually don’t get geometry centers from the “list” feed reliably,
+// so we don’t draw shapes — we show a small “SoCal center” marker per item as a placeholder.
+// (Main action is opening FAA details link.)
+function tfrPlaceholderMarker(){
+  return L.marker([34.1, -118.25], { icon: markerIcon("🚫", "#ef4444") });
+}
+
+function normalizeTfr(x){
+  // Handles common keys seen in FAA exports + older packages
+  const notam = x?.notam_id || x?.notam || x?.notamId || "";
+  const type = x?.type || "";
+  const state = x?.state || "";
+  const facility = x?.facility || "";
+  const date = x?.date || x?.effective || "";
+  const description = x?.description || x?.desc || "";
+
+  const links = x?.links || {};
+  const details = links?.details || x?.details || "";
+  const zoom = links?.zoom || "";
+
+  return { notam, type, state, facility, date, description, details, zoom, raw:x };
+}
+
+function isSoCalTfr(t){
+  const st = (t.state || "").toUpperCase();
+  const desc = (t.description || "").toUpperCase();
+
+  // Prefer official state when present
+  if(st === "CA") return true;
+
+  // Fallback: look for “, CA” or SoCal county names
+  if(desc.includes(", CA")) return true;
+  return SOCAL_COUNTIES.some(c => desc.includes(c));
+}
+
+function renderTfr(){
+  const q = (tfrSearch.value || "").trim().toLowerCase();
+  const typ = (tfrType.value || "all").toUpperCase();
+
+  const filtered = tfrItems
+    .filter(isSoCalTfr)
+    .filter(t => (typ === "ALL" ? true : (String(t.type || "").toUpperCase() === typ)))
+    .filter(t => {
+      if(!q) return true;
+      const hay = `${t.notam} ${t.type} ${t.state} ${t.facility} ${t.date} ${t.description}`.toLowerCase();
+      return hay.includes(q);
+    });
+
+  activeCount_tfr.textContent = `${filtered.length} TFRs`;
+  rows_tfr.innerHTML = "";
+
+  if(!filtered.length){
+    rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No matching SoCal TFRs found.</div>`;
+    layer_tfr.clearLayers();
+    return;
+  }
+
+  // Map: placeholder pins (keeps the tab consistent with your layout)
+  layer_tfr.clearLayers();
+  filtered.forEach(t => {
+    const m = tfrPlaceholderMarker();
+    m.bindPopup(`
+      <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+        <div style="font-weight:900;margin-bottom:6px">${escapeHtml(t.type || "TFR")}</div>
+        <div style="color:rgba(0,0,0,.75);margin-bottom:6px">${escapeHtml(t.description || "")}</div>
+        <div style="font-size:12px;color:rgba(0,0,0,.75)">
+          <div><b>NOTAM:</b> ${escapeHtml(t.notam || "—")}</div>
+          ${t.details ? `<div style="margin-top:6px"><a href="${escapeHtml(t.details)}" target="_blank" rel="noopener noreferrer">Open FAA Details</a></div>` : ""}
+        </div>
+      </div>
+    `);
+    m.addTo(layer_tfr);
+  });
+
+  filtered.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "row";
+    const detailsLink = t.details || "";
+
+    row.innerHTML = `
+      <div class="tbl" style="grid-template-columns: 140px 140px 1fr 160px;">
+        <div class="date">${escapeHtml(t.date || "—")}</div>
+        <div class="mono" style="font-weight:900">${escapeHtml(t.type || "—")}</div>
+        <div class="addr">
+          <a href="${escapeHtml(detailsLink || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(t.description || "Open FAA Details")}</a>
+          <div class="typeText">${escapeHtml((t.state ? (t.state + " • ") : "") + (t.facility || ""))}</div>
+        </div>
+        <div class="mono">${escapeHtml(t.notam || "—")}</div>
+      </div>
+    `;
+
+    row.addEventListener("click", (ev)=>{
+      const tag = ev.target?.tagName?.toLowerCase?.() || "";
+      if(tag === "a" || tag === "button" || tag === "select" || tag === "input") return;
+      // Keep behavior consistent: scroll to map
+      document.getElementById("map_tfr").scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+
+    rows_tfr.appendChild(row);
+  });
+}
+
+async function fetchTfr(){
+  setStatus("wait","Refreshing…");
+  try{
+    const res = await fetch("/api/tfr", { cache:"no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Worker returns: { updatedAt, tfrs: [...] }
+    const raw = Array.isArray(data?.tfrs) ? data.tfrs : (Array.isArray(data) ? data : []);
+    tfrItems = raw.map(normalizeTfr);
+
+    updatedAt_tfr.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : `Updated ${new Date().toLocaleString()}`;
+    renderTfr();
+    setStatus("ok","Updated");
+  }catch(e){
+    console.error(e);
+    setStatus("err","Error");
+    updatedAt_tfr.textContent = "Updated —";
+    rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load TFRs right now.</div>`;
+    if(layer_tfr) layer_tfr.clearLayers();
+  }
+}
+
+tfrSearch?.addEventListener("input", renderTfr);
+tfrType?.addEventListener("change", renderTfr);
   // =====================================================
   // ===================== HELISPOTS =====================
   // =====================================================
@@ -1767,6 +1975,7 @@ function typeEmoji(t){
   initEqMap();
   initWeatherMap();
   initHeliMap();
+  initTfrMap();
 
   // Initial render for helis
   renderHeli();
@@ -1776,12 +1985,14 @@ function typeEmoji(t){
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
+  fetchTfr();
 
   // ===== REFRESH CADENCE =====
   setInterval(fetchFire, 60000);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
+  setInterval(fetchTfr, 300000);
 // ================= HELISPOTS PASSWORD (tab-only, robust) =================
 (function heliAuthObserver(){
   const KEY = "heliAuth";
