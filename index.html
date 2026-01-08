@@ -1782,10 +1782,25 @@ function typeEmoji(t){
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
-  // ================= HELISPOTS PASSWORD (tab-only) =================
-(function heliAuthSetup(){
+// ================= HELISPOTS PASSWORD (tab-only, robust) =================
+(function heliAuthObserver(){
   const KEY = "heliAuth";
   const PASSWORD = "VC2025";
+  const HELI_ID = "tab_heli";
+
+  let lastActiveId = null;
+
+  function panelIsActive(el){
+    if (!el) return false;
+    // common patterns: .active class OR not hidden/displayed
+    return el.classList.contains("active") || el.getAttribute("aria-hidden") === "false";
+  }
+
+  function setActivePanel(panelId){
+    // Generic fallback: toggle .active on panels
+    document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
+    document.getElementById(panelId)?.classList.add("active");
+  }
 
   function ensureHeliAuth(){
     if (sessionStorage.getItem(KEY) === "yes") return true;
@@ -1799,30 +1814,33 @@ function typeEmoji(t){
     return false;
   }
 
-  // Hook into your existing tab switcher
-  const originalShowTab = window.showTab;
-  if (typeof originalShowTab === "function") {
-    window.showTab = function(tabId){
-      if (tabId === "tab_heli" && !ensureHeliAuth()) return;
-      return originalShowTab(tabId);
-    };
-  } else {
-    // Fallback: intercept clicks on tab buttons that use data-tab="tab_heli"
-    document.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-tab]");
-      if (!btn) return;
-      if (btn.getAttribute("data-tab") !== "tab_heli") return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (!ensureHeliAuth()) return;
-
-      // manually activate panel
-      document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
-      document.getElementById("tab_heli")?.classList.add("active");
-    }, true);
+  // Track last active panel (so we can bounce back)
+  function updateLastActive(){
+    const active = Array.from(document.querySelectorAll(".tabPanel"))
+      .find(p => p.classList.contains("active"));
+    if (active?.id && active.id !== HELI_ID) lastActiveId = active.id;
   }
+  updateLastActive();
+
+  // Observe class changes on all tab panels
+  const panels = document.querySelectorAll(".tabPanel");
+  const obs = new MutationObserver(() => {
+    updateLastActive();
+
+    const heli = document.getElementById(HELI_ID);
+    if (!heli) return;
+
+    if (panelIsActive(heli)) {
+      // Helispots just became visible/active -> require auth
+      if (!ensureHeliAuth()) {
+        // kick back to last panel, otherwise default to fire tab if it exists
+        const fallback = lastActiveId || "tab_fire";
+        setActivePanel(fallback);
+      }
+    }
+  });
+
+  panels.forEach(p => obs.observe(p, { attributes: true, attributeFilter: ["class", "aria-hidden", "style"] }));
 })();
 </script>
 </body>
