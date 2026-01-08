@@ -1730,22 +1730,82 @@ function updateTfrMap(items){
 async function fetchTfr(){
   setStatus("wait","Refreshing…");
   try{
-    const res = await fetch("/api/tfr", { cache:"no-store" });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    // Direct FAA export (client-side)
+    const url = "https://tfr.faa.gov/tfr3/export/json?cb=" + Date.now();
+    const res = await fetch(url, { cache:"no-store" });
+    const text = await res.text();
 
-    tfrList = Array.isArray(data?.tfrs) ? data.tfrs : (Array.isArray(data) ? data : []);
-    updatedAt_tfr.textContent = data?.updatedAt
-      ? `Updated ${formatUpdatedLikeVCFD(data.updatedAt)}`
-      : `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
+    // Sometimes it returns HTML wrapper; extract JSON array if needed
+    let jsonStr = text.trim();
+    if (jsonStr.startsWith("<") || !jsonStr.startsWith("[")) {
+      const a = jsonStr.indexOf("[");
+      const b = jsonStr.lastIndexOf("]");
+      if (a === -1 || b === -1 || b <= a) throw new Error("FAA did not return JSON array");
+      jsonStr = jsonStr.slice(a, b + 1);
+    }
 
+    const raw = JSON.parse(jsonStr);
+    if(!Array.isArray(raw)) throw new Error("FAA JSON not an array");
+
+    // --- SoCal filter (best-effort) ---
+    const SOCAL = { minLat:32.0, maxLat:35.8, minLon:-121.5, maxLon:-114.0 };
+    const inBbox = (lat, lon) =>
+      lat >= SOCAL.minLat && lat <= SOCAL.maxLat && lon >= SOCAL.minLon && lon <= SOCAL.maxLon;
+
+    const pick = (o, keys) => {
+      for (const k of keys) if (o && o[k] != null && o[k] !== "") return o[k];
+      return null;
+    };
+    const toNum = (v) => (v == null ? null : Number(v));
+
+    tfrList = raw.map(t=>{
+      const notam = pick(t, ["notam_id","notamId","NOTAMID","NOTAM_ID"]) || "";
+      const id = String(notam).replace("/", "_");
+      const url = notam ? `https://tfr.faa.gov/tfr3/?page=detail_${id}` : "https://tfr.faa.gov/tfr3/";
+
+      const lat = toNum(pick(t, ["lat","latitude","center_lat","centerLatitude","CENT_LAT"]));
+      const lon = toNum(pick(t, ["lon","lng","longitude","center_lon","centerLongitude","CENT_LON"]));
+
+      const type = pick(t, ["type","Type","tfr_type","TFR_TYPE"]) || "";
+      const facility = pick(t, ["facility","Facility","artcc","ARTCC"]) || "";
+      const state = pick(t, ["state","State","STATE"]) || "";
+
+      return {
+        notam_id: notam,
+        type,
+        facility,
+        state,
+        desc: pick(t, ["description","Description","desc"]) || "",
+        date: pick(t, ["date","Date","issued"]) || "—",
+        lat, lon,
+        url
+      };
+    })
+    .filter(x=>{
+      // prefer bbox if coords exist; otherwise keep CA/ZLA as fallback
+      const bboxOk = (x.lat!=null && x.lon!=null) ? inBbox(x.lat, x.lon) : false;
+      const caOk = String(x.state||"").toUpperCase() === "CA";
+      const zlaOk = String(x.facility||"").toUpperCase().includes("ZLA");
+      return bboxOk || caOk || zlaOk;
+    });
+
+    updatedAt_tfr.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
     renderTfr();
     setStatus("ok","Updated");
   }catch(e){
-    console.error(e);
+    console.error("TFR fetch failed:", e);
     setStatus("err","Error");
     updatedAt_tfr.textContent = "Updated —";
-    if(rows_tfr) rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load TFRs right now.</div>`;
+    rows_tfr.innerHTML = `
+      <div style="padding:16px;color:rgba(255,255,255,.7)">
+        Could not load TFRs (FAA blocked browser request or CORS).
+        <div style="margin-top:8px">
+          <a href="https://tfr.faa.gov/tfr3/export/json" target="_blank" rel="noopener noreferrer">Open FAA TFR JSON</a>
+          &nbsp;•&nbsp;
+          <a href="https://tfr.faa.gov/tfr3/" target="_blank" rel="noopener noreferrer">Open FAA TFR site</a>
+        </div>
+      </div>
+    `;
   }
 }
 
