@@ -1493,7 +1493,7 @@
   const heliPrev = document.getElementById("heliPrev");
   const heliNext = document.getElementById("heliNext");
   const heliPagerText = document.getElementById("heliPagerText");
-  const PAGE_SIZE = 25;
+  const PAGE_SIZE = 15;
   let heliPage = 1;
 
   // Combined dataset from your screenshots (Helispot Index + VCFD Snorkel Sites list)
@@ -1561,11 +1561,11 @@
     if(t === "LZ Medivac") return "medevac";
     return "snorkel";
   }
-  function typeEmoji(t){
-    if(t === "Helispot") return "🚁";
-    if(t === "LZ Medivac") return "🚑";
-    return "⚠️";
-  }
+function typeEmoji(t){
+  if(t === "Helispot") return "🚁";
+  if(t === "LZ Medivac") return "🚑";
+  return "🤿"; // snorkel sites
+}
   function typeColor(t){
     if(t === "Helispot") return "#ef4444";
     if(t === "LZ Medivac") return "#a855f7";
