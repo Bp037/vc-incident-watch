@@ -1,84 +1,92 @@
-// /functions/api/tfr.js
+// functions/api/tfr.js
 export async function onRequestGet() {
   const FAA_XML = "https://tfr.faa.gov/tfr3/export/xml";
 
-  // hard timeout so the function never hangs into a CF 502
-  const controller = new AbortController();
-  const timeoutMs = 8000;
-  const t = setTimeout(() => controller.abort(), timeoutMs);
+  const json = (obj, status = 200) =>
+    new Response(JSON.stringify(obj), {
+      status,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    });
 
   try {
     const res = await fetch(FAA_XML, {
-      signal: controller.signal,
       headers: {
-        "Accept": "application/xml,text/xml,*/*",
-        "User-Agent": "vc-incident-watch/1.0"
-      }
+        // Some endpoints behave better with explicit headers
+        "accept": "application/xml,text/xml;q=0.9,*/*;q=0.8",
+        "user-agent": "vcwatch/1.0 (+https://vcwatch.org)",
+      },
+      cf: { cacheTtl: 0, cacheEverything: false },
     });
 
-    if (!res.ok) {
-      return json({ error: `FAA HTTP ${res.status}` }, 502);
+    const text = await res.text();
+
+    // If the upstream returns HTML (common cause of "Unexpected token <")
+    if (!res.ok || /^\s*<!doctype/i.test(text) || /^\s*<html/i.test(text)) {
+      return json(
+        {
+          updatedAt: new Date().toISOString(),
+          count: 0,
+          tfrs: [],
+          error: `FAA upstream returned ${res.status} ${res.statusText}`,
+        },
+        502
+      );
     }
 
-    const xml = await res.text();
+    const getTag = (block, tag) => {
+      const re = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i");
+      const m = block.match(re);
+      return m ? m[1].trim() : "";
+    };
 
-    // Parse each <TFR>...</TFR> block (simple + reliable for this feed)
-    const blocks = xml.match(/<TFR>[\s\S]*?<\/TFR>/g) || [];
+    // Extract each <TFR>...</TFR> block
+    const blocks = [...text.matchAll(/<TFR>([\s\S]*?)<\/TFR>/gi)].map(m => m[1]);
 
-    const tfrs = blocks.map(b => {
-      const get = (tag) => {
-        const m = b.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-        return m ? decodeXml(m[1].trim()) : "";
-      };
+    const tfrsAll = blocks.map(b => {
+      const date = getTag(b, "Date");
+      const notam = getTag(b, "NOTAMID");
+      const facility = getTag(b, "Facility");
+      const state = getTag(b, "State");
+      const type = getTag(b, "Type");
+      const description = getTag(b, "Description");
 
-      // Common tags in FAA export (some may be blank depending on record)
-      const notamId = get("NOTAMID");
-      const safe = notamId ? notamId.replace("/", "_") : "";
+      // Build useful links from NOTAMID (e.g., "5/0160" -> "detail_5_0160")
+      const id = (notam || "").replace("/", "_");
+      const details = id ? `https://tfr.faa.gov/tfr3/?page=detail_${id}` : "";
+      const xml = id ? `https://tfr.faa.gov/tfr3/download/detail_${id}.xml` : "";
+      const aixm = id ? `https://tfr.faa.gov/tfr3/download/detail_${id}.aixm` : "";
 
       return {
-        date: get("Date"),
-        notam_id: notamId,
-        facility: get("Facility"),
-        state: get("State"),
-        type: get("Type"),
-        desc: get("Descr") || get("Description") || "",
-        url: safe ? `https://tfr.faa.gov/tfr3/?page=detail_${safe}` : ""
+        date,
+        notam,
+        facility,
+        state,
+        type,
+        description,
+        links: { details, xml, aixm },
       };
     });
 
-    // IMPORTANT: return ALL records (no filtering yet)
+    // ✅ Keep it simple & reliable: return all CA TFRs (client can filter to "SoCal" if desired)
+    const tfrs = tfrsAll.filter(x => (x.state || "").toUpperCase() === "CA");
+
     return json({
       updatedAt: new Date().toISOString(),
       count: tfrs.length,
-      tfrs
-    }, 200);
-
+      tfrs,
+    });
   } catch (e) {
-    const msg =
-      e?.name === "AbortError" ? `Upstream timeout (FAA) after ${timeoutMs}ms` : String(e?.message || e);
-    return json({ error: msg }, 502);
-  } finally {
-    clearTimeout(t);
+    return json(
+      {
+        updatedAt: new Date().toISOString(),
+        count: 0,
+        tfrs: [],
+        error: String(e?.message || e),
+      },
+      502
+    );
   }
-}
-
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-      "access-control-allow-origin": "*"
-    }
-  });
-}
-
-function decodeXml(s) {
-  // basic XML entity decode
-  return String(s || "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
 }
