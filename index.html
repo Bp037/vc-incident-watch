@@ -203,8 +203,7 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-#map_fire, #map_chp, #map_eq, #map_weather, #map_tfr, #map_heli { height:360px; background:#111; 
-  }
+    #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:360px; background:#111; }
 
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
@@ -220,8 +219,7 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
-     #map_fire, #map_chp, #map_eq, #map_weather, #map_tfr, #map_heli { height:420px; 
-      
+      #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:420px; }
     }
 
     .tabPanel{ display:none; }
@@ -548,7 +546,6 @@
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
-        <button class="tabBtn" data-tab="tfr">TFR</button>
       </div>
     </div>
   </header>
@@ -666,53 +663,7 @@
       </section>
     </div>
 
-<!-- ================= TFR ================= -->
-<div class="tabPanel" id="tab_tfr">
-  <section class="card" aria-label="TFRs">
-    <div class="sectionBar">
-      <div class="left">
-        <div class="label">TFRs (SoCal)</div>
-        <div class="sub" id="updatedAt_tfr">Updated —</div>
-      </div>
-      <div class="right" id="activeCount_tfr">— TFRs</div>
-    </div>
-
-    <div class="controlsRow">
-      <input class="input" id="tfrSearch" placeholder="Search (NOTAM, city, event, type)..." />
-      <select class="select" id="tfrType">
-        <option value="all">Type: All</option>
-        <option value="HAZARDS">HAZARDS</option>
-        <option value="SECURITY">SECURITY</option>
-        <option value="VIP">VIP</option>
-        <option value="SPACE OPERATIONS">SPACE OPERATIONS</option>
-        <option value="SPECIAL">SPECIAL</option>
-        <option value="AIR SHOWS/SPORTS">AIR SHOWS/SPORTS</option>
-        <option value="UAS PUBLIC GATHERING">UAS PUBLIC GATHERING</option>
-      </select>
-    </div>
-
-    <div class="tblHead">
-      <div class="tbl" style="padding:0; grid-template-columns: 140px 140px 1fr 160px;">
-        <div>DATE</div>
-        <div>TYPE</div>
-        <div>DESCRIPTION</div>
-        <div>NOTAM</div>
-      </div>
-    </div>
-
-    <div id="rows_tfr"></div>
-    <div class="helper">Tap a row to open FAA details. “SoCal” filtering is best-effort; always verify official NOTAM/TFR details.</div>
-  </section>
-
-  <section class="card mapCard" aria-label="TFR Map">
-    <div class="mapTop">
-      <div class="label">Map</div>
-      <button class="btn" id="fitBtn_tfr" type="button">Fit Map</button>
-    </div>
-    <div id="map_tfr"></div>
-  </section>
-</div>
-  <!-- ================= HELISPOTS ================= -->
+    <!-- ================= HELISPOTS ================= -->
 
 </script>
     <div class="tabPanel" id="tab_heli">
@@ -810,7 +761,6 @@
     eq: document.getElementById("tab_eq"),
     weather: document.getElementById("tab_weather"),
     heli: document.getElementById("tab_heli"),
-    tfr: document.getElementById("tab_tfr"),
   };
 
   tabBtns.forEach(btn=>{
@@ -826,7 +776,6 @@
         if(key==="eq" && map_eq) map_eq.invalidateSize();
         if(key==="weather" && map_weather) map_weather.invalidateSize();
         if(key==="heli" && map_heli) map_heli.invalidateSize();
-        if(key==="tfr" && map_tfr) map_tfr.invalidateSize();
       }, 50);
     });
   });
@@ -1584,122 +1533,7 @@
       rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
     }
   }
-// =====================================================
-// ======================== TFR (front-end) ========================
-let tfrList = [];
 
-const rows_tfr = document.getElementById("rows_tfr");
-const updatedAt_tfr = document.getElementById("updatedAt_tfr");
-const activeCount_tfr = document.getElementById("activeCount_tfr");
-const tfrSearch = document.getElementById("tfrSearch");
-const tfrType = document.getElementById("tfrType");
-
-function tfrEmoji(type){
-  const t = (type||"").toUpperCase();
-  if(t.includes("SEC")) return "🛑";
-  if(t.includes("VIP")) return "⭐";
-  if(t.includes("SPACE")) return "🚀";
-  if(t.includes("AIR")) return "✈️";
-  if(t.includes("UAS")) return "🛰️";
-  return "⚠️";
-}
-
-function getTfrFiltered(){
-  const q = (tfrSearch?.value || "").trim().toLowerCase();
-  const typ = tfrType?.value || "all";
-
-  return (tfrList || [])
-    .filter(x => {
-      if (typ === "all") return true;
-      return String(x.type || "").toUpperCase() === String(typ).toUpperCase();
-    })
-    .filter(x => {
-      if(!q) return true;
-      const hay = [
-        x.notam_id, x.type, x.desc, x.description, x.facility, x.state, x.city
-      ].filter(Boolean).join(" ").toLowerCase();
-      return hay.includes(q);
-    });
-}
-
-function renderTfr(){
-  if(!rows_tfr) return;
-
-  const items = getTfrFiltered();
-  activeCount_tfr.textContent = `${items.length} TFRs`;
-  rows_tfr.innerHTML = "";
-
-  if(!items.length){
-    rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No matching TFRs found.</div>`;
-    return;
-  }
-
-  items.forEach(x=>{
-    const notam = x.notam_id || x.NOTAMID || "TFR";
-    const type  = x.type || x.Type || "";
-    const desc  = x.desc || x.description || x.Descr || "";
-    const date  = x.date || x.Date || "";
-    const url   = x.url || x.detailsUrl || "";
-
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `
-      <div class="tbl" style="grid-template-columns: 140px 64px 1fr 220px 140px;">
-        <div class="date">${escapeHtml(date || "—")}</div>
-        <div class="icon">${tfrEmoji(type)}</div>
-        <div class="addr">
-          ${url
-            ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(notam)}</a>`
-            : `<div style="font-weight:800;color:rgba(255,255,255,.9)">${escapeHtml(notam)}</div>`
-          }
-          <div class="typeText">${escapeHtml(type)}</div>
-          <div class="typeText" style="opacity:.85;margin-top:4px">${escapeHtml(desc)}</div>
-        </div>
-        <div class="mono">${escapeHtml((x.facility || "") + " " + (x.state || "")) || "—"}</div>
-        <div class="desktopStatus"><span class="chip slate">View</span></div>
-      </div>
-    `;
-
-    row.addEventListener("click", (ev)=>{
-      const tag = ev.target?.tagName?.toLowerCase?.() || "";
-      if(tag === "a" || tag === "button" || tag === "select" || tag === "input") return;
-      if(url) window.open(url, "_blank", "noopener,noreferrer");
-    });
-
-    rows_tfr.appendChild(row);
-  });
-}
-
-async function fetchTfr(){
-  setStatus("wait","Refreshing…");
-  try{
-    const res = await fetch("/api/tfr", { cache:"no-store" });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    // ✅ support multiple shapes
-    tfrList = Array.isArray(data) ? data : (Array.isArray(data?.tfrs) ? data.tfrs : []);
-    const count = data?.count ?? tfrList.length;
-
-    updatedAt_tfr.textContent = data?.updatedAt
-      ? `Updated ${formatUpdatedLikeVCFD(data.updatedAt)}`
-      : `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
-
-    // quick sanity: show count even if filtering removes items
-    activeCount_tfr.textContent = `${count} TFRs`;
-
-    renderTfr();
-    setStatus("ok","Updated");
-  }catch(e){
-    console.error(e);
-    setStatus("err","Error");
-    updatedAt_tfr.textContent = "Updated —";
-    rows_tfr.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load TFRs right now.</div>`;
-  }
-}
-
-tfrSearch?.addEventListener("input", renderTfr);
-tfrType?.addEventListener("change", renderTfr);
   // =====================================================
   // ===================== HELISPOTS =====================
   // =====================================================
@@ -1933,7 +1767,6 @@ function typeEmoji(t){
   initEqMap();
   initWeatherMap();
   initHeliMap();
-  initTfrMap();
 
   // Initial render for helis
   renderHeli();
@@ -1943,14 +1776,12 @@ function typeEmoji(t){
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
-  fetchTfr();
 
   // ===== REFRESH CADENCE =====
   setInterval(fetchFire, 60000);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
-  setInterval(fetchTfr, 300000);
 // ================= HELISPOTS PASSWORD (tab-only, robust) =================
 (function heliAuthObserver(){
   const KEY = "heliAuth";
