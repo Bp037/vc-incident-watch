@@ -203,7 +203,8 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-    #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:360px; background:#111; }
+   #map_fire, #map_chp, #map_eq, #map_weather, #map_heli, #map_tfr { height:360px; background:#111; 
+    }
 
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
@@ -219,9 +220,8 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
-      #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:420px; }
-    }
-
+     #map_fire, #map_chp, #map_eq, #map_weather, #map_heli, #map_tfr { height:420px; 
+      }
     .tabPanel{ display:none; }
     .tabPanel.active{ display:block; }
 
@@ -545,6 +545,7 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
+        <button class="tabBtn" data-tab="tfr">TFR</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
     </div>
@@ -662,7 +663,43 @@
         <div id="map_weather"></div>
       </section>
     </div>
+<!-- ================= TFR ================= -->
+<div class="tabPanel" id="tab_tfr">
+  <section class="card" aria-label="TFRs">
+    <div class="sectionBar">
+      <div class="left">
+        <div class="label">TFRs (SoCal)</div>
+        <div class="sub" id="updatedAt_tfr">Updated —</div>
+      </div>
+      <div class="right" id="activeCount_tfr">— TFRs</div>
+    </div>
 
+    <div class="controlsRow">
+      <input class="input" id="tfrSearch" placeholder="Search (NOTAM, city, event, type)..." />
+      <select class="select" id="tfrType">
+        <option value="all">Type: All</option>
+        <option value="SECURITY">SECURITY</option>
+        <option value="VIP">VIP</option>
+        <option value="HAZARDS">HAZARDS</option>
+        <option value="SPACE OPERATIONS">SPACE OPERATIONS</option>
+        <option value="AIRSHOW">AIRSHOW</option>
+      </select>
+    </div>
+
+    <div id="rows_tfr"></div>
+    <div class="helper">
+      Tap a row to open FAA details. Always verify official NOTAM/TFR text.
+    </div>
+  </section>
+
+  <section class="card mapCard" aria-label="TFR Map">
+    <div class="mapTop">
+      <div class="label">Map</div>
+      <button class="btn" id="fitBtn_tfr" type="button">Fit Map</button>
+    </div>
+    <div id="map_tfr"></div>
+  </section>
+</div>
     <!-- ================= HELISPOTS ================= -->
 
 </script>
@@ -760,6 +797,7 @@
     chp: document.getElementById("tab_chp"),
     eq: document.getElementById("tab_eq"),
     weather: document.getElementById("tab_weather"),
+    tfr: document.getElementById("tab_tfr"),
     heli: document.getElementById("tab_heli"),
   };
 
@@ -775,6 +813,7 @@
         if(key==="chp" && map_chp) map_chp.invalidateSize();
         if(key==="eq" && map_eq) map_eq.invalidateSize();
         if(key==="weather" && map_weather) map_weather.invalidateSize();
+        if(key==="tfr" && map_tfr) map_tfr.invalidateSize();
         if(key==="heli" && map_heli) map_heli.invalidateSize();
       }, 50);
     });
