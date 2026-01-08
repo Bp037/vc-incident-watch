@@ -203,7 +203,7 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-    #map_fire, #map_chp, #map_eq, #map_weather, #map_helis{ height:360px; background:#111; }
+    #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:360px; background:#111; }
 
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
@@ -219,7 +219,7 @@
         font-size:12px; color:rgba(255,255,255,.82);
         white-space:normal;
       }
-      #map_fire, #map_chp, #map_eq, #map_weather, #map_helis{ height:420px; }
+      #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:420px; }
     }
 
     .tabPanel{ display:none; }
@@ -306,7 +306,7 @@
     /* Earthquakes: responsive table */
     .eqTbl {
       display: grid;
-      grid-template-columns: 120px auto 1fr;
+      grid-template-columns: 120px auto 1fr; /* date/time | magnitude | location */
       gap: 12px;
       align-items: center;
     }
@@ -319,7 +319,6 @@
       .eqTbl .typeText{ white-space:normal; overflow:visible; text-overflow:unset; }
     }
     .eqPin{ filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
-
     .eq-row {
       display: grid;
       grid-template-columns: 120px auto 1fr;
@@ -333,11 +332,7 @@
       line-height: 1.1;
     }
     .eq-date { font-size: 0.95rem; }
-    .eq-time {
-      font-size: 0.9rem;
-      opacity: 0.8;
-      margin-top: 4px;
-    }
+    .eq-time { font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
     .eq-mag {
       font-weight: 800;
       font-size: 0.9rem;
@@ -357,175 +352,127 @@
       border-bottom: 1px solid rgba(255,255,255,0.15);
     }
 
-    /* ===== Mobile layout for Weather rows (SCOPED TO WEATHER ONLY) ===== */
-    @media (max-width: 720px) {
-      #tab_weather .tbl {
+    /* IMPORTANT FIX: don't hide icons for Fire/Medical on mobile.
+       Only hide the icon in Weather rows (if desired). */
+    @media (max-width: 720px){
+      /* keep your mobile simplification, but DO NOT hide .icon globally */
+      .tbl {
         grid-template-columns: 1fr !important;
         row-gap: 10px;
       }
-      #tab_weather .tbl .date { font-size: 13px; opacity: 0.85; }
-      #tab_weather .tbl .icon { display: none; } /* only hide icons in Weather */
-      #tab_weather .tbl .addr { font-size: 14px; line-height: 1.35; }
-      #tab_weather .tbl .mono { font-size: 12px; opacity: 0.75; }
-      #tab_weather .tbl .desktopStatus { justify-self: start; margin-top: 6px; }
-      #tab_weather .row { padding: 12px 14px; }
+      .tbl .date { font-size: 13px; opacity: 0.85; }
+      .tbl .addr { font-size: 14px; line-height: 1.35; }
+      .tbl .mono { font-size: 12px; opacity: 0.75; }
+      .tbl .desktopStatus { justify-self: start; margin-top: 6px; }
+      .row { padding: 12px 14px; }
+
+      /* Weather-only icon hide */
+      #tab_weather .tbl .icon { display:none; }
     }
 
-    /* ===================== HELISPOTS ===================== */
-    .helisControls{
-      display:flex; gap:10px; flex-wrap:wrap;
-      padding:12px 16px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.03);
+    /* Helispots controls + table */
+    .controlsRow{
+      display:flex;
+      gap:10px;
       align-items:center;
-    }
-    .helisSearch{
-      flex: 1 1 220px;
-      display:flex; gap:10px; align-items:center;
-      border:1px solid rgba(255,255,255,.14);
+      padding:12px 16px;
+      border-bottom:1px solid rgba(255,255,255,.08);
       background:rgba(0,0,0,.25);
-      border-radius:12px;
-      padding:10px 12px;
+      flex-wrap:wrap;
     }
-    .helisSearch input{
-      width:100%;
-      border:0; outline:none;
-      background:transparent;
+    .input, .select{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
       color:rgba(255,255,255,.92);
-      font-size:14px;
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:13px;
+      outline:none;
     }
-    .helisSelect{
-      display:flex; gap:8px; align-items:center;
+    .input{ flex:1 1 320px; min-width:240px; }
+    .select{ width:180px; }
+
+    .heliHead{
+      display:grid;
+      grid-template-columns: 1fr 160px 220px;
+      gap:10px;
+      align-items:center;
+      padding:10px 16px;
+      color:rgba(255,255,255,.72);
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      background:#060607;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .heliRow{
+      display:grid;
+      grid-template-columns: 1fr 160px 220px;
+      gap:10px;
+      align-items:center;
+      padding:12px 16px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 -1px 0 var(--greenLine);
+      cursor:pointer;
+    }
+    .heliRow:nth-child(odd){ background:var(--rowA); }
+    .heliRow:nth-child(even){ background:var(--rowB); }
+
+    .heliName{ font-weight:800; font-size:13px; }
+    .heliTypeChip{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:800;
       border:1px solid rgba(255,255,255,.14);
-      background:rgba(0,0,0,.25);
-      border-radius:12px;
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.95);
+      white-space:nowrap;
+      width:max-content;
+    }
+    .heliTypeChip.helispot{ border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.12); }
+    .heliTypeChip.medevac{ border-color:rgba(168,85,247,.35); background:rgba(168,85,247,.12); }
+    .heliTypeChip.snorkel{ border-color:rgba(234,179,8,.35); background:rgba(234,179,8,.12); }
+
+    .heliLoc a{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size:12px;
+      color:var(--link);
+      white-space:nowrap;
+    }
+
+    .pager{
+      display:flex; gap:8px; align-items:center; justify-content:space-between;
+      padding:12px 16px;
+      border-top:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.02);
+      flex-wrap:wrap;
+    }
+    .pager .left{ color:rgba(255,255,255,.7); font-size:12px; }
+    .pager .right{ display:flex; gap:8px; align-items:center; }
+    .pager .pill{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.92);
+      border-radius:999px;
       padding:8px 10px;
       font-size:12px;
-      color:rgba(255,255,255,.85);
-    }
-    .helisSelect select{
-      border:0; outline:none;
-      background:transparent;
-      color:rgba(255,255,255,.92);
       font-weight:800;
-      font-size:12px;
+      cursor:pointer;
     }
+    .pager .pill:disabled{ opacity:.45; cursor:not-allowed; }
 
-    .helisGrid{
-      display:grid;
-      grid-template-columns: 1.05fr 1fr;
-      gap:14px;
-      padding:14px 16px 16px;
+    @media (max-width: 760px){
+      .heliHead{ display:none; }
+      .heliRow{
+        grid-template-columns: 1fr;
+        gap:8px;
+        border-radius:14px;
+        margin:10px 12px;
+        padding:12px;
+        border:1px solid rgba(255,255,255,.10);
+      }
+      .heliLoc a{ white-space:normal; }
     }
-    .helisTableWrap{
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:14px;
-      overflow:auto;
-    }
-    table.helisTable{
-      width:100%;
-      border-collapse:collapse;
-      min-width:560px;
-      background: rgba(0,0,0,.20);
-    }
-    .helisTable thead th{
-      text-align:left;
-      font-size:11px;
-      letter-spacing:.14em;
-      text-transform:uppercase;
-      color:rgba(255,255,255,.72);
-      padding:10px 12px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      background:#060607;
-      white-space:nowrap;
-    }
-    .helisTable tbody td{
-      padding:11px 12px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      vertical-align:middle;
-      font-size:13px;
-    }
-    .helisTable tbody tr{ cursor:pointer; }
-    .helisTable tbody tr:nth-child(odd){ background:rgba(255,255,255,.02); }
-    .helisTable tbody tr:nth-child(even){ background:rgba(255,255,255,.04); }
-    .helisTable tbody tr:hover{ background:rgba(255,255,255,.06); }
-    .helisTable tbody tr.active{ background: rgba(255,0,0,.18); }
-    .right{ text-align:right; }
-    .center{ text-align:center; }
-
-    .typePill{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:5px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:850;
-      border:1px solid rgba(255,255,255,.16);
-      background:rgba(255,255,255,.06);
-      white-space:nowrap;
-    }
-    .pill-helispot{ color:#e7e7e7; }
-    .pill-medevac{ color:#ffb6b6; }
-    .pill-snorkel{ color:#ffe08a; }
-
-    .emoji-pin{ background:transparent; border:none; }
-
-    @media (max-width: 900px){
-      .helisGrid{ grid-template-columns: 1fr; }
-      table.helisTable{ min-width: 520px; }
-    }
-
-    /* ===================== PASSWORD MODAL ===================== */
-    .modalOverlay{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.70);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-      z-index:9999;
-    }
-    .modalOverlay.show{ display:flex; }
-    .modal{
-      width:min(520px, 100%);
-      background: rgba(16,16,18,.92);
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:16px;
-      box-shadow: 0 20px 50px rgba(0,0,0,.65);
-      overflow:hidden;
-    }
-    .modalHead{
-      padding:14px 16px;
-      background: rgba(255,255,255,.04);
-      border-bottom:1px solid rgba(255,255,255,.10);
-      display:flex; justify-content:space-between; align-items:center;
-      gap:10px;
-    }
-    .modalHead .t{ font-weight:900; }
-    .modalBody{ padding:16px; }
-    .modalBody p{ margin:0 0 12px; color: rgba(255,255,255,.78); font-size:13px; line-height:1.35; }
-    .modalRow{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-    }
-    .modalRow input{
-      flex:1 1 240px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.25);
-      color: rgba(255,255,255,.92);
-      outline:none;
-      font-size:14px;
-    }
-    .modalFoot{
-      padding:12px 16px;
-      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
-      gap:10px;
-      border-top:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.03);
-    }
-    .miniNote{ color: rgba(255,255,255,.55); font-size:12px; }
-    .errText{ color:#fb7185; font-size:12px; margin-top:10px; display:none; }
-    .errText.show{ display:block; }
   </style>
 </head>
 
@@ -548,7 +495,7 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
-        <button class="tabBtn" data-tab="helis">Helispots</button>
+        <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
     </div>
   </header>
@@ -666,109 +613,73 @@
       </section>
     </div>
 
-    <!-- ================= HELISPOTS (PASSWORD-GATED) ================= -->
-    <div class="tabPanel" id="tab_helis">
+    <!-- ================= HELISPOTS ================= -->
+    <div class="tabPanel" id="tab_heli">
       <section class="card" aria-label="Helispots">
         <div class="sectionBar">
           <div class="left">
             <div class="label">Helispots</div>
-            <div class="sub">Known helicopter landing zones and medevac LZs in Ventura County</div>
+            <div class="sub">Helispots, Medivac LZs, and Snorkel Sites (Ventura County)</div>
           </div>
           <div class="right">
-            <span id="activeCount_helis">— sites</span>
-            <span class="chip slate" id="updatedAt_helis">Manual</span>
+            <span id="heliCount">— sites</span>
           </div>
         </div>
 
-        <div class="helisControls">
-          <div class="helisSearch">
-            <span style="opacity:.8">🔎</span>
-            <input id="helisSearch" type="search" placeholder="Search (name or number)..." autocomplete="off" />
-          </div>
-
-          <label class="helisSelect">
-            <span>Type:</span>
-            <select id="helisType">
-              <option value="all">All</option>
-              <option value="helispot">Helispot</option>
-              <option value="medevac">Medevac</option>
-              <option value="snorkel">Snorkel</option>
-            </select>
-          </label>
-
-          <label class="helisSelect">
-            <span>Night Ops:</span>
-            <select id="helisNight">
-              <option value="all">All</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-            </select>
-          </label>
+        <div class="controlsRow">
+          <input class="input" id="heliSearch" placeholder="Search (name or number)..." />
+          <select class="select" id="heliType">
+            <option value="all">Type: All</option>
+            <option value="Helispot">Helispot</option>
+            <option value="LZ Medivac">LZ Medivac</option>
+            <option value="Snorkel Site">Snorkel Site</option>
+          </select>
         </div>
 
-        <div class="helisGrid">
-          <div class="helisTableWrap">
-            <table class="helisTable">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th class="right">Location (Lat, Lon)</th>
-                  <th class="center">Batt.</th>
-                </tr>
-              </thead>
-              <tbody id="rows_helis"></tbody>
-            </table>
-          </div>
+        <div class="heliHead">
+          <div>Name</div>
+          <div>Type</div>
+          <div>Location (Lat, Lon)</div>
+        </div>
 
-          <div class="card" style="margin:0; border-radius:14px; overflow:hidden;">
-            <div class="mapTop">
-              <div class="label">Map</div>
-              <button class="btn" id="fitBtn_helis" type="button">Fit Map</button>
-            </div>
-            <div id="map_helis"></div>
+        <div id="rows_heli"></div>
+
+        <div class="pager">
+          <div class="left" id="heliPagerText">—</div>
+          <div class="right">
+            <button class="pill" id="heliPrev" type="button">Prev</button>
+            <button class="pill" id="heliNext" type="button">Next</button>
           </div>
         </div>
 
-        <div class="helper">Tap a row to zoom on the map. (Source: VCFD Helispot Manual.)</div>
+        <div class="helper">Tap a row to zoom on the map. Location opens Google Maps.</div>
+      </section>
+
+      <section class="card mapCard" aria-label="Helispots Map">
+        <div class="mapTop">
+          <div class="label">Map</div>
+          <button class="btn" id="fitBtn_heli" type="button">Fit Map</button>
+        </div>
+        <div id="map_heli"></div>
       </section>
     </div>
   </main>
-
-  <!-- PASSWORD MODAL (client-side gate) -->
-  <div class="modalOverlay" id="heliModal">
-    <div class="modal" role="dialog" aria-modal="true" aria-label="Helispots Access">
-      <div class="modalHead">
-        <div class="t">Helispots Access</div>
-        <button class="btn" id="heliModalClose" type="button">Close</button>
-      </div>
-      <div class="modalBody">
-        <p>This tab is restricted. Enter the password to view Helispots.</p>
-        <div class="modalRow">
-          <input id="heliPass" type="password" placeholder="Password" />
-          <button class="btn" id="heliPassBtn" type="button">Unlock</button>
-        </div>
-        <div class="errText" id="heliErr">Wrong password.</div>
-      </div>
-      <div class="modalFoot">
-        <div class="miniNote">Tip: “Remembered” for this browser session.</div>
-        <button class="btn" id="heliLogoutBtn" type="button">Lock Tab</button>
-      </div>
-    </div>
-  </div>
 
 <script>
   function formatUpdatedLikeVCFD(iso) {
     if (!iso) return "—";
     const d = new Date(iso);
     if (isNaN(d)) return "—";
+
     const m = d.getMonth() + 1;
     const day = d.getDate();
     const yr = String(d.getFullYear()).slice(-2);
+
     let h = d.getHours();
     const min = String(d.getMinutes()).padStart(2, "0");
     const ampm = h >= 12 ? "pm" : "am";
     h = h % 12 || 12;
+
     return `${m}/${day}/${yr} ${h}:${min}${ampm}`;
   }
 
@@ -790,16 +701,6 @@
     }[m]));
   }
 
-  function parseDateTime(dt) {
-    if (!dt) return 0;
-    const parts = String(dt).trim().split(" ");
-    if (parts.length < 2) return 0;
-    const [date, time] = parts;
-    const [m, d, y] = date.split("/");
-    if (!m || !d || !y || !time) return 0;
-    return new Date(`20${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}T${time}`).getTime();
-  }
-
   // ===== TABS =====
   const tabBtns = document.querySelectorAll(".tabBtn");
   const panels = {
@@ -807,96 +708,52 @@
     chp: document.getElementById("tab_chp"),
     eq: document.getElementById("tab_eq"),
     weather: document.getElementById("tab_weather"),
-    helis: document.getElementById("tab_helis"),
+    heli: document.getElementById("tab_heli"),
   };
-
-  // ----------------- Helispots password gate (client-side) -----------------
-  const HELI_PASSWORD = "VC2025"; // <-- change this anytime
-  const heliModal = document.getElementById("heliModal");
-  const heliModalClose = document.getElementById("heliModalClose");
-  const heliPass = document.getElementById("heliPass");
-  const heliPassBtn = document.getElementById("heliPassBtn");
-  const heliErr = document.getElementById("heliErr");
-  const heliLogoutBtn = document.getElementById("heliLogoutBtn");
-  const HELI_SESSION_KEY = "helis_ok";
-
-  function helisAuthed(){
-    return sessionStorage.getItem(HELI_SESSION_KEY) === "1";
-  }
-  function showHeliModal(){
-    heliErr.classList.remove("show");
-    heliPass.value = "";
-    heliModal.classList.add("show");
-    setTimeout(()=>heliPass.focus(), 50);
-  }
-  function hideHeliModal(){
-    heliModal.classList.remove("show");
-  }
-  function lockHelis(){
-    sessionStorage.removeItem(HELI_SESSION_KEY);
-  }
-  function unlockHelis(){
-    const val = heliPass.value || "";
-    if(val === HELI_PASSWORD){
-      sessionStorage.setItem(HELI_SESSION_KEY, "1");
-      hideHeliModal();
-      // now actually show the helis tab
-      activateTab("helis", true);
-    } else {
-      heliErr.classList.add("show");
-    }
-  }
-
-  heliModalClose.addEventListener("click", ()=>{
-    hideHeliModal();
-    // bounce back to Fire tab if they tried to access helis
-    activateTab("fire", true);
-  });
-  heliPassBtn.addEventListener("click", unlockHelis);
-  heliPass.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter") unlockHelis();
-    if(e.key === "Escape") heliModalClose.click();
-  });
-  heliLogoutBtn.addEventListener("click", ()=>{
-    lockHelis();
-    hideHeliModal();
-    activateTab("fire", true);
-  });
-  heliModal.addEventListener("click", (e)=>{
-    if(e.target === heliModal) heliModalClose.click();
-  });
-
-  function activateTab(key, skipGate=false){
-    // gate helis unless authed
-    if(key === "helis" && !skipGate && !helisAuthed()){
-      showHeliModal();
-      return;
-    }
-
-    tabBtns.forEach(b=>b.classList.toggle("active", b.dataset.tab === key));
-    Object.keys(panels).forEach(k=>panels[k].classList.toggle("active", k===key));
-
-    setTimeout(()=>{
-      if(key==="fire" && map_fire) map_fire.invalidateSize();
-      if(key==="chp" && map_chp) map_chp.invalidateSize();
-      if(key==="eq" && map_eq) map_eq.invalidateSize();
-      if(key==="weather" && map_weather) map_weather.invalidateSize();
-      if(key==="helis" && map_helis) map_helis.invalidateSize();
-    }, 50);
-
-    if(key === "helis"){
-      // init on first open
-      if(!map_helis) initHelisMap();
-      renderHelis();
-      updateHelisMarkers();
-    }
-  }
 
   tabBtns.forEach(btn=>{
     btn.addEventListener("click", ()=>{
-      activateTab(btn.dataset.tab);
+      tabBtns.forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      const key = btn.dataset.tab;
+      Object.keys(panels).forEach(k=>panels[k].classList.toggle("active", k===key));
+
+      setTimeout(()=>{
+        if(key==="fire" && map_fire) map_fire.invalidateSize();
+        if(key==="chp" && map_chp) map_chp.invalidateSize();
+        if(key==="eq" && map_eq) map_eq.invalidateSize();
+        if(key==="weather" && map_weather) map_weather.invalidateSize();
+        if(key==="heli" && map_heli) map_heli.invalidateSize();
+      }, 50);
     });
   });
+
+  // =====================================================
+  // ================= BASEMAP TOGGLE ====================
+  // =====================================================
+  function addBasemapToggle(map){
+    const street = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    });
+
+    const satellite = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri"
+      }
+    );
+
+    // default layer:
+    street.addTo(map);
+
+    L.control.layers(
+      { "Street": street, "Satellite": satellite },
+      {},
+      { position: "topright" }
+    ).addTo(map);
+  }
 
   // =====================================================
   // =============== MARKER ICONS (EMOJI) ================
@@ -928,16 +785,20 @@
     return "#64748b";
   }
 
-  function markerIcon(typeText, colorHex){
-    const emo = emojiFor(typeText);
+  function markerIcon(emoji, colorHex){
     const bg = colorHex || "#64748b";
     return L.divIcon({
       className: "",
       iconSize: [34,34],
       iconAnchor: [17,17],
       popupAnchor: [0,-14],
-      html: `<div class="emojiPin" style="background:${bg}">${emo}</div>`
+      html: `<div class="emojiPin" style="background:${bg}">${emoji}</div>`
     });
+  }
+
+  function googleMapsLinkFromLatLon(lat, lon){
+    const q = encodeURIComponent(`${lat},${lon}`);
+    return `https://www.google.com/maps?q=${q}`;
   }
 
   // =====================================================
@@ -1034,7 +895,7 @@
 
       row.addEventListener("click", (ev) => {
         const tag = ev.target?.tagName?.toLowerCase?.() || "";
-        if(tag === "a" || tag === "button") return;
+        if(tag === "a" || tag === "button" || tag === "select" || tag === "input") return;
 
         if(x.lat != null && x.lon != null && map_fire){
           map_fire.setView([x.lat, x.lon], Math.max(map_fire.getZoom(), 12), { animate:true });
@@ -1053,11 +914,7 @@
 
   function initFireMap(){
     map_fire = L.map("map_fire", { zoomControl:true }).setView([34.278, -119.293], 10);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map_fire);
-
+    addBasemapToggle(map_fire);
     layer_fire = L.layerGroup().addTo(map_fire);
     document.getElementById("fitBtn_fire").addEventListener("click", fitFireMap);
   }
@@ -1069,7 +926,7 @@
 
       const marker = L.marker([x.lat, x.lon], {
         incidentId: x.id,
-        icon: markerIcon(x.type, colorForFireMedical(x.type))
+        icon: markerIcon(emojiFor(x.type), colorForFireMedical(x.type))
       });
 
       marker.bindPopup(`
@@ -1129,10 +986,7 @@
 
   function initChpMap(){
     map_chp = L.map("map_chp", { zoomControl:true }).setView([34.278, -119.293], 9);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map_chp);
+    addBasemapToggle(map_chp);
     layer_chp = L.layerGroup().addTo(map_chp);
     document.getElementById("fitBtn_chp").addEventListener("click", fitChpMap);
   }
@@ -1191,7 +1045,7 @@
     layer_chp.clearLayers();
     chpIncidents.forEach(x=>{
       if(x.lat==null || x.lon==null) return;
-      const m = L.marker([x.lat, x.lon], { icon: markerIcon(x.type || "CHP", "#0ea5e9") })
+      const m = L.marker([x.lat, x.lon], { icon: markerIcon("🚓", "#0ea5e9") })
         .bindPopup(`
           <div style="font-family:system-ui;font-size:13px;line-height:1.25">
             <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "CHP")}</div>
@@ -1266,17 +1120,14 @@
 
   function initEqMap(){
     map_eq = L.map("map_eq", { zoomControl:true }).setView([34.1, -118.4], 7.5);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map_eq);
+    addBasemapToggle(map_eq);
     layer_eq = L.layerGroup().addTo(map_eq);
     document.getElementById("fitBtn_eq").addEventListener("click", fitEqMap);
   }
 
   function fitEqMap(){
     const pts = [];
-    layer_eq.eachLayer(m=>pts.push(m.getLatLng()));
+    layer_eq.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
     if(pts.length) map_eq.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
@@ -1295,6 +1146,7 @@
     if (m >= 3.0) return 35;
     return 15;
   }
+
   function eqIcon(){
     const size = 26;
     return L.divIcon({
@@ -1305,6 +1157,7 @@
       html:`<div class="eqPin" style="font-size:22px;line-height:22px;">📍</div>`
     });
   }
+
   function magChip(mag){
     const c = eqColor(mag);
     return `<span class="magChip" style="background:${c};border-color:rgba(255,255,255,.22)">M ${escapeHtml(mag)}</span>`;
@@ -1313,6 +1166,7 @@
   function renderEq(){
     rows_eq.innerHTML = "";
     activeCount_eq.textContent = `${eqEvents.length} events`;
+
     rows_eq.innerHTML = `
       <div class="eq-header">
         <div>Date / Time</div>
@@ -1340,9 +1194,7 @@
             <div class="eq-date">${escapeHtml(dateStr)}</div>
             <div class="eq-time">${escapeHtml(timeStr)}</div>
           </div>
-
           <div>${magChip(ev.mag ?? "--")}</div>
-
           <div class="addr">
             <div style="font-weight:800;font-size:14px">${escapeHtml(ev.place || "--")}</div>
             <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
@@ -1367,7 +1219,6 @@
       if(ev.lat==null || ev.lon==null) return;
 
       const rKm = eqRadiusKm(ev.mag);
-
       const ring = L.circle([ev.lat, ev.lon], {
         radius: rKm * 1000,
         weight: 2,
@@ -1456,6 +1307,7 @@
     if (s === "minor") return "minor";
     return "unknown";
   }
+
   function sevStyle(sev){
     const k = sevKey(sev);
     if (k === "moderate") return { color:"#22c55e", weight:2, opacity:0.95, fillOpacity:0.18 };
@@ -1467,11 +1319,7 @@
 
   function initWeatherMap(){
     map_weather = L.map("map_weather", { zoomControl:true }).setView([34.278, -119.293], 8.5);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map_weather);
-
+    addBasemapToggle(map_weather);
     layer_weather = L.layerGroup().addTo(map_weather);
     document.getElementById("fitBtn_weather").addEventListener("click", fitWeatherMap);
   }
@@ -1507,7 +1355,9 @@
       const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
 
       const endsDt = ends ? new Date(ends) : null;
-      const endsStr = endsDt ? endsDt.toLocaleString([], { month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }) : "—";
+      const endsStr = endsDt ? endsDt.toLocaleString([], {
+        month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"
+      }) : "—";
 
       const sev = a.severity || "—";
       const sevCls = `sev-${sevKey(sev)}`;
@@ -1579,7 +1429,6 @@
 
       if (Array.isArray(a.affectedZones) && a.affectedZones.length) {
         const zoneUrls = a.affectedZones.slice(0, 20);
-
         try {
           const zoneGeo = await Promise.all(
             zoneUrls.map(z =>
@@ -1636,152 +1485,239 @@
   // =====================================================
   // ===================== HELISPOTS =====================
   // =====================================================
-  let map_helis, layer_helis;
-  let helisActiveId = null;
+  let map_heli, layer_heli;
+  const rows_heli = document.getElementById("rows_heli");
+  const heliCount = document.getElementById("heliCount");
+  const heliSearch = document.getElementById("heliSearch");
+  const heliType = document.getElementById("heliType");
+  const heliPrev = document.getElementById("heliPrev");
+  const heliNext = document.getElementById("heliNext");
+  const heliPagerText = document.getElementById("heliPagerText");
+  const PAGE_SIZE = 25;
+  let heliPage = 1;
 
-  const rows_helis = document.getElementById("rows_helis");
-  const helisSearch = document.getElementById("helisSearch");
-  const helisType = document.getElementById("helisType");
-  const helisNight = document.getElementById("helisNight");
-  const activeCount_helis = document.getElementById("activeCount_helis");
+  // Combined dataset from your screenshots (Helispot Index + VCFD Snorkel Sites list)
+  const HELI_SITES = [
+    // Helispots + Medivac LZs
+    { name:"50-A — Point Mugu NAS", type:"Helispot", lat:34.11805, lon:-119.107917 },
+    { name:"56-A — Yerba Buena Rd", type:"Helispot", lat:34.304367, lon:-118.998267 },
+    { name:"Solano Verde LZ", type:"LZ Medivac", lat:34.104817, lon:-118.936367 },
+    { name:"Shooting Range LZ", type:"LZ Medivac", lat:34.090217, lon:-118.066667 },
+    { name:"Mansdorf LZ", type:"LZ Medivac", lat:34.067267, lon:-118.99005 },
+    { name:"Station 56 LZ", type:"LZ Medivac", lat:34.050583, lon:-118.954517 },
+    { name:"20-A — Old Walnut Rd", type:"Helispot", lat:34.4372, lon:-119.177417 },
+    { name:"20-B — Thomas Aquinas College", type:"Helispot", lat:34.4286, lon:-119.084317 },
+    { name:"22-A — Lake Casitas", type:"Helispot", lat:34.42185, lon:-119.328583 },
+    { name:"22-B — Country Drive", type:"Helispot", lat:34.422, lon:-119.284467 },
+    { name:"22-C — Rose Valley", type:"Helispot", lat:34.54125, lon:-119.185467 },
+    { name:"25-A — Unocal On-Shore", type:"Helispot", lat:34.355117, lon:-119.421267 },
+    { name:"Honor Farm LZ", type:"LZ Medivac", lat:34.427367, lon:-119.295117 },
+    { name:"32-A — Dos Vientos", type:"Helispot", lat:34.164583, lon:-118.98315 },
+    { name:"33-A — Sherwood Country Club", type:"Helispot", lat:34.126883, lon:-118.876967 },
+    { name:"35-A — Rancho Conejo", type:"Helispot", lat:34.207617, lon:-118.929583 },
+    { name:"36-A — Lambourne Place", type:"Helispot", lat:34.19125, lon:-118.751833 },
+    { name:"Green Meadow LZ", type:"LZ Medivac", lat:34.175317, lon:-118.888767 },
+    { name:"Sycamore LZ", type:"LZ Medivac", lat:34.146883, lon:-118.964517 },
+    { name:"42-A — Calleguas", type:"Helispot", lat:34.3057, lon:-118.916567 },
+    { name:"44-A — Sunset Hills", type:"Helispot", lat:34.22385, lon:-118.81375 },
+    { name:"46-A — Presidio Drive", type:"Helispot", lat:34.303183, lon:-118.7088 },
+    { name:"47-A — Station 47", type:"Helispot", lat:34.2879, lon:-118.762533 },
+    { name:"East Valley LZ", type:"LZ Medivac", lat:34.24695, lon:-118.83555 },
+    { name:"27-A — River Street", type:"Helispot", lat:34.3922, lon:-118.937817 },
+    { name:"28-A — Lake Piru Marina", type:"Helispot", lat:34.4762, lon:-118.761367 },
+    { name:"Todd Road LZ", type:"LZ Medivac", lat:34.31145, lon:-119.11395 },
 
-  // Helper: degrees/minutes to decimal
-  function dmToDec(deg, minutes){ return Number(deg) + (Number(minutes) / 60); }
-
-  // From the VCFD Helispot Manual pages where lat/long are clearly printed on the helispot cards. :contentReference[oaicite:1]{index=1}
-  const HELISPOTS = [
-    // Battalion 1
-    { id:"50-A", name:"Point Mugu NAS", type:"helispot", batt:1, night:"no",  lat: dmToDec(34, 7.050),  lon: -(dmToDec(119, 6.377)) },
-    { id:"56-A", name:"Yerba Buena Rd", type:"helispot", batt:1, night:"yes", lat: dmToDec(34, 6.289),  lon: -(dmToDec(118,56.182)) },
-
-    { id:"SV",   name:"Solana Verde LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34,18.262), lon: -(dmToDec(118,59.896)) },
-    { id:"SR",   name:"Shooting Range LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34, 5.417), lon: -(dmToDec(119, 4.001)) },
-    { id:"MD",   name:"Mansdorf LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34, 4.033), lon: -(dmToDec(119,59.400)) },
-    { id:"ST56", name:"Station 56 LZ (Medevac Only)", type:"medevac", batt:1, night:"—", lat: dmToDec(34, 3.026), lon: -(dmToDec(118,57.270)) },
-
-    // Battalion 2
-    { id:"20-A", name:"Old Walnut Rd", type:"helispot", batt:2, night:"no",  lat: dmToDec(34,25.208), lon: -(dmToDec(119,10.614)) },
-    { id:"20-B", name:"Thomas Aquinas College", type:"helispot", batt:2, night:"yes", lat: dmToDec(34,25.716), lon: -(dmToDec(119, 5.059)) },
-    { id:"22-A", name:"Lake Casitas", type:"helispot", batt:2, night:"no",  lat: dmToDec(34,25.311), lon: -(dmToDec(119,19.715)) },
-    { id:"22-C", name:"Rose Valley", type:"helispot", batt:2, night:"no",  lat: dmToDec(34,32.475), lon: -(dmToDec(119,11.128)) },
-    { id:"22-B", name:"Country Drive", type:"helispot", batt:2, night:"yes", lat: dmToDec(34,25.320), lon: -(dmToDec(119,17.068)) },
-    { id:"HF",   name:"Honor Farm LZ (Medevac Only)", type:"medevac", batt:2, night:"—", lat: dmToDec(34,25.642), lon: -(dmToDec(119,17.707)) }
+    // Snorkel Sites (VCFD Snorkel Sites list)
+    { name:"16-1 — Arcosa Quarry", type:"Snorkel Site", lat:34.76205, lon:-119.043133 },
+    { name:"20-1 — Black Mountain Ranch", type:"Snorkel Site", lat:34.42145, lon:-119.199567 },
+    { name:"21-1 — Senior Canyon", type:"Snorkel Site", lat:34.471583, lon:-119.189283 },
+    { name:"21-2 — Hermitage", type:"Snorkel Site", lat:34.472783, lon:-119.216967 },
+    { name:"22-1 — Rose Valley", type:"Snorkel Site", lat:34.541283, lon:-119.187417 },
+    { name:"22-2 — Creek Rd", type:"Snorkel Site", lat:34.428217, lon:-119.355833 },
+    { name:"22-3 — Hartman Ranch", type:"Snorkel Site", lat:34.603283, lon:-119.393733 },
+    { name:"23-1 — Lake Casitas", type:"Snorkel Site", lat:34.373233, lon:-119.340867 },
+    { name:"26-1 — Limoneira", type:"Snorkel Site", lat:34.3345, lon:-119.129017 },
+    { name:"27-1 — Young Rd", type:"Snorkel Site", lat:34.406217, lon:-118.969283 },
+    { name:"27-2 — Sycamore & Oak", type:"Snorkel Site", lat:34.4148, lon:-118.9436 },
+    { name:"27-3 — Elkins Ranch Golf Course", type:"Snorkel Site", lat:34.372867, lon:-118.909483 },
+    { name:"28-1 — LaVerne Nursery", type:"Snorkel Site", lat:34.410767, lon:-118.801933 },
+    { name:"28-2 — Lake Piru", type:"Snorkel Site", lat:34.467717, lon:-118.753583 },
+    { name:"33-1 — Lake Sherwood", type:"Snorkel Site", lat:34.1392, lon:-118.868967 },
+    { name:"42-1 — Moorpark Country Club", type:"Snorkel Site", lat:34.304533, lon:-118.900517 },
+    { name:"42-2 — Calleguas Dip Tank", type:"Snorkel Site", lat:34.3057, lon:-118.916567 },
+    { name:"44-1 — Bard Lake", type:"Snorkel Site", lat:34.237417, lon:-118.822383 },
+    { name:"46-1 — Simi Hills Golf Course", type:"Snorkel Site", lat:34.298333, lon:-118.694167 },
+    { name:"46-2 — Lost Canyons Golf Course", type:"Snorkel Site", lat:34.31275, lon:-118.729333 },
+    { name:"50-1 — Broom Ranch", type:"Snorkel Site", lat:34.147517, lon:-119.042783 },
+    { name:"51-1 — United Water", type:"Snorkel Site", lat:34.276133, lon:-119.125367 },
+    { name:"54-1 — Scary Dairy", type:"Snorkel Site", lat:34.1825, lon:-119.025283 },
+    { name:"55-1 — Milligan Ranch", type:"Snorkel Site", lat:34.278733, lon:-119.059767 },
+    { name:"55-2 — Downs Ranch", type:"Snorkel Site", lat:34.30165, lon:-119.057867 },
+    { name:"75-1 — Chatsworth Dip Tank", type:"Snorkel Site", lat:34.2325, lon:-118.641167 },
   ];
 
-  function helisTypePill(t){
-    if(t === "helispot") return `<span class="typePill pill-helispot">Helispot</span>`;
-    if(t === "medevac") return `<span class="typePill pill-medevac">LZ Medevac</span>`;
-    if(t === "snorkel") return `<span class="typePill pill-snorkel">Snorkel</span>`;
-    return `<span class="typePill">—</span>`;
+  function typeClass(t){
+    if(t === "Helispot") return "helispot";
+    if(t === "LZ Medivac") return "medevac";
+    return "snorkel";
+  }
+  function typeEmoji(t){
+    if(t === "Helispot") return "🚁";
+    if(t === "LZ Medivac") return "🚑";
+    return "⚠️";
+  }
+  function typeColor(t){
+    if(t === "Helispot") return "#ef4444";
+    if(t === "LZ Medivac") return "#a855f7";
+    return "#eab308";
   }
 
-  function helisMarkerIcon(t){
-    const emoji = (t === "medevac") ? "🩺" : (t === "snorkel" ? "⚠️" : "🚁");
-    return L.divIcon({
-      className:"emoji-pin",
-      iconSize:[1,1],
-      iconAnchor:[0,0],
-      popupAnchor:[0,-10],
-      html:`<div style="font-size:20px; transform: translate(-50%,-50%);">${emoji}</div>`
-    });
+  function extractSortableCode(name){
+    // matches "20-A — ..." or "16-1 — ..." or "22-C ..." etc.
+    const s = String(name || "").trim();
+    const first = s.split("—")[0].trim(); // "20-A" or "Solano Verde LZ"
+    const m = first.match(/^(\d+)\s*[-–]\s*([A-Za-z0-9]+)$/) || first.match(/^(\d+)-([A-Za-z0-9]+)$/);
+    if(!m) return null;
+    const major = parseInt(m[1],10);
+    const minorRaw = m[2];
+    const minorIsNum = /^[0-9]+$/.test(minorRaw);
+    const minorNum = minorIsNum ? parseInt(minorRaw,10) : null;
+    return { major, minorRaw, minorIsNum, minorNum };
   }
 
-  function initHelisMap(){
-    map_helis = L.map("map_helis", { zoomControl:true }).setView([34.278, -119.293], 9.5);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map_helis);
-    layer_helis = L.layerGroup().addTo(map_helis);
-    document.getElementById("fitBtn_helis").addEventListener("click", fitHelisMap);
+  function heliSort(a,b){
+    const ca = extractSortableCode(a.name);
+    const cb = extractSortableCode(b.name);
+
+    if(ca && cb){
+      if(ca.major !== cb.major) return ca.major - cb.major;
+      // compare minors numeric before alpha
+      if(ca.minorIsNum && cb.minorIsNum) return ca.minorNum - cb.minorNum;
+      if(ca.minorIsNum && !cb.minorIsNum) return -1;
+      if(!ca.minorIsNum && cb.minorIsNum) return 1;
+      // both alpha
+      const ma = ca.minorRaw.toUpperCase();
+      const mb = cb.minorRaw.toUpperCase();
+      if(ma !== mb) return ma < mb ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    }
+    if(ca && !cb) return -1;
+    if(!ca && cb) return 1;
+    return a.name.localeCompare(b.name);
   }
 
-  function fitHelisMap(){
-    const pts = [];
-    layer_helis.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
-    if(pts.length) map_helis.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  function getHeliFiltered(){
+    const q = (heliSearch.value || "").trim().toLowerCase();
+    const t = heliType.value;
+
+    return HELI_SITES
+      .filter(x => (t === "all" ? true : x.type === t))
+      .filter(x => {
+        if(!q) return true;
+        return (x.name || "").toLowerCase().includes(q) || String(x.lat).includes(q) || String(x.lon).includes(q);
+      })
+      .slice()
+      .sort(heliSort);
   }
 
-  function helisFiltered(){
-    const q = (helisSearch.value || "").toLowerCase().trim();
-    const t = helisType.value;
-    const n = helisNight.value;
+  function renderHeli(){
+    const all = getHeliFiltered();
+    heliCount.textContent = `${all.length} sites`;
 
-    return HELISPOTS.filter(h=>{
-      const hit = !q || (`${h.id} ${h.name}`.toLowerCase().includes(q));
-      const typeOk = (t === "all") || (h.type === t);
-      const nightOk = (n === "all") || ((h.night || "").toLowerCase() === n);
-      return hit && typeOk && nightOk;
-    });
-  }
+    const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+    heliPage = Math.min(heliPage, totalPages);
 
-  function renderHelis(){
-    const items = helisFiltered();
-    activeCount_helis.textContent = `${items.length} sites`;
+    const startIdx = (heliPage - 1) * PAGE_SIZE;
+    const pageItems = all.slice(startIdx, startIdx + PAGE_SIZE);
 
-    rows_helis.innerHTML = items.map(h => `
-      <tr data-id="${escapeHtml(h.id)}" class="${h.id === helisActiveId ? "active" : ""}">
-        <td><strong>${escapeHtml(h.id)}</strong> — ${escapeHtml(h.name)}</td>
-        <td>${helisTypePill(h.type)}</td>
-        <td class="right">${h.lat.toFixed(4)}, ${h.lon.toFixed(4)}</td>
-        <td class="center">${escapeHtml(h.batt ?? "—")}</td>
-      </tr>
-    `).join("");
+    heliPrev.disabled = heliPage <= 1;
+    heliNext.disabled = heliPage >= totalPages;
 
-    rows_helis.querySelectorAll("tr").forEach(tr=>{
-      tr.addEventListener("click", ()=>{
-        const id = tr.getAttribute("data-id");
-        focusHeli(id);
+    heliPagerText.textContent = `Page ${heliPage} of ${totalPages} • Showing ${pageItems.length} of ${all.length}`;
+
+    rows_heli.innerHTML = "";
+
+    pageItems.forEach(x=>{
+      const mapsHref = googleMapsLinkFromLatLon(x.lat, x.lon);
+      const row = document.createElement("div");
+      row.className = "heliRow";
+      row.innerHTML = `
+        <div class="heliName">${escapeHtml(x.name)}</div>
+        <div><span class="heliTypeChip ${typeClass(x.type)}">${escapeHtml(x.type)}</span></div>
+        <div class="heliLoc"><a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.lat.toFixed(4))}, ${escapeHtml(x.lon.toFixed(4))}</a></div>
+      `;
+
+      row.addEventListener("click", (ev)=>{
+        const tag = ev.target?.tagName?.toLowerCase?.() || "";
+        if(tag === "a" || tag === "button" || tag === "select" || tag === "input") return;
+
+        if(map_heli){
+          map_heli.setView([x.lat, x.lon], Math.max(map_heli.getZoom(), 12), { animate:true });
+          layer_heli.eachLayer(m=>{
+            if(m?.options?.siteName === x.name) m.openPopup();
+          });
+          document.getElementById("map_heli").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
       });
+
+      rows_heli.appendChild(row);
     });
+
+    updateHeliMarkers(all);
   }
 
-  function updateHelisMarkers(){
-    if(!layer_helis) return;
-    layer_helis.clearLayers();
+  function initHeliMap(){
+    map_heli = L.map("map_heli", { zoomControl:true }).setView([34.278, -119.293], 9.5);
+    addBasemapToggle(map_heli);
+    layer_heli = L.layerGroup().addTo(map_heli);
+    document.getElementById("fitBtn_heli").addEventListener("click", fitHeliMap);
+  }
 
-    const items = helisFiltered();
+  function updateHeliMarkers(filteredAll){
+    layer_heli.clearLayers();
+    (filteredAll || []).forEach(x=>{
+      if(x.lat==null || x.lon==null) return;
 
-    items.forEach(h=>{
-      const m = L.marker([h.lat, h.lon], { icon: helisMarkerIcon(h.type), heliId:h.id })
-        .bindPopup(`
-          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-            <div style="font-weight:900;margin-bottom:6px">${escapeHtml(h.id)} — ${escapeHtml(h.name)}</div>
-            <div style="opacity:.85;margin-bottom:6px">${h.type === "medevac" ? "LZ Medevac" : (h.type === "snorkel" ? "Snorkel Site" : "Helispot")}</div>
-            <div style="opacity:.85">Battalion: ${escapeHtml(h.batt ?? "—")}</div>
-            <div style="opacity:.85">${h.lat.toFixed(4)}, ${h.lon.toFixed(4)}</div>
+      const m = L.marker([x.lat, x.lon], {
+        siteName: x.name,
+        icon: markerIcon(typeEmoji(x.type), typeColor(x.type))
+      }).bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.name)}</div>
+          <div style="color:rgba(0,0,0,.75);margin-bottom:6px"><b>Type:</b> ${escapeHtml(x.type)}</div>
+          <div style="font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Lat/Lon:</b> ${escapeHtml(x.lat)}, ${escapeHtml(x.lon)}</div>
+            <div style="margin-top:6px">
+              <a href="${googleMapsLinkFromLatLon(x.lat, x.lon)}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+            </div>
           </div>
-        `);
-      m.addTo(layer_helis);
+        </div>
+      `);
+
+      m.addTo(layer_heli);
     });
   }
 
-  function focusHeli(id){
-    helisActiveId = id;
-    renderHelis();
-
-    const h = HELISPOTS.find(x => x.id === id);
-    if(!h || !map_helis) return;
-
-    map_helis.setView([h.lat, h.lon], Math.max(map_helis.getZoom(), 12), { animate:true });
-
-    // open popup
-    layer_helis.eachLayer(layer=>{
-      if(layer?.options?.heliId === id) layer.openPopup();
-    });
-
-    document.getElementById("map_helis").scrollIntoView({ behavior:"smooth", block:"start" });
+  function fitHeliMap(){
+    const pts = [];
+    layer_heli.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
+    if(pts.length) map_heli.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
-  helisSearch.addEventListener("input", ()=>{ renderHelis(); updateHelisMarkers(); });
-  helisType.addEventListener("change", ()=>{ renderHelis(); updateHelisMarkers(); });
-  helisNight.addEventListener("change", ()=>{ renderHelis(); updateHelisMarkers(); });
+  heliSearch.addEventListener("input", ()=>{ heliPage = 1; renderHeli(); });
+  heliType.addEventListener("change", ()=>{ heliPage = 1; renderHeli(); });
+  heliPrev.addEventListener("click", ()=>{ heliPage = Math.max(1, heliPage - 1); renderHeli(); });
+  heliNext.addEventListener("click", ()=>{ heliPage = heliPage + 1; renderHeli(); });
 
   // ===== INIT ALL MAPS =====
   initFireMap();
   initChpMap();
   initEqMap();
   initWeatherMap();
+  initHeliMap();
+
+  // Initial render for helis
+  renderHeli();
 
   // ===== FIRST LOAD =====
   fetchFire();
@@ -1794,9 +1730,6 @@
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
-
-  // Default render helis table (map initializes on first open)
-  renderHelis();
 </script>
 </body>
 </html>
