@@ -664,6 +664,24 @@
     </div>
 
     <!-- ================= HELISPOTS ================= -->
+    <script>
+(function protectHelispots(){
+  const KEY = "heliAuth";
+  const PASSWORD = "VC2025";
+
+  // already unlocked in this browser session
+  if (sessionStorage.getItem(KEY) === "yes") return;
+
+  const p = prompt("Enter password to access Helispots:");
+  if (p === PASSWORD) {
+    sessionStorage.setItem(KEY, "yes");
+  } else {
+    alert("Access denied");
+    // remove the helispots panel so it can't be viewed
+    document.getElementById("tab_heli")?.remove();
+  }
+})();
+</script>
     <div class="tabPanel" id="tab_heli">
       <section class="card" aria-label="Helispots">
         <div class="sectionBar">
