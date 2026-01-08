@@ -835,11 +835,9 @@
     return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
   }
 
-  function normalizeTypeLabel(typeText){
-    const t = (typeText || "").trim();
-    if (t.toLowerCase() === "1e") return "Gas Leak";
-    return t;
-  }
+function normalizeTypeLabel(typeText){
+  return (typeText || "").trim();
+}
 
   function normalizeFire(raw){
     const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
