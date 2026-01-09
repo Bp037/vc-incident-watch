@@ -523,6 +523,24 @@
     width: 100%;
   }
 }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+.embed-wrap{
+  width:100%;
+  height: calc(100vh - 220px); /* tune this number if needed */
+  border-radius: 16px;
+  overflow:hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #0b0b0b;
+}
+
+.embed-wrap iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  display:block;
+}
   </style>
 </head>
 
@@ -545,6 +563,7 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
+        <button class="tab" data-tab="arcgis">ArcGIS</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
     </div>
@@ -662,6 +681,29 @@
         <div id="map_weather"></div>
       </section>
     </div>
+<section id="tab-arcgis" class="tab-panel">
+  <div class="card">
+    <div class="card-head">
+      <h2>ArcGIS Reference Map</h2>
+      <span class="subtle">Primary map view</span>
+    </div>
+
+<!-- ================= ArcGIS ================= -->
+    <div class="embed-wrap">
+      <iframe
+        title="ArcGIS Map"
+        src="https://www.arcgis.com/apps/View/index.html?appid=24d2d88d701b4eaa8e9fe6e5882c8258"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <div class="card-foot subtle">
+      Data source: ArcGIS
+    </div>
+  </div>
+</section>
 
     <!-- ================= HELISPOTS ================= -->
 
