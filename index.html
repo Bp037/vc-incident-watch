@@ -586,6 +586,29 @@
     padding-top: 0;
   }
 }
+/* Fire/Medical — lock TYPE column so multi-emoji rows align */
+@media (max-width: 760px) {
+
+  /* Force TYPE cell to fixed width */
+  #tab_fire #rows_fire .tbl > :nth-child(2) {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+
+    white-space: nowrap;   /* prevent emoji wrapping */
+    overflow: hidden;      /* prevent expansion */
+  }
+
+  /* Normalize emoji size */
+  #tab_fire #rows_fire .tbl > :nth-child(2) {
+    font-size: 22px;
+    line-height: 1;
+  }
+}
   </style>
 </head>
 
