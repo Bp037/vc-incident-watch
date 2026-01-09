@@ -687,6 +687,69 @@
     line-height: 1.15;
   }
 }
+/* ===== FIRE/MEDICAL MOBILE: put emoji UNDER date/time ===== */
+@media (max-width: 760px){
+  /* 2 columns: left = time+emoji stack, right = all text */
+  #tab_fire #rows_fire .tbl{
+    grid-template-columns: 132px 1fr !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  /* Reset any previous grid hacks */
+  #tab_fire #rows_fire .tbl > *{
+    grid-column: auto !important;
+    margin: 0 !important;
+  }
+
+  /* DATE/TIME sits in left column */
+  #tab_fire #rows_fire .date{
+    grid-column: 1 !important;
+    white-space: nowrap;
+  }
+
+  /* ICON goes under the date/time (same left column) */
+  #tab_fire #rows_fire .icon{
+    grid-column: 1 !important;
+    justify-self: start;
+    margin-top: 6px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* ADDRESS + TYPE + META all in right column */
+  #tab_fire #rows_fire .addr,
+  #tab_fire #rows_fire .desktopUnits,
+  #tab_fire #rows_fire .desktopStatus{
+    grid-column: 2 !important;
+    justify-self: start;
+  }
+
+  /* Desktop-only columns OFF on mobile */
+  #tab_fire #rows_fire .desktopUnits,
+  #tab_fire #rows_fire .desktopStatus{
+    display: none !important;
+  }
+
+  /* Mobile meta ON */
+  #tab_fire #rows_fire .mobileMeta{
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: center;
+  }
+
+  /* Let the address wrap nicely */
+  #tab_fire #rows_fire .addr a{
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.15;
+  }
+}
   </style>
 </head>
 
