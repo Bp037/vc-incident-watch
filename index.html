@@ -564,6 +564,28 @@
     grid-column: 1 / -1;
   }
 }
+/* Fire/Medical mobile alignment polish */
+@media (max-width: 760px) {
+
+  /* Lock icon column width */
+  #tab_fire #rows_fire .tbl {
+    grid-template-columns: 40px 1fr;
+    column-gap: 12px;
+  }
+
+  /* Center emoji within its column */
+  #tab_fire #rows_fire .tbl > :nth-child(2) {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 2px;
+  }
+
+  /* Ensure text column is consistent */
+  #tab_fire #rows_fire .tbl > :nth-child(3) {
+    padding-top: 0;
+  }
+}
   </style>
 </head>
 
