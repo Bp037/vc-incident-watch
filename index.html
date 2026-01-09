@@ -530,7 +530,40 @@
     align-self: flex-start;
   }
 }
+/* Fire/Medical mobile layout — restore original inline icon + address */
+@media (max-width: 760px) {
 
+  /* Only affect Fire/Medical rows */
+  #tab_fire #rows_fire .tbl {
+    grid-template-columns: auto 1fr; /* TYPE | ADDRESS */
+  }
+
+  /* DATE/TIME on its own row */
+  #tab_fire #rows_fire .tbl > :nth-child(1) {
+    grid-column: 1 / -1;
+    margin-bottom: 6px;
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
+  /* TYPE (emoji + label) inline on the left */
+  #tab_fire #rows_fire .tbl > :nth-child(2) {
+    grid-column: 1;
+    align-self: flex-start;
+  }
+
+  /* ADDRESS inline to the right of the emoji */
+  #tab_fire #rows_fire .tbl > :nth-child(3) {
+    grid-column: 2;
+    align-self: flex-start;
+  }
+
+  /* UNITS + STATUS stacked below */
+  #tab_fire #rows_fire .tbl > :nth-child(4),
+  #tab_fire #rows_fire .tbl > :nth-child(5) {
+    grid-column: 1 / -1;
+  }
+}
   </style>
 </head>
 
