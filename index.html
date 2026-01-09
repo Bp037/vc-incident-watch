@@ -563,7 +563,7 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
-        <button class="tab" data-tab="arcgis">ArcGIS</button>
+        <button class="tabBtn" data-tab="arcgis">ArcGIS</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
     </div>
@@ -681,7 +681,7 @@
         <div id="map_weather"></div>
       </section>
     </div>
-<section id="tab-arcgis" class="tab-panel">
+<div id="tab_arcgis" class="tabPanel">
   <div class="card">
     <div class="card-head">
       <h2>ArcGIS Reference Map</h2>
@@ -802,6 +802,7 @@
     chp: document.getElementById("tab_chp"),
     eq: document.getElementById("tab_eq"),
     weather: document.getElementById("tab_weather"),
+    arcgis: document.getElementById("tab_arcgis"),
     heli: document.getElementById("tab_heli"),
   };
 
