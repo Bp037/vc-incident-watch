@@ -636,6 +636,57 @@
     margin-top: 2px;
   }
 }
+/* ===== FIRE/MEDICAL MOBILE: hard reset to the clean 3-col layout ===== */
+@media (max-width: 760px){
+  #tab_fire #rows_fire .tbl{
+    grid-template-columns: 118px 44px 1fr !important; /* time | icon | content */
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  /* Undo all the nth-child/grid-column hacks above */
+  #tab_fire #rows_fire .tbl > *{
+    grid-column: auto !important;
+    justify-self: stretch !important;
+    align-self: flex-start !important;
+    margin: 0 !important;
+  }
+
+  /* Keep icon perfectly centered in its lane */
+  #tab_fire #rows_fire .icon{
+    width: 44px;
+    min-width: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* Hide desktop-only columns on mobile */
+  #tab_fire #rows_fire .desktopUnits,
+  #tab_fire #rows_fire .desktopStatus{
+    display: none !important;
+  }
+
+  /* Show units + status under the address on mobile */
+  #tab_fire #rows_fire .mobileMeta{
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: center;
+  }
+
+  /* Allow address wrapping nicely */
+  #tab_fire #rows_fire .addr{
+    min-width: 0;
+  }
+  #tab_fire #rows_fire .addr a{
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.15;
+  }
+}
   </style>
 </head>
 
