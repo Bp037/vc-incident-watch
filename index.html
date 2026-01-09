@@ -489,40 +489,7 @@
     padding: 4px 8px;
   }
 }
-/* Fire/Medical rows: make layout feel centered + balanced */
-#rows_fire > * {
-  max-width: 720px;          /* keeps content from feeling stuck left */
-  margin: 0 auto;            /* centers the whole row block */
-}
 
-/* If each incident row is a DIV, make it a grid on mobile */
-@media (max-width: 640px) {
-  #rows_fire .row,
-  #rows_fire .incident,
-  #rows_fire .card {
-    display: grid;
-    grid-template-columns: 1fr auto; /* content + icon column */
-    column-gap: 14px;
-    align-items: center;
-  }
-
-  /* Make the icon/emoji “live” on the right */
-  #rows_fire .icon,
-  #rows_fire .emoji {
-    font-size: 28px;
-    line-height: 1;
-    justify-self: end;
-    opacity: 0.95;
-  }
-
-  /* Keep the main text from being too wide/lefty */
-  #rows_fire .main,
-  #rows_fire .content,
-  #rows_fire .details {
-    justify-self: start;
-    width: 100%;
-  }
-}
 .tab-panel { display:none; }
 .tab-panel.active { display:block; }
 
