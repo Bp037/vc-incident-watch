@@ -508,6 +508,29 @@
   border:0;
   display:block;
 }
+/* Fire/Medical mobile layout — restore original inline icon */
+@media (max-width: 760px){
+  #tab_fire .tbl{
+    grid-template-columns: 36px 1fr; /* icon | content */
+  }
+
+  #tab_fire .date{
+    grid-column: 1 / -1;
+    margin-bottom: 6px;
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
+  #tab_fire .icon{
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  #tab_fire .addr{
+    align-self: flex-start;
+  }
+}
+
   </style>
 </head>
 
