@@ -890,14 +890,16 @@
         <div id="map_weather"></div>
       </section>
     </div>
-<div id="tab_arcgis" class="tabPanel">
-  <div class="card">
-    <div class="card-head">
-      <h2>ArcGIS Reference Map</h2>
-      <span class="subtle">Primary map view</span>
+<!-- ================= ArcGIS ================= -->
+<div class="tabPanel" id="tab_arcgis">
+  <section class="card" aria-label="ArcGIS Reference Map">
+    <div class="sectionBar">
+      <div class="left">
+        <div class="label">ArcGIS Reference Map</div>
+        <div class="sub">Primary map view</div>
+      </div>
     </div>
 
-<!-- ================= ArcGIS ================= -->
     <div class="embed-wrap">
       <iframe
         title="ArcGIS Map"
@@ -908,11 +910,9 @@
       ></iframe>
     </div>
 
-    <div class="card-foot subtle">
-      Data source: ArcGIS
-    </div>
-  </div>
-</section>
+    <div class="helper">Data source: ArcGIS</div>
+  </section>
+</div>
 
     <!-- ================= HELISPOTS ================= -->
 
