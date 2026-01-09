@@ -609,6 +609,33 @@
     line-height: 1;
   }
 }
+/* Fire/Medical mobile — lock content block alignment */
+@media (max-width: 760px) {
+
+  /* Treat ADDRESS + TYPE + UNITS + STATUS as one column */
+  #tab_fire #rows_fire .tbl > :nth-child(3),
+  #tab_fire #rows_fire .tbl > :nth-child(4),
+  #tab_fire #rows_fire .tbl > :nth-child(5) {
+    grid-column: 2;
+    justify-self: start;
+    align-self: flex-start;
+  }
+
+  /* Add consistent vertical rhythm */
+  #tab_fire #rows_fire .tbl > :nth-child(3) {
+    margin-bottom: 2px;
+  }
+
+  #tab_fire #rows_fire .tbl > :nth-child(4) {
+    margin-bottom: 4px;
+    opacity: 0.85;
+  }
+
+  /* Keep status chip aligned under content, not floating */
+  #tab_fire #rows_fire .tbl > :nth-child(5) {
+    margin-top: 2px;
+  }
+}
   </style>
 </head>
 
