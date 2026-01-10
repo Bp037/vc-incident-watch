@@ -15,7 +15,7 @@
     :root{
       --bg:#000;
       --ink:#f4f4f5;
-      --muted:rgba(255,255,255,.7);
+      --muted:rgba(255,255,255,.72);
       --muted2:rgba(255,255,255,.45);
       --link:#60a5fa;
 
@@ -31,13 +31,6 @@
       --greenLine:rgba(16,185,129,.35);
       --shadow:rgba(0,0,0,.55);
     }
-
-    /* Weather severity chip colors */
-    .chip.sev-moderate { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.18); }
-    .chip.sev-severe   { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.18); }
-    .chip.sev-extreme  { border-color: rgba(168,85,247,.55); background: rgba(168,85,247,.18); }
-    .chip.sev-minor    { border-color: rgba(234,179,8,.55);  background: rgba(234,179,8,.18); }
-    .chip.sev-unknown  { border-color: rgba(148,163,184,.45); background: rgba(148,163,184,.16); }
 
     *{ box-sizing:border-box; }
     body{
@@ -180,6 +173,13 @@
     .chip.amber{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.10); }
     .chip.slate{ border-color:rgba(148,163,184,.30); background:rgba(148,163,184,.10); }
 
+    /* Weather severity chip colors */
+    .chip.sev-moderate { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.18); }
+    .chip.sev-severe   { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.18); }
+    .chip.sev-extreme  { border-color: rgba(168,85,247,.55); background: rgba(168,85,247,.18); }
+    .chip.sev-minor    { border-color: rgba(234,179,8,.55);  background: rgba(234,179,8,.18); }
+    .chip.sev-unknown  { border-color: rgba(148,163,184,.45); background: rgba(148,163,184,.16); }
+
     .helper{ padding:10px 16px; color:rgba(255,255,255,.4); font-size:11px; }
 
     .mapCard{ margin-top:18px; }
@@ -190,6 +190,7 @@
       border-bottom:1px solid rgba(255,255,255,.10);
     }
     .mapTop .label{ font-weight:800; font-size:16px; }
+
     .btn{
       appearance:none;
       border:1px solid rgba(255,255,255,.14);
@@ -203,24 +204,7 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-    #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:360px; background:#111; }
-
-    .mobileMeta{ display:none; }
-    @media (max-width: 760px){
-      .tblHead{ display:none; }
-      .tbl{ grid-template-columns: 118px 44px 1fr; gap:10px; }
-      .addr a{ white-space:normal; overflow:visible; text-overflow:unset; line-height:1.15; }
-      .desktopUnits, .desktopStatus{ display:none; }
-      .mobileMeta{
-        display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; align-items:center;
-      }
-      .mobileUnits{
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-        font-size:12px; color:rgba(255,255,255,.82);
-        white-space:normal;
-      }
-      #map_fire, #map_chp, #map_eq, #map_weather, #map_heli { height:420px; }
-    }
+    #map_fire, #map_chp, #map_eq, #map_weather, #map_cams, #map_heli { height:360px; background:#111; }
 
     .tabPanel{ display:none; }
     .tabPanel.active{ display:block; }
@@ -235,6 +219,7 @@
       background:#1f2937;
     }
 
+    /* CHP table */
     .chpGridHead{
       display:grid;
       grid-template-columns: 160px 220px 1fr 90px 90px;
@@ -257,6 +242,7 @@
       padding:14px 16px;
       border-bottom:1px solid rgba(255,255,255,.06);
       box-shadow: inset 0 -1px 0 var(--greenLine);
+      cursor:pointer;
     }
     .chpRow:nth-child(odd){ background:var(--rowA); }
     .chpRow:nth-child(even){ background:var(--rowB); }
@@ -265,20 +251,7 @@
     .chpLoc{ font-size:13px; color:rgba(255,255,255,.86); white-space:pre-wrap; word-break:break-word; }
     .chpMono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; font-size:12px; color:rgba(255,255,255,.80); }
 
-    @media (max-width: 760px){
-      .chpGridHead{ display:none; }
-      .chpRow{
-        display:block;
-        border-radius:14px;
-        margin:12px 16px;
-        border:1px solid rgba(255,255,255,.10);
-        padding:12px;
-      }
-      .chpKV{ display:grid; grid-template-columns: 92px 1fr; gap:10px 12px; padding:6px 0; }
-      .k{ color:rgba(255,255,255,.55); font-weight:800; letter-spacing:.08em; font-size:11px; text-transform:uppercase; }
-      .v{ font-size:13px; color:rgba(255,255,255,.9); }
-    }
-
+    /* Earthquakes */
     .magChip{
       display:inline-flex;align-items:center;justify-content:center;
       padding:6px 10px;border-radius:999px;
@@ -288,86 +261,99 @@
       color:rgba(255,255,255,.95);
       white-space:nowrap;
     }
-
-    /* Weather text wrapping fixes */
-    .weather-alert-row, .alert-row { display:flex; gap:10px; align-items:center; }
-    .weather-alert-text, .alert-text { min-width:0; flex:1 1 auto; }
-    .weather-alert-title, .alert-title {
-      white-space:normal; overflow:hidden; display:-webkit-box;
-      -webkit-box-orient:vertical; -webkit-line-clamp:2;
-    }
-    .weather-alert-subtitle, .alert-subtitle { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    #tab_weather .tbl { align-items:start; }
-    #tab_weather .addr > div:first-child{ white-space:normal; overflow:visible; text-overflow:unset; }
-    #tab_weather .addr .typeText{
-      white-space:normal; overflow:visible; text-overflow:unset; display:block; word-break:break-word;
-    }
-
-    /* Earthquakes: responsive table */
     .eqTbl {
       display: grid;
-      grid-template-columns: 120px auto 1fr; /* date/time | magnitude | location */
-      gap: 12px;
-      align-items: center;
-    }
-    @media (max-width: 520px){
-      .eqTbl{
-        grid-template-columns: 120px 80px 1fr;
-      }
-      .eqTbl .mono{ display:none; }
-      .eqTbl .addr > div:first-child{ font-size:13px; }
-      .eqTbl .typeText{ white-space:normal; overflow:visible; text-overflow:unset; }
-    }
-    .eqPin{ filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
-    .eq-row {
-      display: grid;
       grid-template-columns: 120px auto 1fr;
       gap: 12px;
       align-items: center;
+      padding: 12px 16px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 -1px 0 var(--greenLine);
+      cursor:pointer;
     }
-    .eq-dt {
-      display: flex;
-      flex-direction: column;
-      font-weight: 600;
-      line-height: 1.1;
-    }
-    .eq-date { font-size: 0.95rem; }
-    .eq-time { font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
-    .eq-mag {
-      font-weight: 800;
-      font-size: 0.9rem;
-      padding: 6px 12px;
-      border-radius: 999px;
-      white-space: nowrap;
-    }
-    .eq-header {
-      display: grid;
+    .eqTbl:nth-child(odd){ background:var(--rowA); }
+    .eqTbl:nth-child(even){ background:var(--rowB); }
+    .eq-dt{ display:flex; flex-direction:column; font-weight:700; line-height:1.1; }
+    .eq-date{ font-size:13px; }
+    .eq-time{ font-size:12px; opacity:.8; margin-top:4px; }
+
+    .eqHeader{
+      display:grid;
       grid-template-columns: 120px auto 1fr;
       gap: 12px;
-      padding: 8px 16px;
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
+      padding: 10px 16px;
+      font-size: 11px;
+      letter-spacing: .18em;
       text-transform: uppercase;
-      opacity: 0.65;
-      border-bottom: 1px solid rgba(255,255,255,0.15);
+      opacity: .72;
+      background:#060607;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      border-top:1px solid rgba(255,255,255,.08);
     }
 
-    /* IMPORTANT FIX: don't hide icons for Fire/Medical on mobile.
-       Only hide the icon in Weather rows (if desired). */
-    @media (max-width: 720px){
-      /* keep your mobile simplification, but DO NOT hide .icon globally */
-      .tbl {
-        grid-template-columns: 1fr !important;
-        row-gap: 10px;
-      }
-      .tbl .date { font-size: 13px; opacity: 0.85; }
-      .tbl .addr { font-size: 14px; line-height: 1.35; }
-      .tbl .mono { font-size: 12px; opacity: 0.75; }
-      .tbl .desktopStatus { justify-self: start; margin-top: 6px; }
-      .row { padding: 12px 14px; }
+    /* Weather wrapping */
+    #tab_weather .tbl { align-items:start; }
+    #tab_weather .addr > div:first-child{ white-space:normal; overflow:visible; text-overflow:unset; }
+    #tab_weather .addr .typeText{ white-space:normal; overflow:visible; text-overflow:unset; display:block; word-break:break-word; }
+    #tab_weather .tbl .icon{ display:none; } /* optional */
 
-      /* Weather-only icon hide */
-      #tab_weather .tbl .icon { display:none; }
+    /* ArcGIS iframe */
+    .embed-wrap{
+      width:100%;
+      height: calc(100vh - 220px);
+      border-radius: 16px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #0b0b0b;
+    }
+    .embed-wrap iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+    }
+
+    /* Cameras list */
+    .camRow{
+      display:grid;
+      grid-template-columns: 84px 1fr 140px;
+      gap:12px;
+      align-items:center;
+      padding:12px 16px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 -1px 0 var(--greenLine);
+      cursor:pointer;
+    }
+    .camRow:nth-child(odd){ background:var(--rowA); }
+    .camRow:nth-child(even){ background:var(--rowB); }
+
+    .camThumb{
+      width:84px; height:54px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      object-fit:cover;
+      display:block;
+    }
+    .camName{ font-weight:900; font-size:14px; }
+    .camMeta{ font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .camRight{ display:flex; justify-content:flex-end; gap:8px; align-items:center; }
+
+    .badgeOnline{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:850;
+      border:1px solid rgba(34,197,94,.35);
+      background:rgba(34,197,94,.10);
+      white-space:nowrap;
+    }
+    .badgeOffline{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:850;
+      border:1px solid rgba(148,163,184,.30);
+      background:rgba(148,163,184,.10);
+      white-space:nowrap;
     }
 
     /* Helispots controls + table */
@@ -461,7 +447,42 @@
     }
     .pager .pill:disabled{ opacity:.45; cursor:not-allowed; }
 
+    /* Mobile */
+    .mobileMeta{ display:none; }
     @media (max-width: 760px){
+      .tblHead{ display:none; }
+      .tbl{ grid-template-columns: 118px 44px 1fr; gap:10px; align-items:start; }
+      .addr a{ white-space:normal; overflow:visible; text-overflow:unset; line-height:1.15; }
+      .desktopUnits, .desktopStatus{ display:none; }
+      .mobileMeta{
+        display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; align-items:center;
+      }
+      .mobileUnits{
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+        font-size:12px; color:rgba(255,255,255,.82);
+        white-space:normal;
+      }
+
+      #map_fire, #map_chp, #map_eq, #map_weather, #map_cams, #map_heli { height:420px; }
+
+      .chpGridHead{ display:none; }
+      .chpRow{
+        display:block;
+        border-radius:14px;
+        margin:12px 16px;
+        border:1px solid rgba(255,255,255,.10);
+        padding:12px;
+      }
+      .chpKV{ display:grid; grid-template-columns: 92px 1fr; gap:10px 12px; padding:6px 0; }
+      .k{ color:rgba(255,255,255,.55); font-weight:800; letter-spacing:.08em; font-size:11px; text-transform:uppercase; }
+      .v{ font-size:13px; color:rgba(255,255,255,.9); }
+
+      .eqHeader{ display:none; }
+      .eqTbl{ grid-template-columns: 120px 90px 1fr; }
+
+      .camRow{ grid-template-columns: 84px 1fr; }
+      .camRight{ justify-content:flex-start; }
+
       .heliHead{ display:none; }
       .heliRow{
         grid-template-columns: 1fr;
@@ -473,283 +494,6 @@
       }
       .heliLoc a{ white-space:normal; }
     }
-   /* --- Force severity badge to appear on mobile --- */
-@media (max-width: 640px) {
-  .alert-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-
-  .severity {
-    display: inline-flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-}
-
-.tab-panel { display:none; }
-.tab-panel.active { display:block; }
-
-.embed-wrap{
-  width:100%;
-  height: calc(100vh - 220px); /* tune this number if needed */
-  border-radius: 16px;
-  overflow:hidden;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: #0b0b0b;
-}
-
-.embed-wrap iframe{
-  width:100%;
-  height:100%;
-  border:0;
-  display:block;
-}
-/* Fire/Medical mobile layout — restore original inline icon */
-@media (max-width: 760px){
-  #tab_fire .tbl{
-    grid-template-columns: 36px 1fr; /* icon | content */
-  }
-
-  #tab_fire .date{
-    grid-column: 1 / -1;
-    margin-bottom: 6px;
-    font-size: 12px;
-    opacity: 0.75;
-  }
-
-  #tab_fire .icon{
-    align-self: flex-start;
-    margin-top: 2px;
-  }
-
-  #tab_fire .addr{
-    align-self: flex-start;
-  }
-}
-/* Fire/Medical mobile layout — restore original inline icon + address */
-@media (max-width: 760px) {
-
-  /* Only affect Fire/Medical rows */
-  #tab_fire #rows_fire .tbl {
-    grid-template-columns: auto 1fr; /* TYPE | ADDRESS */
-  }
-
-  /* DATE/TIME on its own row */
-  #tab_fire #rows_fire .tbl > :nth-child(1) {
-    grid-column: 1 / -1;
-    margin-bottom: 6px;
-    font-size: 12px;
-    opacity: 0.75;
-  }
-
-  /* TYPE (emoji + label) inline on the left */
-  #tab_fire #rows_fire .tbl > :nth-child(2) {
-    grid-column: 1;
-    align-self: flex-start;
-  }
-
-  /* ADDRESS inline to the right of the emoji */
-  #tab_fire #rows_fire .tbl > :nth-child(3) {
-    grid-column: 2;
-    align-self: flex-start;
-  }
-
-  /* UNITS + STATUS stacked below */
-  #tab_fire #rows_fire .tbl > :nth-child(4),
-  #tab_fire #rows_fire .tbl > :nth-child(5) {
-    grid-column: 1 / -1;
-  }
-}
-/* Fire/Medical mobile alignment polish */
-@media (max-width: 760px) {
-
-  /* Lock icon column width */
-  #tab_fire #rows_fire .tbl {
-    grid-template-columns: 40px 1fr;
-    column-gap: 12px;
-  }
-
-  /* Center emoji within its column */
-  #tab_fire #rows_fire .tbl > :nth-child(2) {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 2px;
-  }
-
-  /* Ensure text column is consistent */
-  #tab_fire #rows_fire .tbl > :nth-child(3) {
-    padding-top: 0;
-  }
-}
-/* Fire/Medical — lock TYPE column so multi-emoji rows align */
-@media (max-width: 760px) {
-
-  /* Force TYPE cell to fixed width */
-  #tab_fire #rows_fire .tbl > :nth-child(2) {
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
-
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-
-    white-space: nowrap;   /* prevent emoji wrapping */
-    overflow: hidden;      /* prevent expansion */
-  }
-
-  /* Normalize emoji size */
-  #tab_fire #rows_fire .tbl > :nth-child(2) {
-    font-size: 22px;
-    line-height: 1;
-  }
-}
-/* Fire/Medical mobile — lock content block alignment */
-@media (max-width: 760px) {
-
-  /* Treat ADDRESS + TYPE + UNITS + STATUS as one column */
-  #tab_fire #rows_fire .tbl > :nth-child(3),
-  #tab_fire #rows_fire .tbl > :nth-child(4),
-  #tab_fire #rows_fire .tbl > :nth-child(5) {
-    grid-column: 2;
-    justify-self: start;
-    align-self: flex-start;
-  }
-
-  /* Add consistent vertical rhythm */
-  #tab_fire #rows_fire .tbl > :nth-child(3) {
-    margin-bottom: 2px;
-  }
-
-  #tab_fire #rows_fire .tbl > :nth-child(4) {
-    margin-bottom: 4px;
-    opacity: 0.85;
-  }
-
-  /* Keep status chip aligned under content, not floating */
-  #tab_fire #rows_fire .tbl > :nth-child(5) {
-    margin-top: 2px;
-  }
-}
-/* ===== FIRE/MEDICAL MOBILE: hard reset to the clean 3-col layout ===== */
-@media (max-width: 760px){
-  #tab_fire #rows_fire .tbl{
-    grid-template-columns: 118px 44px 1fr !important; /* time | icon | content */
-    gap: 10px !important;
-    align-items: flex-start !important;
-  }
-
-  /* Undo all the nth-child/grid-column hacks above */
-  #tab_fire #rows_fire .tbl > *{
-    grid-column: auto !important;
-    justify-self: stretch !important;
-    align-self: flex-start !important;
-    margin: 0 !important;
-  }
-
-  /* Keep icon perfectly centered in its lane */
-  #tab_fire #rows_fire .icon{
-    width: 44px;
-    min-width: 44px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-  }
-
-  /* Hide desktop-only columns on mobile */
-  #tab_fire #rows_fire .desktopUnits,
-  #tab_fire #rows_fire .desktopStatus{
-    display: none !important;
-  }
-
-  /* Show units + status under the address on mobile */
-  #tab_fire #rows_fire .mobileMeta{
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 6px;
-    align-items: center;
-  }
-
-  /* Allow address wrapping nicely */
-  #tab_fire #rows_fire .addr{
-    min-width: 0;
-  }
-  #tab_fire #rows_fire .addr a{
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    line-height: 1.15;
-  }
-}
-/* ===== FIRE/MEDICAL MOBILE: put emoji UNDER date/time ===== */
-@media (max-width: 760px){
-  /* 2 columns: left = time+emoji stack, right = all text */
-  #tab_fire #rows_fire .tbl{
-    grid-template-columns: 132px 1fr !important;
-    gap: 10px !important;
-    align-items: flex-start !important;
-  }
-
-  /* Reset any previous grid hacks */
-  #tab_fire #rows_fire .tbl > *{
-    grid-column: auto !important;
-    margin: 0 !important;
-  }
-
-  /* DATE/TIME sits in left column */
-  #tab_fire #rows_fire .date{
-    grid-column: 1 !important;
-    white-space: nowrap;
-  }
-
-  /* ICON goes under the date/time (same left column) */
-  #tab_fire #rows_fire .icon{
-    grid-column: 1 !important;
-    justify-self: start;
-    margin-top: 6px;
-    width: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-  }
-
-  /* ADDRESS + TYPE + META all in right column */
-  #tab_fire #rows_fire .addr,
-  #tab_fire #rows_fire .desktopUnits,
-  #tab_fire #rows_fire .desktopStatus{
-    grid-column: 2 !important;
-    justify-self: start;
-  }
-
-  /* Desktop-only columns OFF on mobile */
-  #tab_fire #rows_fire .desktopUnits,
-  #tab_fire #rows_fire .desktopStatus{
-    display: none !important;
-  }
-
-  /* Mobile meta ON */
-  #tab_fire #rows_fire .mobileMeta{
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 6px;
-    align-items: center;
-  }
-
-  /* Let the address wrap nicely */
-  #tab_fire #rows_fire .addr a{
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    line-height: 1.15;
-  }
-}
   </style>
 </head>
 
@@ -773,6 +517,7 @@
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
         <button class="tabBtn" data-tab="arcgis">ArcGIS</button>
+        <button class="tabBtn" data-tab="cams">Cameras</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
     </div>
@@ -854,6 +599,10 @@
           </div>
         </div>
 
+        <div class="eqHeader">
+          <div>Date / Time</div><div>Magnitude</div><div>Location / Depth</div>
+        </div>
+
         <div id="rows_eq"></div>
         <div class="helper">Tap an event to zoom on the map.</div>
       </section>
@@ -890,33 +639,56 @@
         <div id="map_weather"></div>
       </section>
     </div>
-<!-- ================= ArcGIS ================= -->
-<div class="tabPanel" id="tab_arcgis">
-  <section class="card" aria-label="ArcGIS Reference Map">
-    <div class="sectionBar">
-      <div class="left">
-        <div class="label">ArcGIS Reference Map</div>
-        <div class="sub">Primary map view</div>
-      </div>
+
+    <!-- ================= ArcGIS ================= -->
+    <div class="tabPanel" id="tab_arcgis">
+      <section class="card" aria-label="ArcGIS Reference Map">
+        <div class="sectionBar">
+          <div class="left">
+            <div class="label">ArcGIS Reference Map</div>
+            <div class="sub">Primary map view</div>
+          </div>
+        </div>
+
+        <div class="embed-wrap">
+          <iframe
+            title="ArcGIS Map"
+            src="https://www.arcgis.com/apps/View/index.html?appid=24d2d88d701b4eaa8e9fe6e5882c8258"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+          ></iframe>
+        </div>
+
+        <div class="helper">Data source: ArcGIS</div>
+      </section>
     </div>
 
-    <div class="embed-wrap">
-      <iframe
-        title="ArcGIS Map"
-        src="https://www.arcgis.com/apps/View/index.html?appid=24d2d88d701b4eaa8e9fe6e5882c8258"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        allowfullscreen
-      ></iframe>
-    </div>
+    <!-- ================= CAMERAS ================= -->
+    <div class="tabPanel" id="tab_cams">
+      <section class="card" aria-label="Fire Cameras">
+        <div class="sectionBar">
+          <div class="left">
+            <div class="label">Cameras (Ventura County)</div>
+            <div class="sub" id="updatedAt_cams">Updated —</div>
+          </div>
+          <div class="right" id="activeCount_cams">— cameras</div>
+        </div>
 
-    <div class="helper">Data source: ArcGIS</div>
-  </section>
-</div>
+        <div id="rows_cams"></div>
+        <div class="helper">Tap a row to zoom. “Open” launches the camera page in a new tab.</div>
+      </section>
+
+      <section class="card mapCard" aria-label="Camera Map">
+        <div class="mapTop">
+          <div class="label">Map</div>
+          <button class="btn" id="fitBtn_cams" type="button">Fit Map</button>
+        </div>
+        <div id="map_cams"></div>
+      </section>
+    </div>
 
     <!-- ================= HELISPOTS ================= -->
-
-</script>
     <div class="tabPanel" id="tab_heli">
       <section class="card" aria-label="Helispots">
         <div class="sectionBar">
@@ -969,27 +741,31 @@
   </main>
 
 <script>
+  // =========================
+  // Helpers / Global Status
+  // =========================
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
   function formatUpdatedLikeVCFD(iso) {
     if (!iso) return "—";
     const d = new Date(iso);
     if (isNaN(d)) return "—";
-
     const m = d.getMonth() + 1;
     const day = d.getDate();
     const yr = String(d.getFullYear()).slice(-2);
-
     let h = d.getHours();
     const min = String(d.getMinutes()).padStart(2, "0");
     const ampm = h >= 12 ? "pm" : "am";
     h = h % 12 || 12;
-
     return `${m}/${day}/${yr} ${h}:${min}${ampm}`;
   }
 
-  // ===== GLOBAL STATUS DOT =====
   const dot = document.getElementById("dot");
   const statusText = document.getElementById("statusText");
-
   function setStatus(state, text){
     dot.classList.remove("ok","wait","err");
     if(state === "ok") dot.classList.add("ok");
@@ -998,43 +774,9 @@
     statusText.textContent = text;
   }
 
-  function escapeHtml(s){
-    return String(s ?? "").replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m]));
-  }
-
-  // ===== TABS =====
-  const tabBtns = document.querySelectorAll(".tabBtn");
-  const panels = {
-    fire: document.getElementById("tab_fire"),
-    chp: document.getElementById("tab_chp"),
-    eq: document.getElementById("tab_eq"),
-    weather: document.getElementById("tab_weather"),
-    arcgis: document.getElementById("tab_arcgis"),
-    heli: document.getElementById("tab_heli"),
-  };
-
-  tabBtns.forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      tabBtns.forEach(b=>b.classList.remove("active"));
-      btn.classList.add("active");
-      const key = btn.dataset.tab;
-      Object.keys(panels).forEach(k=>panels[k].classList.toggle("active", k===key));
-
-      setTimeout(()=>{
-        if(key==="fire" && map_fire) map_fire.invalidateSize();
-        if(key==="chp" && map_chp) map_chp.invalidateSize();
-        if(key==="eq" && map_eq) map_eq.invalidateSize();
-        if(key==="weather" && map_weather) map_weather.invalidateSize();
-        if(key==="heli" && map_heli) map_heli.invalidateSize();
-      }, 50);
-    });
-  });
-
-  // =====================================================
-  // ================= BASEMAP TOGGLE ====================
-  // =====================================================
+  // =========================
+  // Leaflet basemap toggle
+  // =========================
   function addBasemapToggle(map){
     const street = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -1043,28 +785,19 @@
 
     const satellite = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 19,
-        attribution: "Tiles &copy; Esri"
-      }
+      { maxZoom: 19, attribution: "Tiles &copy; Esri" }
     );
 
-    // default layer:
     street.addTo(map);
-
-    L.control.layers(
-      { "Street": street, "Satellite": satellite },
-      {},
-      { position: "topright" }
-    ).addTo(map);
+    L.control.layers({ "Street": street, "Satellite": satellite }, {}, { position:"topright" }).addTo(map);
   }
 
-  // =====================================================
-  // =============== MARKER ICONS (EMOJI) ================
-  // =====================================================
+  // =========================
+  // Marker icons (emoji)
+  // =========================
   function emojiFor(typeText){
     const t = (typeText || "").toLowerCase().trim();
-    if (t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
+    if (t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
     if(t.includes("rescue")) return "🛟";
     if(t.includes("water")) return "🌊";
@@ -1081,6 +814,7 @@
 
   function colorForFireMedical(typeText){
     const t = (typeText || "").toLowerCase();
+    if(t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "#f59e0b";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "#2563eb";
     if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "#f97316";
     if(t.includes("fire") || t.includes("structure") || t.includes("vegetation") || t.includes("brush")) return "#ef4444";
@@ -1105,9 +839,65 @@
     return `https://www.google.com/maps?q=${q}`;
   }
 
-  // =====================================================
-  // ================= FIRE / MEDICAL ====================
-  // =====================================================
+  function googleMapsLinkFromAddress(addr){
+    const q = encodeURIComponent(addr || "");
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
+
+  // =========================
+  // Tabs + Helispots password
+  // =========================
+  const tabBtns = document.querySelectorAll(".tabBtn");
+  const panels = {
+    fire: document.getElementById("tab_fire"),
+    chp: document.getElementById("tab_chp"),
+    eq: document.getElementById("tab_eq"),
+    weather: document.getElementById("tab_weather"),
+    arcgis: document.getElementById("tab_arcgis"),
+    cams: document.getElementById("tab_cams"),
+    heli: document.getElementById("tab_heli"),
+  };
+
+  const HELI_AUTH_KEY = "heliAuth";
+  const HELI_PASSWORD = "VC2025"; // change whenever you want
+
+  function ensureHeliAuth(){
+    if (sessionStorage.getItem(HELI_AUTH_KEY) === "yes") return true;
+    const p = prompt("Enter password to access Helispots:");
+    if (p === HELI_PASSWORD) {
+      sessionStorage.setItem(HELI_AUTH_KEY, "yes");
+      return true;
+    }
+    alert("Access denied");
+    return false;
+  }
+
+  function setActiveTab(key){
+    tabBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === key));
+    Object.keys(panels).forEach(k => panels[k].classList.toggle("active", k === key));
+
+    // Let leaflet maps resize properly when switching tabs
+    setTimeout(() => {
+      if(key==="fire" && map_fire) map_fire.invalidateSize();
+      if(key==="chp" && map_chp) map_chp.invalidateSize();
+      if(key==="eq" && map_eq) map_eq.invalidateSize();
+      if(key==="weather" && map_weather) map_weather.invalidateSize();
+      if(key==="cams" && map_cams) map_cams.invalidateSize();
+      if(key==="heli" && map_heli) map_heli.invalidateSize();
+    }, 50);
+  }
+
+  tabBtns.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const key = btn.dataset.tab;
+      if(key === "heli" && !ensureHeliAuth()) return;
+      setActiveTab(key);
+    });
+  });
+
+  // =========================
+  // FIRE / MEDICAL
+  // =========================
   const FIRE_API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 
   let map_fire, layer_fire;
@@ -1125,11 +915,6 @@
     return `<span class="chip slate">${escapeHtml(statusText)}</span>`;
   }
 
-  function googleMapsLink(fullAddress){
-    const q = encodeURIComponent(fullAddress || "");
-    return `https://www.google.com/maps/search/?api=1&query=${q}`;
-  }
-
   function parseResponseDate(s){
     const m = String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
     if(!m) return 0;
@@ -1139,11 +924,11 @@
     return new Date(year, mm-1, dd, hh, mi).getTime() || 0;
   }
 
- function normalizeTypeLabel(typeText){
-  const t = (typeText || "").trim();
-  if (t.toLowerCase() === "1e") return "Investigation";
-  return t;
-}
+  function normalizeTypeLabel(typeText){
+    const t = String(typeText || "").trim();
+    if (t.toLowerCase() === "1e") return "Gas Leak";
+    return t;
+  }
 
   function normalizeFire(raw){
     const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
@@ -1154,8 +939,8 @@
     const city = raw?.city ? String(raw.city).trim() : "";
     const street = [block, addr].filter(Boolean).join(" ").trim();
     const fullAddress = [street, city].filter(Boolean).join(", ").trim();
-    const type = normalizeTypeLabel(raw?.incidentType || raw?.IncidentType || "");
 
+    const type = normalizeTypeLabel(raw?.incidentType || raw?.IncidentType || "");
     const status = raw?.status || raw?.Status || "";
     const units = raw?.units || raw?.Units || "";
 
@@ -1169,12 +954,51 @@
     };
   }
 
+  function initFireMap(){
+    map_fire = L.map("map_fire", { zoomControl:true }).setView([34.278, -119.293], 10);
+    addBasemapToggle(map_fire);
+    layer_fire = L.layerGroup().addTo(map_fire);
+    document.getElementById("fitBtn_fire").addEventListener("click", fitFireMap);
+  }
+
+  function fitFireMap(){
+    const pts = [];
+    layer_fire.eachLayer(m => pts.push(m.getLatLng()));
+    if(pts.length) map_fire.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  function updateFireMarkers(){
+    layer_fire.clearLayers();
+    fireIncidents.forEach(x => {
+      if(x.lat == null || x.lon == null) return;
+
+      const marker = L.marker([x.lat, x.lon], {
+        incidentId: x.id,
+        icon: markerIcon(emojiFor(x.type), colorForFireMedical(x.type))
+      });
+
+      marker.bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.type || "Incident")}</div>
+          <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
+          <div style="margin-top:8px;font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
+            <div><b>Units:</b> ${escapeHtml(x.units || "—")}</div>
+            <div><b>Status:</b> ${escapeHtml(x.status || "—")}</div>
+          </div>
+        </div>
+      `);
+
+      marker.addTo(layer_fire);
+    });
+  }
+
   function renderFire(){
     rows_fire.innerHTML = "";
     activeCount_fire.textContent = `${fireIncidents.length} active`;
 
-    fireIncidents.forEach((x) => {
-      const mapsHref = googleMapsLink(x.fullAddress);
+    fireIncidents.forEach(x => {
+      const mapsHref = googleMapsLinkFromAddress(x.fullAddress);
       const statusChip = chipFor(x.status);
       const unitsText = x.units ? escapeHtml(x.units) : `<span style="color:rgba(255,255,255,.35)">—</span>`;
 
@@ -1203,56 +1027,15 @@
 
         if(x.lat != null && x.lon != null && map_fire){
           map_fire.setView([x.lat, x.lon], Math.max(map_fire.getZoom(), 12), { animate:true });
-          layer_fire.eachLayer((m) => {
-            if(m?.options?.incidentId === x.id) m.openPopup();
-          });
+          layer_fire.eachLayer(m => { if(m?.options?.incidentId === x.id) m.openPopup(); });
           document.getElementById("map_fire").scrollIntoView({ behavior:"smooth", block:"start" });
-        }else{
+        } else {
           document.getElementById("map_fire").scrollIntoView({ behavior:"smooth", block:"start" });
         }
       });
 
       rows_fire.appendChild(row);
     });
-  }
-
-  function initFireMap(){
-    map_fire = L.map("map_fire", { zoomControl:true }).setView([34.278, -119.293], 10);
-    addBasemapToggle(map_fire);
-    layer_fire = L.layerGroup().addTo(map_fire);
-    document.getElementById("fitBtn_fire").addEventListener("click", fitFireMap);
-  }
-
-  function updateFireMarkers(){
-    layer_fire.clearLayers();
-    fireIncidents.forEach((x) => {
-      if(x.lat == null || x.lon == null) return;
-
-      const marker = L.marker([x.lat, x.lon], {
-        incidentId: x.id,
-        icon: markerIcon(emojiFor(x.type), colorForFireMedical(x.type))
-      });
-
-      marker.bindPopup(`
-        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-          <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "Incident")}</div>
-          <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
-          <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
-            <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
-            <div><b>Units:</b> ${escapeHtml(x.units || "—")}</div>
-            <div><b>Status:</b> ${escapeHtml(x.status || "—")}</div>
-          </div>
-        </div>
-      `);
-
-      marker.addTo(layer_fire);
-    });
-  }
-
-  function fitFireMap(){
-    const pts = [];
-    layer_fire.eachLayer((m) => pts.push(m.getLatLng()));
-    if(pts.length) map_fire.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
   async function fetchFire(){
@@ -1278,9 +1061,9 @@
     }
   }
 
-  // =====================================================
-  // ======================= CHP =========================
-  // =====================================================
+  // =========================
+  // CHP (via your /api/incidents)
+  // =========================
   let map_chp, layer_chp;
   let chpIncidents = [];
 
@@ -1297,7 +1080,7 @@
 
   function fitChpMap(){
     const pts = [];
-    layer_chp.eachLayer(m=>pts.push(m.getLatLng()));
+    layer_chp.eachLayer(m => pts.push(m.getLatLng()));
     if(pts.length) map_chp.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
@@ -1352,9 +1135,9 @@
       const m = L.marker([x.lat, x.lon], { icon: markerIcon("🚓", "#0ea5e9") })
         .bindPopup(`
           <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-            <div style="font-weight:800;margin-bottom:4px">${escapeHtml(x.type || "CHP")}</div>
+            <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.type || "CHP")}</div>
             <div style="color:rgba(0,0,0,.75);white-space:pre-wrap">${escapeHtml(x.location || "")}</div>
-            <div style="margin-top:6px;font-size:12px;color:rgba(0,0,0,.75)">
+            <div style="margin-top:8px;font-size:12px;color:rgba(0,0,0,.75)">
               <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
               <div><b>Lat/Lon:</b> ${x.lat ?? "—"}, ${x.lon ?? "—"}</div>
             </div>
@@ -1372,11 +1155,9 @@
       const data = await res.json();
 
       const raw = Array.isArray(data?.chp?.incidents) ? data.chp.incidents : [];
-
       chpIncidents = raw.map((x, i) => {
         const lat = x?.latitude ?? x?.lat ?? null;
         const lon = x?.longitude ?? x?.lon ?? null;
-
         return {
           id: x?.id ?? `${x?.type || "CHP"}-${i}`,
           dateStr: x?.dateStr ?? x?.dateTime ?? "—",
@@ -1387,12 +1168,7 @@
         };
       });
 
-      if (data?.updatedAt) {
-        const formatted = formatUpdatedLikeVCFD(data.updatedAt);
-        updatedAt_chp.textContent = `Updated ${formatted}`;
-      } else {
-        updatedAt_chp.textContent = "Updated —";
-      }
+      updatedAt_chp.textContent = data?.updatedAt ? `Updated ${formatUpdatedLikeVCFD(data.updatedAt)}` : "Updated —";
 
       renderChp();
       updateChpMarkers();
@@ -1405,9 +1181,9 @@
     }
   }
 
-  // =====================================================
-  // ==================== EARTHQUAKES ====================
-  // =====================================================
+  // =========================
+  // EARTHQUAKES (USGS)
+  // =========================
   let map_eq, layer_eq;
   let eqEvents = [];
 
@@ -1416,11 +1192,12 @@
   const activeCount_eq = document.getElementById("activeCount_eq");
 
   const EQ_BBOX = { minLat: 32.0, maxLat: 35.8, minLon: -120.9, maxLon: -114.0 };
+  const EQ_MIN_MAG = 2.0;
+
   function eqInBbox(lat, lon){
     return lat >= EQ_BBOX.minLat && lat <= EQ_BBOX.maxLat &&
            lon >= EQ_BBOX.minLon && lon <= EQ_BBOX.maxLon;
   }
-  const EQ_MIN_MAG = 2.0;
 
   function initEqMap(){
     map_eq = L.map("map_eq", { zoomControl:true }).setView([34.1, -118.4], 7.5);
@@ -1431,7 +1208,7 @@
 
   function fitEqMap(){
     const pts = [];
-    layer_eq.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
+    layer_eq.eachLayer(m => { if(m.getLatLng) pts.push(m.getLatLng()); });
     if(pts.length) map_eq.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
   }
 
@@ -1441,43 +1218,33 @@
     if(m >= 4.0) return "#f97316";
     return "#fbbf24";
   }
-  function eqRadiusKm(mag){
-    const m = Number(mag || 0);
-    if (m >= 7.0) return 350;
-    if (m >= 6.0) return 220;
-    if (m >= 5.0) return 140;
-    if (m >= 4.0) return 80;
-    if (m >= 3.0) return 35;
-    return 15;
-  }
-
-  function eqIcon(){
-    const size = 26;
-    return L.divIcon({
-      className:"",
-      iconSize:[size,size],
-      iconAnchor:[size/2,size],
-      popupAnchor:[0,-18],
-      html:`<div class="eqPin" style="font-size:22px;line-height:22px;">📍</div>`
-    });
-  }
 
   function magChip(mag){
     const c = eqColor(mag);
     return `<span class="magChip" style="background:${c};border-color:rgba(255,255,255,.22)">M ${escapeHtml(mag)}</span>`;
   }
 
+  function updateEqMarkers(){
+    layer_eq.clearLayers();
+    eqEvents.forEach(ev=>{
+      if(ev.lat==null || ev.lon==null) return;
+      const m = L.marker([ev.lat, ev.lon], { icon: markerIcon("📍", "#fbbf24") })
+        .bindPopup(`
+          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+            <div style="font-weight:900;margin-bottom:6px">M ${escapeHtml(ev.mag ?? "—")} — ${escapeHtml(ev.place || "")}</div>
+            <div style="font-size:12px;color:rgba(0,0,0,.75)">
+              <div><b>Time:</b> ${escapeHtml(ev.time ? new Date(ev.time).toLocaleString() : "—")}</div>
+              <div><b>Depth:</b> ${escapeHtml(ev.depthKm != null ? (ev.depthKm + " km") : "—")}</div>
+            </div>
+          </div>
+        `);
+      m.addTo(layer_eq);
+    });
+  }
+
   function renderEq(){
     rows_eq.innerHTML = "";
     activeCount_eq.textContent = `${eqEvents.length} events`;
-
-    rows_eq.innerHTML = `
-      <div class="eq-header">
-        <div>Date / Time</div>
-        <div>Magnitude</div>
-        <div>Location / Depth</div>
-      </div>
-    `;
 
     if(!eqEvents.length){
       rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No SoCal earthquakes M${EQ_MIN_MAG.toFixed(1)}+ found in the past 24 hours.</div>`;
@@ -1485,24 +1252,21 @@
     }
 
     eqEvents.forEach(ev=>{
-      const row = document.createElement("div");
-      row.className = "row";
-
       const dt = ev.time ? new Date(ev.time) : null;
-      const dateStr = dt ? dt.toLocaleDateString([], { month:"numeric", day:"numeric", year:"numeric" }) : "--";
-      const timeStr = dt ? dt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
+      const dateStr = dt ? dt.toLocaleDateString([], { month:"numeric", day:"numeric", year:"numeric" }) : "—";
+      const timeStr = dt ? dt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "—";
 
+      const row = document.createElement("div");
+      row.className = "eqTbl";
       row.innerHTML = `
-        <div class="eqTbl" style="padding:0 16px;">
-          <div class="eq-dt">
-            <div class="eq-date">${escapeHtml(dateStr)}</div>
-            <div class="eq-time">${escapeHtml(timeStr)}</div>
-          </div>
-          <div>${magChip(ev.mag ?? "--")}</div>
-          <div class="addr">
-            <div style="font-weight:800;font-size:14px">${escapeHtml(ev.place || "--")}</div>
-            <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
-          </div>
+        <div class="eq-dt">
+          <div class="eq-date">${escapeHtml(dateStr)}</div>
+          <div class="eq-time">${escapeHtml(timeStr)}</div>
+        </div>
+        <div>${magChip(ev.mag ?? "—")}</div>
+        <div class="addr">
+          <div style="font-weight:900;font-size:14px">${escapeHtml(ev.place || "—")}</div>
+          <div class="typeText">${escapeHtml(ev.depthKm != null ? ("Depth: " + ev.depthKm + " km") : "")}</div>
         </div>
       `;
 
@@ -1514,37 +1278,6 @@
       });
 
       rows_eq.appendChild(row);
-    });
-  }
-
-  function updateEqMarkers(){
-    layer_eq.clearLayers();
-    eqEvents.forEach(ev=>{
-      if(ev.lat==null || ev.lon==null) return;
-
-      const rKm = eqRadiusKm(ev.mag);
-      const ring = L.circle([ev.lat, ev.lon], {
-        radius: rKm * 1000,
-        weight: 2,
-        opacity: 0.5,
-        fillOpacity: 0.06,
-        dashArray: "6 6"
-      });
-
-      const m = L.marker([ev.lat, ev.lon], { icon: eqIcon() })
-        .bindPopup(`
-          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-            <div style="font-weight:900;margin-bottom:6px">M ${escapeHtml(ev.mag ?? "—")} — ${escapeHtml(ev.place || "")}</div>
-            <div style="font-size:12px;color:rgba(0,0,0,.75)">
-              <div><b>Time:</b> ${escapeHtml(ev.time ? new Date(ev.time).toLocaleString() : "—")}</div>
-              <div><b>Depth:</b> ${escapeHtml(ev.depthKm != null ? (ev.depthKm + " km") : "—")}</div>
-              <div><b>Estimated area:</b> ~${escapeHtml(rKm)} km radius</div>
-            </div>
-          </div>
-        `);
-
-      ring.addTo(layer_eq);
-      m.addTo(layer_eq);
     });
   }
 
@@ -1593,9 +1326,9 @@
     }
   }
 
-  // =====================================================
-  // =================== WEATHER ALERTS ==================
-  // =====================================================
+  // =========================
+  // WEATHER (via your /api/weather)
+  // =========================
   let map_weather, layer_weather;
   let wxAlerts = [];
 
@@ -1630,9 +1363,7 @@
 
   function fitWeatherMap(){
     const bounds = [];
-    layer_weather.eachLayer(l=>{
-      if(l.getBounds) bounds.push(l.getBounds());
-    });
+    layer_weather.eachLayer(l => { if(l.getBounds) bounds.push(l.getBounds()); });
     if(bounds.length){
       const b = bounds.reduce((acc,bb)=> acc.extend(bb), bounds[0]);
       map_weather.fitBounds(b, { padding:[20,20] });
@@ -1656,20 +1387,16 @@
 
       const sentDt = sent ? new Date(sent) : null;
       const sentDate = sentDt ? sentDt.toLocaleDateString() : "—";
-      const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "";
+      const sentTime = sentDt ? sentDt.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" }) : "—";
 
       const endsDt = ends ? new Date(ends) : null;
-      const endsStr = endsDt ? endsDt.toLocaleString([], {
-        month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"
-      }) : "—";
+      const endsStr = endsDt ? endsDt.toLocaleString([], { month:"numeric", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }) : "—";
 
       const sev = a.severity || "—";
       const sevCls = `sev-${sevKey(sev)}`;
-      const hasPolyHint = a.geometry ? "Polygon: yes" : (Array.isArray(a.affectedZones) && a.affectedZones.length ? "Polygon: via zones" : "Polygon: none");
 
       const row = document.createElement("div");
       row.className = "row";
-
       row.innerHTML = `
         <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
           <div class="date">
@@ -1680,7 +1407,6 @@
           <div class="addr">
             <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
             <div class="typeText">${escapeHtml(area)}</div>
-            <div class="typeText" style="opacity:.65;margin-top:4px">${escapeHtml(hasPolyHint)}</div>
           </div>
           <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
           <div class="desktopStatus">
@@ -1690,7 +1416,6 @@
       `;
 
       row.addEventListener("click", ()=>{
-        setTimeout(() => map_weather.invalidateSize(true), 0);
         if(a._bounds){
           map_weather.fitBounds(a._bounds, { padding:[20,20] });
           document.getElementById("map_weather").scrollIntoView({ behavior:"smooth", block:"start" });
@@ -1786,9 +1511,165 @@
     }
   }
 
-  // =====================================================
-  // ===================== HELISPOTS =====================
-  // =====================================================
+  // =========================
+  // CAMERAS (ALERTCalifornia ArcGIS feed)
+  // =========================
+  const CAM_SERVICE =
+    "https://services8.arcgis.com/X84q166Srnyl4JMV/ArcGIS/rest/services/ALERTCalifornia_Camera_Feed/FeatureServer/0/query";
+
+  let map_cams, layer_cams;
+  let cams = [];
+
+  const rows_cams = document.getElementById("rows_cams");
+  const updatedAt_cams = document.getElementById("updatedAt_cams");
+  const activeCount_cams = document.getElementById("activeCount_cams");
+
+  function initCamsMap(){
+    map_cams = L.map("map_cams", { zoomControl:true }).setView([34.278, -119.293], 9.8);
+    addBasemapToggle(map_cams);
+    layer_cams = L.layerGroup().addTo(map_cams);
+    document.getElementById("fitBtn_cams").addEventListener("click", fitCamsMap);
+  }
+
+  function fitCamsMap(){
+    const pts = [];
+    layer_cams.eachLayer(m => { if(m.getLatLng) pts.push(m.getLatLng()); });
+    if(pts.length) map_cams.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  function camThumbBusted(url){
+    if(!url) return "";
+    try{
+      const u = new URL(url, window.location.href);
+      u.searchParams.set("_", String(Date.now()));
+      return u.toString();
+    }catch(_){
+      return url + (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+    }
+  }
+
+  function renderCams(){
+    rows_cams.innerHTML = "";
+    activeCount_cams.textContent = `${cams.length} cameras`;
+
+    if(!cams.length){
+      rows_cams.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No cameras returned for Ventura County.</div>`;
+      return;
+    }
+
+    cams.forEach(c => {
+      const row = document.createElement("div");
+      row.className = "camRow";
+
+      const thumb = c.imageURL ? camThumbBusted(c.imageURL) : "";
+      const onlineBadge = c.isOnline ? `<span class="badgeOnline">Online</span>` : `<span class="badgeOffline">Offline</span>`;
+      const openHref = c.cameraURL || c.networkURL || "";
+
+      row.innerHTML = `
+        <div>
+          ${thumb
+            ? `<img class="camThumb" src="${thumb}" alt="${escapeHtml(c.cameraName || "Camera")}" loading="lazy" />`
+            : `<div class="camThumb" style="display:flex;align-items:center;justify-content:center;">📷</div>`
+          }
+        </div>
+
+        <div>
+          <div class="camName">${escapeHtml(c.cameraName || "Unnamed camera")}</div>
+          <div class="camMeta">
+            ${escapeHtml(c.county || "—")}
+            ${c.lat != null && c.lon != null ? ` • ${c.lat.toFixed(4)}, ${c.lon.toFixed(4)}` : ""}
+          </div>
+        </div>
+
+        <div class="camRight">
+          ${onlineBadge}
+          ${openHref ? `<a class="btn" href="${openHref}" target="_blank" rel="noopener noreferrer">Open</a>` : ""}
+        </div>
+      `;
+
+      row.addEventListener("click", (ev) => {
+        const tag = ev.target?.tagName?.toLowerCase?.() || "";
+        if(tag === "a" || tag === "button") return;
+
+        if(c.lat != null && c.lon != null && map_cams){
+          map_cams.setView([c.lat, c.lon], Math.max(map_cams.getZoom(), 12), { animate:true });
+          document.getElementById("map_cams").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      });
+
+      rows_cams.appendChild(row);
+    });
+  }
+
+  function updateCamsMarkers(){
+    layer_cams.clearLayers();
+    cams.forEach(c => {
+      if(c.lat == null || c.lon == null) return;
+      const color = c.isOnline ? "#22c55e" : "#64748b";
+
+      const m = L.marker([c.lat, c.lon], { icon: markerIcon("📷", color) })
+        .bindPopup(`
+          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+            <div style="font-weight:900;margin-bottom:6px">${escapeHtml(c.cameraName || "Camera")}</div>
+            <div style="font-size:12px;color:rgba(0,0,0,.75)">
+              <div><b>Status:</b> ${c.isOnline ? "Online" : "Offline"}</div>
+              <div><b>County:</b> ${escapeHtml(c.county || "—")}</div>
+              ${c.cameraURL ? `<div style="margin-top:8px"><a href="${c.cameraURL}" target="_blank" rel="noopener noreferrer">Open camera</a></div>` : ""}
+            </div>
+          </div>
+        `);
+      m.addTo(layer_cams);
+    });
+  }
+
+  async function fetchCams(){
+    setStatus("wait","Refreshing…");
+    try{
+      const where = "UPPER(county)='VENTURA'";
+      const outFields = "cameraName,county,isOnline,imageURL,cameraURL,networkURL";
+      const url =
+        `${CAM_SERVICE}?where=${encodeURIComponent(where)}` +
+        `&outFields=${encodeURIComponent(outFields)}` +
+        `&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=2000`;
+
+      const res = await fetch(url, { cache:"no-store" });
+      if(!res.ok) throw new Error(`Camera service HTTP ${res.status}`);
+      const geo = await res.json();
+
+      const feats = Array.isArray(geo?.features) ? geo.features : [];
+      cams = feats.map(f => {
+        const p = f?.properties || {};
+        const coords = f?.geometry?.coordinates;
+        const lon = Array.isArray(coords) ? Number(coords[0]) : null;
+        const lat = Array.isArray(coords) ? Number(coords[1]) : null;
+
+        return {
+          cameraName: p.cameraName || p.cameraname || p.name || "",
+          county: p.county || "",
+          isOnline: !!(p.isOnline ?? p.isonline ?? false),
+          imageURL: p.imageURL || p.imageUrl || "",
+          cameraURL: p.cameraURL || p.cameraUrl || "",
+          networkURL: p.networkURL || p.networkUrl || "",
+          lat: (lat != null && !Number.isNaN(lat)) ? lat : null,
+          lon: (lon != null && !Number.isNaN(lon)) ? lon : null
+        };
+      }).sort((a,b)=> (a.cameraName || "").localeCompare(b.cameraName || ""));
+
+      updatedAt_cams.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
+      renderCams();
+      updateCamsMarkers();
+      setStatus("ok","Updated");
+    }catch(e){
+      console.error(e);
+      setStatus("err","Error");
+      updatedAt_cams.textContent = "Updated —";
+      rows_cams.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load cameras right now.</div>`;
+    }
+  }
+
+  // =========================
+  // HELISPOTS
+  // =========================
   let map_heli, layer_heli;
   const rows_heli = document.getElementById("rows_heli");
   const heliCount = document.getElementById("heliCount");
@@ -1800,9 +1681,7 @@
   const PAGE_SIZE = 15;
   let heliPage = 1;
 
-  // Combined dataset from your screenshots (Helispot Index + VCFD Snorkel Sites list)
   const HELI_SITES = [
-    // Helispots + Medivac LZs
     { name:"50-A — Point Mugu NAS", type:"Helispot", lat:34.11805, lon:-119.107917 },
     { name:"56-A — Yerba Buena Rd", type:"Helispot", lat:34.304367, lon:-118.998267 },
     { name:"Solano Verde LZ", type:"LZ Medivac", lat:34.104817, lon:-118.936367 },
@@ -1831,7 +1710,6 @@
     { name:"28-A — Lake Piru Marina", type:"Helispot", lat:34.4762, lon:-118.761367 },
     { name:"Todd Road LZ", type:"LZ Medivac", lat:34.31145, lon:-119.11395 },
 
-    // Snorkel Sites (VCFD Snorkel Sites list)
     { name:"16-1 — Arcosa Quarry", type:"Snorkel Site", lat:34.76205, lon:-119.043133 },
     { name:"20-1 — Black Mountain Ranch", type:"Snorkel Site", lat:34.42145, lon:-119.199567 },
     { name:"21-1 — Senior Canyon", type:"Snorkel Site", lat:34.471583, lon:-119.189283 },
@@ -1865,11 +1743,11 @@
     if(t === "LZ Medivac") return "medevac";
     return "snorkel";
   }
-function typeEmoji(t){
-  if(t === "Helispot") return "🚁";
-  if(t === "LZ Medivac") return "🚑";
-  return "🤿"; // snorkel sites
-}
+  function typeEmoji(t){
+    if(t === "Helispot") return "🚁";
+    if(t === "LZ Medivac") return "🚑";
+    return "🤿";
+  }
   function typeColor(t){
     if(t === "Helispot") return "#ef4444";
     if(t === "LZ Medivac") return "#a855f7";
@@ -1877,9 +1755,8 @@ function typeEmoji(t){
   }
 
   function extractSortableCode(name){
-    // matches "20-A — ..." or "16-1 — ..." or "22-C ..." etc.
     const s = String(name || "").trim();
-    const first = s.split("—")[0].trim(); // "20-A" or "Solano Verde LZ"
+    const first = s.split("—")[0].trim();
     const m = first.match(/^(\d+)\s*[-–]\s*([A-Za-z0-9]+)$/) || first.match(/^(\d+)-([A-Za-z0-9]+)$/);
     if(!m) return null;
     const major = parseInt(m[1],10);
@@ -1892,14 +1769,11 @@ function typeEmoji(t){
   function heliSort(a,b){
     const ca = extractSortableCode(a.name);
     const cb = extractSortableCode(b.name);
-
     if(ca && cb){
       if(ca.major !== cb.major) return ca.major - cb.major;
-      // compare minors numeric before alpha
       if(ca.minorIsNum && cb.minorIsNum) return ca.minorNum - cb.minorNum;
       if(ca.minorIsNum && !cb.minorIsNum) return -1;
       if(!ca.minorIsNum && cb.minorIsNum) return 1;
-      // both alpha
       const ma = ca.minorRaw.toUpperCase();
       const mb = cb.minorRaw.toUpperCase();
       if(ma !== mb) return ma < mb ? -1 : 1;
@@ -1924,6 +1798,42 @@ function typeEmoji(t){
       .sort(heliSort);
   }
 
+  function initHeliMap(){
+    map_heli = L.map("map_heli", { zoomControl:true }).setView([34.278, -119.293], 9.5);
+    addBasemapToggle(map_heli);
+    layer_heli = L.layerGroup().addTo(map_heli);
+    document.getElementById("fitBtn_heli").addEventListener("click", fitHeliMap);
+  }
+
+  function fitHeliMap(){
+    const pts = [];
+    layer_heli.eachLayer(m => { if(m.getLatLng) pts.push(m.getLatLng()); });
+    if(pts.length) map_heli.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
+  }
+
+  function updateHeliMarkers(filteredAll){
+    layer_heli.clearLayers();
+    (filteredAll || []).forEach(x=>{
+      if(x.lat==null || x.lon==null) return;
+      const m = L.marker([x.lat, x.lon], {
+        siteName: x.name,
+        icon: markerIcon(typeEmoji(x.type), typeColor(x.type))
+      }).bindPopup(`
+        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
+          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.name)}</div>
+          <div style="color:rgba(0,0,0,.75);margin-bottom:6px"><b>Type:</b> ${escapeHtml(x.type)}</div>
+          <div style="font-size:12px;color:rgba(0,0,0,.75)">
+            <div><b>Lat/Lon:</b> ${escapeHtml(x.lat)}, ${escapeHtml(x.lon)}</div>
+            <div style="margin-top:8px">
+              <a href="${googleMapsLinkFromLatLon(x.lat, x.lon)}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+            </div>
+          </div>
+        </div>
+      `);
+      m.addTo(layer_heli);
+    });
+  }
+
   function renderHeli(){
     const all = getHeliFiltered();
     heliCount.textContent = `${all.length} sites`;
@@ -1938,7 +1848,6 @@ function typeEmoji(t){
     heliNext.disabled = heliPage >= totalPages;
 
     heliPagerText.textContent = `Page ${heliPage} of ${totalPages} • Showing ${pageItems.length} of ${all.length}`;
-
     rows_heli.innerHTML = "";
 
     pageItems.forEach(x=>{
@@ -1957,9 +1866,6 @@ function typeEmoji(t){
 
         if(map_heli){
           map_heli.setView([x.lat, x.lon], Math.max(map_heli.getZoom(), 12), { animate:true });
-          layer_heli.eachLayer(m=>{
-            if(m?.options?.siteName === x.name) m.openPopup();
-          });
           document.getElementById("map_heli").scrollIntoView({ behavior:"smooth", block:"start" });
         }
       });
@@ -1970,130 +1876,37 @@ function typeEmoji(t){
     updateHeliMarkers(all);
   }
 
-  function initHeliMap(){
-    map_heli = L.map("map_heli", { zoomControl:true }).setView([34.278, -119.293], 9.5);
-    addBasemapToggle(map_heli);
-    layer_heli = L.layerGroup().addTo(map_heli);
-    document.getElementById("fitBtn_heli").addEventListener("click", fitHeliMap);
-  }
-
-  function updateHeliMarkers(filteredAll){
-    layer_heli.clearLayers();
-    (filteredAll || []).forEach(x=>{
-      if(x.lat==null || x.lon==null) return;
-
-      const m = L.marker([x.lat, x.lon], {
-        siteName: x.name,
-        icon: markerIcon(typeEmoji(x.type), typeColor(x.type))
-      }).bindPopup(`
-        <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.name)}</div>
-          <div style="color:rgba(0,0,0,.75);margin-bottom:6px"><b>Type:</b> ${escapeHtml(x.type)}</div>
-          <div style="font-size:12px;color:rgba(0,0,0,.75)">
-            <div><b>Lat/Lon:</b> ${escapeHtml(x.lat)}, ${escapeHtml(x.lon)}</div>
-            <div style="margin-top:6px">
-              <a href="${googleMapsLinkFromLatLon(x.lat, x.lon)}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
-            </div>
-          </div>
-        </div>
-      `);
-
-      m.addTo(layer_heli);
-    });
-  }
-
-  function fitHeliMap(){
-    const pts = [];
-    layer_heli.eachLayer(m=>{ if(m.getLatLng) pts.push(m.getLatLng()); });
-    if(pts.length) map_heli.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
-  }
-
   heliSearch.addEventListener("input", ()=>{ heliPage = 1; renderHeli(); });
   heliType.addEventListener("change", ()=>{ heliPage = 1; renderHeli(); });
   heliPrev.addEventListener("click", ()=>{ heliPage = Math.max(1, heliPage - 1); renderHeli(); });
   heliNext.addEventListener("click", ()=>{ heliPage = heliPage + 1; renderHeli(); });
 
-  // ===== INIT ALL MAPS =====
+  // =========================
+  // INIT + FIRST LOAD + REFRESH
+  // =========================
   initFireMap();
   initChpMap();
   initEqMap();
   initWeatherMap();
+  initCamsMap();
   initHeliMap();
 
-  // Initial render for helis
   renderHeli();
 
-  // ===== FIRST LOAD =====
   fetchFire();
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
+  fetchCams();
 
-  // ===== REFRESH CADENCE =====
   setInterval(fetchFire, 60000);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
-// ================= HELISPOTS PASSWORD (tab-only, robust) =================
-(function heliAuthObserver(){
-  const KEY = "heliAuth";
-  const PASSWORD = "VC2025";
-  const HELI_ID = "tab_heli";
+  setInterval(fetchCams, 120000);
 
-  let lastActiveId = null;
-
-  function panelIsActive(el){
-    if (!el) return false;
-    // common patterns: .active class OR not hidden/displayed
-    return el.classList.contains("active") || el.getAttribute("aria-hidden") === "false";
-  }
-
-  function setActivePanel(panelId){
-    // Generic fallback: toggle .active on panels
-    document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
-    document.getElementById(panelId)?.classList.add("active");
-  }
-
-  function ensureHeliAuth(){
-    if (sessionStorage.getItem(KEY) === "yes") return true;
-
-    const p = prompt("Enter password to access Helispots:");
-    if (p === PASSWORD) {
-      sessionStorage.setItem(KEY, "yes");
-      return true;
-    }
-    alert("Access denied");
-    return false;
-  }
-
-  // Track last active panel (so we can bounce back)
-  function updateLastActive(){
-    const active = Array.from(document.querySelectorAll(".tabPanel"))
-      .find(p => p.classList.contains("active"));
-    if (active?.id && active.id !== HELI_ID) lastActiveId = active.id;
-  }
-  updateLastActive();
-
-  // Observe class changes on all tab panels
-  const panels = document.querySelectorAll(".tabPanel");
-  const obs = new MutationObserver(() => {
-    updateLastActive();
-
-    const heli = document.getElementById(HELI_ID);
-    if (!heli) return;
-
-    if (panelIsActive(heli)) {
-      // Helispots just became visible/active -> require auth
-      if (!ensureHeliAuth()) {
-        // kick back to last panel, otherwise default to fire tab if it exists
-        const fallback = lastActiveId || "tab_fire";
-        setActivePanel(fallback);
-      }
-    }
-  });
-
-  panels.forEach(p => obs.observe(p, { attributes: true, attributeFilter: ["class", "aria-hidden", "style"] }));
-})();
+  // Keep status from staying "wait" forever if multiple fetches overlap
+  setStatus("ok","Updated");
 </script>
 </body>
 </html>
