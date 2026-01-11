@@ -219,6 +219,46 @@
       background:#1f2937;
     }
 
+    /* ============= FIRE/MEDICAL: emoji under time/date ============= */
+    #tab_fire .tbl.fmTbl{
+      grid-template-columns: 160px 1fr 240px 140px;
+      align-items:start;
+    }
+    #tab_fire .callLeft{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:6px;
+    }
+    #tab_fire .callWhen{
+      font-size:13px;
+      line-height:1.15;
+      opacity:.95;
+    }
+    #tab_fire .callEmoji{
+      font-size:22px;
+      line-height:1;
+    }
+
+    /* ============= WEATHER: fix wrapping/stacking ============= */
+    #tab_weather .tbl.wxTbl{
+      grid-template-columns: 170px 1fr 240px 140px;
+      align-items:start;
+    }
+    #tab_weather .addr .typeText{
+      white-space:normal;
+      overflow:visible;
+      text-overflow:unset;
+      word-break:break-word;
+    }
+    #tab_weather .mono{
+      white-space:normal;
+      overflow:visible;
+      text-overflow:unset;
+      word-break:break-word;
+    }
+
     /* CHP table */
     .chpGridHead{
       display:grid;
@@ -290,12 +330,6 @@
       border-bottom:1px solid rgba(255,255,255,.08);
       border-top:1px solid rgba(255,255,255,.08);
     }
-
-    /* Weather wrapping */
-    #tab_weather .tbl { align-items:start; }
-    #tab_weather .addr > div:first-child{ white-space:normal; overflow:visible; text-overflow:unset; }
-    #tab_weather .addr .typeText{ white-space:normal; overflow:visible; text-overflow:unset; display:block; word-break:break-word; }
-    #tab_weather .tbl .icon{ display:none; } /* optional */
 
     /* ArcGIS iframe */
     .embed-wrap{
@@ -493,38 +527,14 @@
         border:1px solid rgba(255,255,255,.10);
       }
       .heliLoc a{ white-space:normal; }
+
+      /* Fire table mobile (date+emoji left, address right) */
+      #tab_fire .tbl.fmTbl{ grid-template-columns: 118px 1fr; }
+
+      /* Weather mobile: stack nicely */
+      #tab_weather .tbl.wxTbl{ grid-template-columns: 1fr; gap:8px; }
+      #tab_weather .date{ white-space:normal; }
     }
-    .callRow{
-  display:flex;
-  gap:12px;
-  align-items:flex-start;
-}
-
-.callLeft{
-  width:90px;              /* adjust to taste */
-  flex:0 0 90px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  text-align:center;
-}
-
-.callWhen{
-  font-size:14px;
-  line-height:1.15;
-  opacity:.9;
-}
-
-.callEmoji{
-  margin-top:6px;
-  font-size:22px;
-  line-height:1;
-}
-
-.callMain{
-  flex:1 1 auto;
-  min-width:0;             /* important on mobile flex */
-}
   </style>
 </head>
 
@@ -547,7 +557,7 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
-        <button class="tabBtn" data-tab="arcgis">ArcGIS</button>
+        <button class="tabBtn" data-tab="arcgis">VC-EOC Map</button>
         <button class="tabBtn" data-tab="cams">Cameras</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
@@ -567,9 +577,8 @@
         </div>
 
         <div class="tblHead">
-          <div class="tbl" style="padding:0;">
+          <div class="tbl fmTbl" style="padding:0;">
             <div>DATE/TIME</div>
-            <div>TYPE</div>
             <div>ADDRESS</div>
             <div>UNITS</div>
             <div>STATUS</div>
@@ -671,19 +680,19 @@
       </section>
     </div>
 
-    <!-- ================= ArcGIS ================= -->
+    <!-- ================= VC-EOC MAP (ArcGIS) ================= -->
     <div class="tabPanel" id="tab_arcgis">
-      <section class="card" aria-label="ArcGIS Reference Map">
+      <section class="card" aria-label="VC-EOC Map">
         <div class="sectionBar">
           <div class="left">
-            <div class="label">ArcGIS Reference Map</div>
+            <div class="label">VC-EOC Map</div>
             <div class="sub">Primary map view</div>
           </div>
         </div>
 
         <div class="embed-wrap">
           <iframe
-            title="ArcGIS Map"
+            title="VC-EOC Map"
             src="https://www.arcgis.com/apps/View/index.html?appid=24d2d88d701b4eaa8e9fe6e5882c8258"
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
@@ -907,7 +916,6 @@
     tabBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === key));
     Object.keys(panels).forEach(k => panels[k].classList.toggle("active", k === key));
 
-    // Let leaflet maps resize properly when switching tabs
     setTimeout(() => {
       if(key==="fire" && map_fire) map_fire.invalidateSize();
       if(key==="chp" && map_chp) map_chp.invalidateSize();
@@ -1036,9 +1044,14 @@
       const row = document.createElement("div");
       row.className = "row";
       row.innerHTML = `
-        <div class="tbl">
-          <div class="date">${escapeHtml(x.dateStr)}</div>
-          <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+        <div class="tbl fmTbl">
+          <div class="date">
+            <div class="callLeft">
+              <div class="callWhen">${escapeHtml(x.dateStr)}</div>
+              <div class="callEmoji" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+            </div>
+          </div>
+
           <div class="addr">
             <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
             <div class="typeText">${escapeHtml(x.type || "")}</div>
@@ -1047,6 +1060,7 @@
               <div>${statusChip}</div>
             </div>
           </div>
+
           <div class="desktopUnits mono">${unitsText}</div>
           <div class="desktopStatus">${statusChip}</div>
         </div>
@@ -1429,18 +1443,17 @@
       const row = document.createElement("div");
       row.className = "row";
       row.innerHTML = `
-        <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
+        <div class="tbl wxTbl">
           <div class="date">
             <div>${escapeHtml(sentDate)}</div>
             <div style="opacity:.8;margin-top:4px">${escapeHtml(sentTime)}</div>
           </div>
-          <div class="icon">⚠️</div>
           <div class="addr">
             <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
             <div class="typeText">${escapeHtml(area)}</div>
           </div>
           <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
-          <div class="desktopStatus">
+          <div>
             <span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span>
           </div>
         </div>
@@ -1936,7 +1949,6 @@
   setInterval(fetchWeather, 300000);
   setInterval(fetchCams, 120000);
 
-  // Keep status from staying "wait" forever if multiple fetches overlap
   setStatus("ok","Updated");
 </script>
 </body>
