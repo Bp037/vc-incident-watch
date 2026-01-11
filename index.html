@@ -494,6 +494,37 @@
       }
       .heliLoc a{ white-space:normal; }
     }
+    .callRow{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+}
+
+.callLeft{
+  width:90px;              /* adjust to taste */
+  flex:0 0 90px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+
+.callWhen{
+  font-size:14px;
+  line-height:1.15;
+  opacity:.9;
+}
+
+.callEmoji{
+  margin-top:6px;
+  font-size:22px;
+  line-height:1;
+}
+
+.callMain{
+  flex:1 1 auto;
+  min-width:0;             /* important on mobile flex */
+}
   </style>
 </head>
 
