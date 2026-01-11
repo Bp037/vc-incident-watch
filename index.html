@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -124,14 +123,10 @@
 
     .tbl{
       display:grid;
+      grid-template-columns: 140px 64px 1fr 240px 140px;
       gap:12px;
       align-items:center;
       padding:0 16px;
-    }
-
-    /* Default (kept for other tabs if needed) */
-    .tbl.defaultCols{
-      grid-template-columns: 140px 64px 1fr 240px 140px;
     }
 
     .row{
@@ -148,17 +143,6 @@
       font-size:13px;
       white-space:nowrap;
     }
-
-    .whenEmoji{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      text-align:center;
-      gap:6px;
-    }
-    .whenEmoji .whenTxt{ line-height:1.15; }
-    .whenEmoji .whenEmojiIcon{ font-size:22px; line-height:1; }
-
     .icon{ font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; }
     .addr a{ display:block; font-size:14px; font-weight:700; color:var(--link); }
     .addr .typeText{
@@ -220,7 +204,7 @@
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
 
-    #map_fire, #map_chp, #map_eq, #map_weather, #map_cams, #map_air, #map_heli { height:360px; background:#111; }
+    #map_fire, #map_chp, #map_eq, #map_weather, #map_cams, #map_heli { height:360px; background:#111; }
 
     .tabPanel{ display:none; }
     .tabPanel.active{ display:block; }
@@ -234,16 +218,6 @@
       font-size:18px;
       background:#1f2937;
     }
-
-    /* ===== FIRE specific grid (emoji under time) ===== */
-    #tab_fire .tbl{ grid-template-columns: 150px 1fr 240px 140px; }
-    #tab_fire .tblHead .tbl{ grid-template-columns: 150px 1fr 240px 140px; }
-
-    /* ===== WEATHER specific grid (fix messed up text) ===== */
-    #tab_weather .tbl{ grid-template-columns: 170px 1fr 240px 140px; align-items:start; }
-    #tab_weather .tblHead .tbl{ grid-template-columns: 170px 1fr 240px 140px; }
-    #tab_weather .addr > div:first-child{ white-space:normal; overflow:visible; text-overflow:unset; }
-    #tab_weather .addr .typeText{ white-space:normal; overflow:visible; text-overflow:unset; display:block; word-break:break-word; }
 
     /* CHP table */
     .chpGridHead{
@@ -276,44 +250,6 @@
     .chpType{ font-weight:800; font-size:13px; }
     .chpLoc{ font-size:13px; color:rgba(255,255,255,.86); white-space:pre-wrap; word-break:break-word; }
     .chpMono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; font-size:12px; color:rgba(255,255,255,.80); }
-
-    /* Aircraft list */
-    .airHead{
-      display:grid;
-      grid-template-columns: 1fr 120px 120px 120px 120px;
-      gap:10px;
-      align-items:center;
-      padding:10px 16px;
-      color:rgba(255,255,255,.72);
-      font-size:11px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      background:#060607;
-      border-top:1px solid rgba(255,255,255,.08);
-      border-bottom:1px solid rgba(255,255,255,.08);
-    }
-    .airRow{
-      display:grid;
-      grid-template-columns: 1fr 120px 120px 120px 120px;
-      gap:10px;
-      align-items:center;
-      padding:12px 16px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      box-shadow: inset 0 -1px 0 var(--greenLine);
-      cursor:pointer;
-    }
-    .airRow:nth-child(odd){ background:var(--rowA); }
-    .airRow:nth-child(even){ background:var(--rowB); }
-    .airCallsign{ font-weight:900; font-size:13px; display:flex; gap:8px; align-items:center; min-width:0; }
-    .airTag{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:4px 8px; border-radius:999px;
-      font-size:11px; font-weight:900;
-      border:1px solid rgba(245,158,11,.40);
-      background:rgba(245,158,11,.14);
-      white-space:nowrap;
-    }
-    .airMono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; font-size:12px; color:rgba(255,255,255,.85); }
 
     /* Earthquakes */
     .magChip{
@@ -354,6 +290,12 @@
       border-bottom:1px solid rgba(255,255,255,.08);
       border-top:1px solid rgba(255,255,255,.08);
     }
+
+    /* Weather wrapping */
+    #tab_weather .tbl { align-items:start; }
+    #tab_weather .addr > div:first-child{ white-space:normal; overflow:visible; text-overflow:unset; }
+    #tab_weather .addr .typeText{ white-space:normal; overflow:visible; text-overflow:unset; display:block; word-break:break-word; }
+    #tab_weather .tbl .icon{ display:none; } /* optional */
 
     /* ArcGIS iframe */
     .embed-wrap{
@@ -509,6 +451,8 @@
     .mobileMeta{ display:none; }
     @media (max-width: 760px){
       .tblHead{ display:none; }
+      .tbl{ grid-template-columns: 118px 44px 1fr; gap:10px; align-items:start; }
+      .addr a{ white-space:normal; overflow:visible; text-overflow:unset; line-height:1.15; }
       .desktopUnits, .desktopStatus{ display:none; }
       .mobileMeta{
         display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; align-items:center;
@@ -519,11 +463,7 @@
         white-space:normal;
       }
 
-      #map_fire, #map_chp, #map_eq, #map_weather, #map_cams, #map_air, #map_heli { height:420px; }
-
-      /* Fire/Weather become 2-column on mobile */
-      #tab_fire .tbl{ grid-template-columns: 118px 1fr; gap:10px; align-items:start; }
-      #tab_weather .tbl{ grid-template-columns: 118px 1fr; gap:10px; align-items:start; }
+      #map_fire, #map_chp, #map_eq, #map_weather, #map_cams, #map_heli { height:420px; }
 
       .chpGridHead{ display:none; }
       .chpRow{
@@ -543,16 +483,6 @@
       .camRow{ grid-template-columns: 84px 1fr; }
       .camRight{ justify-content:flex-start; }
 
-      .airHead{ display:none; }
-      .airRow{
-        grid-template-columns: 1fr;
-        gap:8px;
-        border-radius:14px;
-        margin:10px 12px;
-        padding:12px;
-        border:1px solid rgba(255,255,255,.10);
-      }
-
       .heliHead{ display:none; }
       .heliRow{
         grid-template-columns: 1fr;
@@ -564,6 +494,37 @@
       }
       .heliLoc a{ white-space:normal; }
     }
+    .callRow{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+}
+
+.callLeft{
+  width:90px;              /* adjust to taste */
+  flex:0 0 90px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+
+.callWhen{
+  font-size:14px;
+  line-height:1.15;
+  opacity:.9;
+}
+
+.callEmoji{
+  margin-top:6px;
+  font-size:22px;
+  line-height:1;
+}
+
+.callMain{
+  flex:1 1 auto;
+  min-width:0;             /* important on mobile flex */
+}
   </style>
 </head>
 
@@ -586,9 +547,8 @@
         <button class="tabBtn" data-tab="chp">CHP</button>
         <button class="tabBtn" data-tab="eq">Earthquakes</button>
         <button class="tabBtn" data-tab="weather">Weather Alerts</button>
-        <button class="tabBtn" data-tab="arcgis">VC-EOC Map</button>
+        <button class="tabBtn" data-tab="arcgis">ArcGIS</button>
         <button class="tabBtn" data-tab="cams">Cameras</button>
-        <button class="tabBtn" data-tab="air">Aircraft</button>
         <button class="tabBtn" data-tab="heli">Helispots</button>
       </div>
     </div>
@@ -609,6 +569,7 @@
         <div class="tblHead">
           <div class="tbl" style="padding:0;">
             <div>DATE/TIME</div>
+            <div>TYPE</div>
             <div>ADDRESS</div>
             <div>UNITS</div>
             <div>STATUS</div>
@@ -697,15 +658,6 @@
           <div class="right" id="activeCount_weather">— alerts</div>
         </div>
 
-        <div class="tblHead">
-          <div class="tbl" style="padding:0;">
-            <div>SENT</div>
-            <div>HEADLINE / AREAS</div>
-            <div>ENDS</div>
-            <div>SEVERITY</div>
-          </div>
-        </div>
-
         <div id="rows_weather"></div>
         <div class="helper">Tap an alert to zoom to its polygon.</div>
       </section>
@@ -719,12 +671,12 @@
       </section>
     </div>
 
-    <!-- ================= VC-EOC Map (ArcGIS) ================= -->
+    <!-- ================= ArcGIS ================= -->
     <div class="tabPanel" id="tab_arcgis">
-      <section class="card" aria-label="VC-EOC Map">
+      <section class="card" aria-label="ArcGIS Reference Map">
         <div class="sectionBar">
           <div class="left">
-            <div class="label">VC-EOC Map</div>
+            <div class="label">ArcGIS Reference Map</div>
             <div class="sub">Primary map view</div>
           </div>
         </div>
@@ -767,37 +719,7 @@
       </section>
     </div>
 
-    <!-- ================= AIRCRAFT ================= -->
-    <div class="tabPanel" id="tab_air">
-      <section class="card" aria-label="Aircraft">
-        <div class="sectionBar">
-          <div class="left">
-            <div class="label">Aircraft (Mode-S)</div>
-            <div class="sub" id="updatedAt_air">Updated —</div>
-          </div>
-          <div class="right" id="activeCount_air">— aircraft</div>
-        </div>
-
-        <div id="airNotice" class="helper"></div>
-
-        <div class="airHead">
-          <div>CALLSIGN</div><div>ALT (FT)</div><div>SPD (KTS)</div><div>LAT</div><div>LON</div>
-        </div>
-
-        <div id="rows_air"></div>
-        <div class="helper">Tap a row to zoom. Tracked aircraft require ICAO24 hex (24-bit address).</div>
-      </section>
-
-      <section class="card mapCard" aria-label="Aircraft Map">
-        <div class="mapTop">
-          <div class="label">Map</div>
-          <button class="btn" id="fitBtn_air" type="button">Fit Map</button>
-        </div>
-        <div id="map_air"></div>
-      </section>
-    </div>
-
-    <!-- ================= HELISPOTS (LOCKED + LAST) ================= -->
+    <!-- ================= HELISPOTS ================= -->
     <div class="tabPanel" id="tab_heli">
       <section class="card" aria-label="Helispots">
         <div class="sectionBar">
@@ -906,10 +828,9 @@
   // =========================
   function emojiFor(typeText){
     const t = (typeText || "").toLowerCase().trim();
-    if (/^1\s*e$/.test(t) || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
-    if(t.includes("active assailant")) return "🚨";
+    if (t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
-    if(t.includes("rescue") || t.includes("us&r") || t.includes("technical rescue")) return "🛟";
+    if(t.includes("rescue")) return "🛟";
     if(t.includes("water")) return "🌊";
     if(t.includes("structure")) return "🏠🔥";
     if(t.includes("fire")) return "🔥";
@@ -923,8 +844,8 @@
   }
 
   function colorForFireMedical(typeText){
-    const t = (typeText || "").toLowerCase().trim();
-    if (/^1\s*e$/.test(t) || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "#f59e0b";
+    const t = (typeText || "").toLowerCase();
+    if(t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "#f59e0b";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "#2563eb";
     if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "#f97316";
     if(t.includes("fire") || t.includes("structure") || t.includes("vegetation") || t.includes("brush")) return "#ef4444";
@@ -965,13 +886,11 @@
     weather: document.getElementById("tab_weather"),
     arcgis: document.getElementById("tab_arcgis"),
     cams: document.getElementById("tab_cams"),
-    air: document.getElementById("tab_air"),
     heli: document.getElementById("tab_heli"),
   };
 
   const HELI_AUTH_KEY = "heliAuth";
   const HELI_PASSWORD = "VC2025"; // change whenever you want
-  let currentTab = "fire";
 
   function ensureHeliAuth(){
     if (sessionStorage.getItem(HELI_AUTH_KEY) === "yes") return true;
@@ -985,17 +904,16 @@
   }
 
   function setActiveTab(key){
-    currentTab = key;
     tabBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === key));
     Object.keys(panels).forEach(k => panels[k].classList.toggle("active", k === key));
 
+    // Let leaflet maps resize properly when switching tabs
     setTimeout(() => {
       if(key==="fire" && map_fire) map_fire.invalidateSize();
       if(key==="chp" && map_chp) map_chp.invalidateSize();
       if(key==="eq" && map_eq) map_eq.invalidateSize();
       if(key==="weather" && map_weather) map_weather.invalidateSize();
       if(key==="cams" && map_cams) map_cams.invalidateSize();
-      if(key==="air" && map_air) map_air.invalidateSize();
       if(key==="heli" && map_heli) map_heli.invalidateSize();
     }, 50);
   }
@@ -1039,7 +957,7 @@
 
   function normalizeTypeLabel(typeText){
     const t = String(typeText || "").trim();
-    if (/^1\s*e$/i.test(t)) return "Gas Leak";
+    if (t.toLowerCase() === "1e") return "Gas Leak";
     return t;
   }
 
@@ -1119,11 +1037,8 @@
       row.className = "row";
       row.innerHTML = `
         <div class="tbl">
-          <div class="date whenEmoji">
-            <div class="whenTxt">${escapeHtml(x.dateStr)}</div>
-            <div class="whenEmojiIcon" title="${escapeHtml(x.type)}">${escapeHtml(emojiFor(x.type))}</div>
-          </div>
-
+          <div class="date">${escapeHtml(x.dateStr)}</div>
+          <div class="icon" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
           <div class="addr">
             <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
             <div class="typeText">${escapeHtml(x.type || "")}</div>
@@ -1132,7 +1047,6 @@
               <div>${statusChip}</div>
             </div>
           </div>
-
           <div class="desktopUnits mono">${unitsText}</div>
           <div class="desktopStatus">${statusChip}</div>
         </div>
@@ -1156,7 +1070,7 @@
   }
 
   async function fetchFire(){
-    if (currentTab === "fire") setStatus("wait","Refreshing…");
+    setStatus("wait","Refreshing…");
     try{
       const res = await fetch(FIRE_API_URL, { cache:"no-store" });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1169,10 +1083,10 @@
       updatedAt_fire.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
       renderFire();
       updateFireMarkers();
-      if (currentTab === "fire") setStatus("ok","Updated");
+      setStatus("ok","Updated");
     }catch(e){
       console.error(e);
-      if (currentTab === "fire") setStatus("err","Error");
+      setStatus("err","Error");
       updatedAt_fire.textContent = "Updated —";
       rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
     }
@@ -1265,7 +1179,7 @@
   }
 
   async function fetchChp(){
-    if (currentTab === "chp") setStatus("wait","Refreshing…");
+    setStatus("wait","Refreshing…");
     try{
       const res = await fetch("/api/incidents", { cache:"no-store" });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1289,10 +1203,10 @@
 
       renderChp();
       updateChpMarkers();
-      if (currentTab === "chp") setStatus("ok","Updated");
+      setStatus("ok","Updated");
     }catch(e){
       console.error(e);
-      if (currentTab === "chp") setStatus("err","Error");
+      setStatus("err","Error");
       updatedAt_chp.textContent = "Updated —";
       rows_chp.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load CHP right now.</div>`;
     }
@@ -1399,7 +1313,7 @@
   }
 
   async function fetchEarthquakes(){
-    if (currentTab === "eq") setStatus("wait","Refreshing…");
+    setStatus("wait","Refreshing…");
     try{
       const feed = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
       const res = await fetch(feed, { cache:"no-store" });
@@ -1434,10 +1348,10 @@
       updatedAt_eq.textContent = `Updated ${new Date().toLocaleString()}`;
       renderEq();
       updateEqMarkers();
-      if (currentTab === "eq") setStatus("ok","Updated");
+      setStatus("ok","Updated");
     }catch(e){
       console.error("EQ fetch failed:", e);
-      if (currentTab === "eq") setStatus("err","Error");
+      setStatus("err","Error");
       updatedAt_eq.textContent = "Updated —";
       rows_eq.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load earthquakes right now.</div>`;
     }
@@ -1515,24 +1429,17 @@
       const row = document.createElement("div");
       row.className = "row";
       row.innerHTML = `
-        <div class="tbl">
+        <div class="tbl" style="grid-template-columns: 170px 64px 1fr 220px 140px;">
           <div class="date">
             <div>${escapeHtml(sentDate)}</div>
             <div style="opacity:.8;margin-top:4px">${escapeHtml(sentTime)}</div>
           </div>
-
+          <div class="icon">⚠️</div>
           <div class="addr">
             <div style="font-weight:900;font-size:14px">${escapeHtml(headline)}</div>
             <div class="typeText">${escapeHtml(area)}</div>
-
-            <div class="mobileMeta">
-              <div class="mobileUnits">${endsDt ? escapeHtml("Ends: " + endsStr) : "—"}</div>
-              <div><span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span></div>
-            </div>
           </div>
-
           <div class="mono">${escapeHtml(endsDt ? ("Ends: " + endsStr) : "—")}</div>
-
           <div class="desktopStatus">
             <span class="chip ${escapeHtml(sevCls)}">${escapeHtml(sev)}</span>
           </div>
@@ -1615,7 +1522,7 @@
   }
 
   async function fetchWeather(){
-    if (currentTab === "weather") setStatus("wait","Refreshing…");
+    setStatus("wait","Refreshing…");
     try{
       const res = await fetch("/api/weather", { cache:"no-store" });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1626,17 +1533,17 @@
 
       renderWeather();
       await updateWeatherMap();
-      if (currentTab === "weather") setStatus("ok","Updated");
+      setStatus("ok","Updated");
     }catch(e){
       console.error(e);
-      if (currentTab === "weather") setStatus("err","Error");
+      setStatus("err","Error");
       updatedAt_weather.textContent = "Updated —";
       rows_weather.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load weather alerts right now.</div>`;
     }
   }
 
   // =========================
-  // CAMERAS (ALERTCalifornia ArcGIS feed) - UNCHANGED
+  // CAMERAS (ALERTCalifornia ArcGIS feed)
   // =========================
   const CAM_SERVICE =
     "https://services8.arcgis.com/X84q166Srnyl4JMV/ArcGIS/rest/services/ALERTCalifornia_Camera_Feed/FeatureServer/0/query";
@@ -1747,7 +1654,7 @@
   }
 
   async function fetchCams(){
-    if (currentTab === "cams") setStatus("wait","Refreshing…");
+    setStatus("wait","Refreshing…");
     try{
       const where = "UPPER(county)='VENTURA'";
       const outFields = "cameraName,county,isOnline,imageURL,cameraURL,networkURL";
@@ -1782,201 +1689,17 @@
       updatedAt_cams.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
       renderCams();
       updateCamsMarkers();
-      if (currentTab === "cams") setStatus("ok","Updated");
+      setStatus("ok","Updated");
     }catch(e){
       console.error(e);
-      if (currentTab === "cams") setStatus("err","Error");
+      setStatus("err","Error");
       updatedAt_cams.textContent = "Updated —";
       rows_cams.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load cameras right now.</div>`;
     }
   }
 
   // =========================
-  // AIRCRAFT (Mode-S via /api/aircraft)
-  // =========================
-  let map_air, layer_air;
-  let airItems = [];
-
-  const rows_air = document.getElementById("rows_air");
-  const updatedAt_air = document.getElementById("updatedAt_air");
-  const activeCount_air = document.getElementById("activeCount_air");
-  const airNotice = document.getElementById("airNotice");
-
-  const AIR_MAX = 10;
-  const AIR_POLL_MS = 10000;
-
-  // "Bleed a bit" into neighboring counties (tweak later if you want)
-  const AIR_BBOX = { minLat: 33.85, maxLat: 34.85, minLon: -119.85, maxLon: -118.65 };
-
-  // IMPORTANT: Tracking needs ICAO24 hex. Fill these in when you have them.
-  const TRACKED_AIRCRAFT = [
-    { tail: "N60VC",  icao24: "TBD" },
-    { tail: "N70VC",  icao24: "TBD" },
-    { tail: "N40CU",  icao24: "TBD" },
-    { tail: "N412VC", icao24: "A4DD6C" } // from your screenshot; change if needed
-  ].map(x => ({ ...x, tail: String(x.tail).toUpperCase(), icao24: String(x.icao24).toLowerCase() }));
-
-  function initAirMap(){
-    map_air = L.map("map_air", { zoomControl:true }).setView([34.278, -119.293], 9.3);
-    addBasemapToggle(map_air);
-    layer_air = L.layerGroup().addTo(map_air);
-    document.getElementById("fitBtn_air").addEventListener("click", fitAirMap);
-  }
-
-  function fitAirMap(){
-    const pts = [];
-    layer_air.eachLayer(m => { if(m.getLatLng) pts.push(m.getLatLng()); });
-    if(pts.length) map_air.fitBounds(L.latLngBounds(pts), { padding:[20,20] });
-  }
-
-  function isTrackedIcao(icao24){
-    const v = String(icao24 || "").toLowerCase();
-    return TRACKED_AIRCRAFT.some(t => t.icao24 && t.icao24 !== "tbd" && t.icao24 === v);
-  }
-
-  function trackedTailForIcao(icao24){
-    const v = String(icao24 || "").toLowerCase();
-    const hit = TRACKED_AIRCRAFT.find(t => t.icao24 && t.icao24 !== "tbd" && t.icao24 === v);
-    return hit ? hit.tail : null;
-  }
-
-  function renderAir(){
-    rows_air.innerHTML = "";
-    activeCount_air.textContent = `${airItems.length} aircraft`;
-
-    const missing = TRACKED_AIRCRAFT.filter(t => !t.icao24 || t.icao24 === "tbd");
-    if (missing.length) {
-      airNotice.innerHTML =
-        `Tracking needs ICAO24 hex for: <b>${missing.map(m => escapeHtml(m.tail)).join(", ")}</b>. ` +
-        `Once you paste the hex values, those aircraft will be highlighted automatically.`;
-    } else {
-      airNotice.textContent = "Tracking enabled for your configured aircraft.";
-    }
-
-    if(!airItems.length){
-      rows_air.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">No aircraft returned in the box yet (or /api/aircraft isn't set up).</div>`;
-      return;
-    }
-
-    const isMobile = window.matchMedia("(max-width: 760px)").matches;
-
-    airItems.forEach(a=>{
-      const isTracked = isTrackedIcao(a.icao24);
-      const label = (a.callsign || "").trim() || (isTracked ? trackedTailForIcao(a.icao24) : "") || a.icao24 || "Aircraft";
-      const altFt = a.altFt != null ? Math.round(a.altFt) : null;
-      const spdKts = a.spdKts != null ? Math.round(a.spdKts) : null;
-
-      const row = document.createElement("div");
-      row.className = "airRow";
-
-      if (isMobile){
-        row.innerHTML = `
-          <div class="airCallsign">
-            <span>${escapeHtml(label)}</span>
-            ${isTracked ? `<span class="airTag">TRACKED</span>` : ""}
-          </div>
-          <div class="airMono">ICAO: ${escapeHtml(a.icao24 || "—")}</div>
-          <div class="airMono">Alt: ${altFt != null ? escapeHtml(altFt + " ft") : "—"}</div>
-          <div class="airMono">Spd: ${spdKts != null ? escapeHtml(spdKts + " kt") : "—"}</div>
-          <div class="airMono">Pos: ${a.lat != null && a.lon != null ? escapeHtml(a.lat.toFixed(4) + ", " + a.lon.toFixed(4)) : "—"}</div>
-        `;
-      } else {
-        row.innerHTML = `
-          <div class="airCallsign">
-            <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(label)}</span>
-            ${isTracked ? `<span class="airTag">TRACKED</span>` : ""}
-          </div>
-          <div class="airMono">${altFt != null ? escapeHtml(altFt) : "—"}</div>
-          <div class="airMono">${spdKts != null ? escapeHtml(spdKts) : "—"}</div>
-          <div class="airMono">${a.lat != null ? escapeHtml(a.lat.toFixed(4)) : "—"}</div>
-          <div class="airMono">${a.lon != null ? escapeHtml(a.lon.toFixed(4)) : "—"}</div>
-        `;
-      }
-
-      row.addEventListener("click", ()=>{
-        if(a.lat!=null && a.lon!=null){
-          map_air.setView([a.lat, a.lon], Math.max(map_air.getZoom(), 11), { animate:true });
-          document.getElementById("map_air").scrollIntoView({ behavior:"smooth", block:"start" });
-        }
-      });
-
-      rows_air.appendChild(row);
-    });
-  }
-
-  function updateAirMarkers(){
-    layer_air.clearLayers();
-    airItems.forEach(a=>{
-      if(a.lat==null || a.lon==null) return;
-
-      const tracked = isTrackedIcao(a.icao24);
-      const color = tracked ? "#f59e0b" : "#38bdf8";
-      const emoji = tracked ? "🚁" : "✈️";
-      const label = (a.callsign || "").trim() || trackedTailForIcao(a.icao24) || a.icao24 || "Aircraft";
-
-      const m = L.marker([a.lat, a.lon], { icon: markerIcon(emoji, color) })
-        .bindPopup(`
-          <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-            <div style="font-weight:900;margin-bottom:6px">${escapeHtml(label)} ${tracked ? "(Tracked)" : ""}</div>
-            <div style="font-size:12px;color:rgba(0,0,0,.75)">
-              <div><b>ICAO:</b> ${escapeHtml(a.icao24 || "—")}</div>
-              <div><b>Alt:</b> ${a.altFt != null ? escapeHtml(Math.round(a.altFt) + " ft") : "—"}</div>
-              <div><b>Speed:</b> ${a.spdKts != null ? escapeHtml(Math.round(a.spdKts) + " kt") : "—"}</div>
-            </div>
-          </div>
-        `);
-      m.addTo(layer_air);
-    });
-  }
-
-  async function fetchAir(){
-    // Only poll when Aircraft tab is active
-    if (currentTab !== "air") return;
-
-    setStatus("wait","Refreshing…");
-    try{
-      const q = new URLSearchParams({
-        minLat: String(AIR_BBOX.minLat),
-        maxLat: String(AIR_BBOX.maxLat),
-        minLon: String(AIR_BBOX.minLon),
-        maxLon: String(AIR_BBOX.maxLon),
-        limit: String(AIR_MAX)
-      });
-
-      const res = await fetch(`/api/aircraft?${q.toString()}`, { cache:"no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      // expected shape: { updatedAt, aircraft:[{icao24,callsign,lat,lon,altFt,spdKts}] }
-      const raw = Array.isArray(data?.aircraft) ? data.aircraft : [];
-      airItems = raw
-        .map(x => ({
-          icao24: x?.icao24 ? String(x.icao24).toLowerCase() : "",
-          callsign: x?.callsign ? String(x.callsign).trim() : "",
-          lat: x?.lat != null ? Number(x.lat) : null,
-          lon: x?.lon != null ? Number(x.lon) : null,
-          altFt: x?.altFt != null ? Number(x.altFt) : null,
-          spdKts: x?.spdKts != null ? Number(x.spdKts) : null
-        }))
-        .filter(x => x.lat != null && x.lon != null)
-        .slice(0, AIR_MAX);
-
-      updatedAt_air.textContent = data?.updatedAt ? `Updated ${data.updatedAt}` : `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
-      renderAir();
-      updateAirMarkers();
-      setStatus("ok","Updated");
-    }catch(e){
-      console.error("Aircraft fetch failed:", e);
-      setStatus("err","Error");
-      updatedAt_air.textContent = "Updated —";
-      rows_air.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">
-        Aircraft requires an /api/aircraft endpoint (proxy). Once that’s added, this tab will populate.
-      </div>`;
-    }
-  }
-
-  // =========================
-  // HELISPOTS (unchanged from your code)
+  // HELISPOTS
   // =========================
   let map_heli, layer_heli;
   const rows_heli = document.getElementById("rows_heli");
@@ -1989,9 +1712,62 @@
   const PAGE_SIZE = 15;
   let heliPage = 1;
 
-  const HELI_SITES = ${"/* your existing HELI_SITES array stays exactly as-is here */"}[];
-  // NOTE: To keep this response size sane, I didn’t reprint the full HELI_SITES array here.
-  // In YOUR actual file, keep your existing HELI_SITES array unchanged.
+  const HELI_SITES = [
+    { name:"50-A — Point Mugu NAS", type:"Helispot", lat:34.11805, lon:-119.107917 },
+    { name:"56-A — Yerba Buena Rd", type:"Helispot", lat:34.304367, lon:-118.998267 },
+    { name:"Solano Verde LZ", type:"LZ Medivac", lat:34.104817, lon:-118.936367 },
+    { name:"Shooting Range LZ", type:"LZ Medivac", lat:34.090217, lon:-118.066667 },
+    { name:"Mansdorf LZ", type:"LZ Medivac", lat:34.067267, lon:-118.99005 },
+    { name:"Station 56 LZ", type:"LZ Medivac", lat:34.050583, lon:-118.954517 },
+    { name:"20-A — Old Walnut Rd", type:"Helispot", lat:34.4372, lon:-119.177417 },
+    { name:"20-B — Thomas Aquinas College", type:"Helispot", lat:34.4286, lon:-119.084317 },
+    { name:"22-A — Lake Casitas", type:"Helispot", lat:34.42185, lon:-119.328583 },
+    { name:"22-B — Country Drive", type:"Helispot", lat:34.422, lon:-119.284467 },
+    { name:"22-C — Rose Valley", type:"Helispot", lat:34.54125, lon:-119.185467 },
+    { name:"25-A — Unocal On-Shore", type:"Helispot", lat:34.355117, lon:-119.421267 },
+    { name:"Honor Farm LZ", type:"LZ Medivac", lat:34.427367, lon:-119.295117 },
+    { name:"32-A — Dos Vientos", type:"Helispot", lat:34.164583, lon:-118.98315 },
+    { name:"33-A — Sherwood Country Club", type:"Helispot", lat:34.126883, lon:-118.876967 },
+    { name:"35-A — Rancho Conejo", type:"Helispot", lat:34.207617, lon:-118.929583 },
+    { name:"36-A — Lambourne Place", type:"Helispot", lat:34.19125, lon:-118.751833 },
+    { name:"Green Meadow LZ", type:"LZ Medivac", lat:34.175317, lon:-118.888767 },
+    { name:"Sycamore LZ", type:"LZ Medivac", lat:34.146883, lon:-118.964517 },
+    { name:"42-A — Calleguas", type:"Helispot", lat:34.3057, lon:-118.916567 },
+    { name:"44-A — Sunset Hills", type:"Helispot", lat:34.22385, lon:-118.81375 },
+    { name:"46-A — Presidio Drive", type:"Helispot", lat:34.303183, lon:-118.7088 },
+    { name:"47-A — Station 47", type:"Helispot", lat:34.2879, lon:-118.762533 },
+    { name:"East Valley LZ", type:"LZ Medivac", lat:34.24695, lon:-118.83555 },
+    { name:"27-A — River Street", type:"Helispot", lat:34.3922, lon:-118.937817 },
+    { name:"28-A — Lake Piru Marina", type:"Helispot", lat:34.4762, lon:-118.761367 },
+    { name:"Todd Road LZ", type:"LZ Medivac", lat:34.31145, lon:-119.11395 },
+
+    { name:"16-1 — Arcosa Quarry", type:"Snorkel Site", lat:34.76205, lon:-119.043133 },
+    { name:"20-1 — Black Mountain Ranch", type:"Snorkel Site", lat:34.42145, lon:-119.199567 },
+    { name:"21-1 — Senior Canyon", type:"Snorkel Site", lat:34.471583, lon:-119.189283 },
+    { name:"21-2 — Hermitage", type:"Snorkel Site", lat:34.472783, lon:-119.216967 },
+    { name:"22-1 — Rose Valley", type:"Snorkel Site", lat:34.541283, lon:-119.187417 },
+    { name:"22-2 — Creek Rd", type:"Snorkel Site", lat:34.428217, lon:-119.355833 },
+    { name:"22-3 — Hartman Ranch", type:"Snorkel Site", lat:34.603283, lon:-119.393733 },
+    { name:"23-1 — Lake Casitas", type:"Snorkel Site", lat:34.373233, lon:-119.340867 },
+    { name:"26-1 — Limoneira", type:"Snorkel Site", lat:34.3345, lon:-119.129017 },
+    { name:"27-1 — Young Rd", type:"Snorkel Site", lat:34.406217, lon:-118.969283 },
+    { name:"27-2 — Sycamore & Oak", type:"Snorkel Site", lat:34.4148, lon:-118.9436 },
+    { name:"27-3 — Elkins Ranch Golf Course", type:"Snorkel Site", lat:34.372867, lon:-118.909483 },
+    { name:"28-1 — LaVerne Nursery", type:"Snorkel Site", lat:34.410767, lon:-118.801933 },
+    { name:"28-2 — Lake Piru", type:"Snorkel Site", lat:34.467717, lon:-118.753583 },
+    { name:"33-1 — Lake Sherwood", type:"Snorkel Site", lat:34.1392, lon:-118.868967 },
+    { name:"42-1 — Moorpark Country Club", type:"Snorkel Site", lat:34.304533, lon:-118.900517 },
+    { name:"42-2 — Calleguas Dip Tank", type:"Snorkel Site", lat:34.3057, lon:-118.916567 },
+    { name:"44-1 — Bard Lake", type:"Snorkel Site", lat:34.237417, lon:-118.822383 },
+    { name:"46-1 — Simi Hills Golf Course", type:"Snorkel Site", lat:34.298333, lon:-118.694167 },
+    { name:"46-2 — Lost Canyons Golf Course", type:"Snorkel Site", lat:34.31275, lon:-118.729333 },
+    { name:"50-1 — Broom Ranch", type:"Snorkel Site", lat:34.147517, lon:-119.042783 },
+    { name:"51-1 — United Water", type:"Snorkel Site", lat:34.276133, lon:-119.125367 },
+    { name:"54-1 — Scary Dairy", type:"Snorkel Site", lat:34.1825, lon:-119.025283 },
+    { name:"55-1 — Milligan Ranch", type:"Snorkel Site", lat:34.278733, lon:-119.059767 },
+    { name:"55-2 — Downs Ranch", type:"Snorkel Site", lat:34.30165, lon:-119.057867 },
+    { name:"75-1 — Chatsworth Dip Tank", type:"Snorkel Site", lat:34.2325, lon:-118.641167 },
+  ];
 
   function typeClass(t){
     if(t === "Helispot") return "helispot";
@@ -2144,12 +1920,9 @@
   initEqMap();
   initWeatherMap();
   initCamsMap();
-  initAirMap();
   initHeliMap();
 
-  // Keep your existing HELI_SITES array + renderHeli call
-  // (don’t replace it with the placeholder)
-  // renderHeli();
+  renderHeli();
 
   fetchFire();
   fetchChp();
@@ -2163,9 +1936,7 @@
   setInterval(fetchWeather, 300000);
   setInterval(fetchCams, 120000);
 
-  // Aircraft: every 10s but only when tab is active (inside fetchAir)
-  setInterval(fetchAir, AIR_POLL_MS);
-
+  // Keep status from staying "wait" forever if multiple fetches overlap
   setStatus("ok","Updated");
 </script>
 </body>
