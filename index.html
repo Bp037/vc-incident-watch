@@ -219,27 +219,37 @@
       background:#1f2937;
     }
 
-    /* ============= FIRE/MEDICAL: emoji under time/date ============= */
-    #tab_fire .tbl.fmTbl{
-      grid-template-columns: 160px 1fr 240px 140px;
-      align-items:start;
-    }
-    #tab_fire .callLeft{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      text-align:center;
-      gap:6px;
-    }
-    #tab_fire .callWhen{
-      font-size:13px;
-      line-height:1.15;
-      opacity:.95;
-    }
-    #tab_fire .callEmoji{
-      font-size:22px;
-      line-height:1;
-    }
+    /* ============= FIRE/MEDICAL: emoji centered under date/time ============= */
+#tab_fire .tbl.fmTbl{
+  grid-template-columns: 160px 1fr 240px 140px;
+  align-items: stretch;            /* let the left cell stretch to full row height */
+}
+
+#tab_fire .date{
+  align-self: stretch;             /* make the date cell fill the row height */
+}
+
+#tab_fire .callLeft{
+  display: grid;
+  grid-template-rows: auto 1fr;    /* time takes what it needs, rest is free space */
+  height: 100%;
+  justify-items: center;
+  text-align: center;
+  gap: 0;                          /* remove fixed gap so centering is true */
+}
+
+#tab_fire .callWhen{
+  font-size: 13px;
+  line-height: 1.15;
+  opacity: .95;
+  margin-bottom: 4px;              /* small breathing room under the time */
+}
+
+#tab_fire .callEmoji{
+  align-self: center;              /* center emoji within the remaining space */
+  font-size: 22px;
+  line-height: 1;
+}
 
     /* ============= WEATHER: fix wrapping/stacking ============= */
     #tab_weather .tbl.wxTbl{
