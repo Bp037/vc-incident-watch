@@ -47,6 +47,7 @@
       color:var(--ink);
       font-size:14px;
     }
+    input[type="checkbox"], input[type="radio"]{ width:auto; }
     textarea{ min-height:120px; }
     .row{ display:flex; gap:12px; flex-wrap:wrap; }
     .row > div{ flex:1 1 260px; }
@@ -91,6 +92,44 @@
       color:var(--muted);
     }
     .hint{ font-size:11px; color:var(--muted); margin-top:6px; }
+    .tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .tabBtn{
+      appearance:none;
+      border:1px solid var(--border);
+      background:#12121a;
+      color:var(--ink);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .tabBtn.active{
+      background:#1a1a24;
+      border-color:rgba(255,255,255,.24);
+    }
+    .tabPanel{ display:none; }
+    .tabPanel.active{ display:block; }
+    .optionRow{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+    .optionRow label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+    }
   </style>
 </head>
 <body>
@@ -114,7 +153,13 @@
       <div class="hint">Token is stored in session storage in this browser.</div>
     </section>
 
-    <section class="card">
+    <div class="tabs">
+      <button class="tabBtn active" data-tab="subscribers">Subscribers</button>
+      <button class="tabBtn" data-tab="test">Test SMS</button>
+    </div>
+
+    <div class="tabPanel active" id="tab_subscribers">
+      <section class="card">
       <h2 style="margin:0 0 12px;font-size:16px;">Add subscriber</h2>
       <div class="row">
         <div>
@@ -174,15 +219,55 @@
         </table>
       </div>
     </section>
+    </div>
+
+    <div class="tabPanel" id="tab_test">
+      <section class="card">
+        <h2 style="margin:0 0 12px;font-size:16px;">Send test SMS</h2>
+        <div class="row">
+          <div>
+            <label for="testRecipients">Recipients (one per line: name,phone)</label>
+            <textarea id="testRecipients" placeholder="Jane Doe,+18055551234"></textarea>
+            <div class="hint">You can also enter just a phone number per line.</div>
+          </div>
+        </div>
+
+        <div class="optionRow">
+          <label><input type="radio" name="testMode" value="latest" checked /> Use latest fire call</label>
+          <label><input type="radio" name="testMode" value="custom" /> Custom message</label>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label for="testMessage">Custom message</label>
+          <textarea id="testMessage" placeholder="Enter a custom test message..." disabled></textarea>
+          <div class="hint">Custom messages are sent as-is. Leave disabled to use latest call data.</div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <button class="btn" id="sendTest">Send test SMS</button>
+        </div>
+        <div class="status" id="testStatus"></div>
+      </section>
+    </div>
   </main>
 
   <script>
     const API_URL = "/api/subscribers";
+    const TEST_API_URL = "/api/test-sms";
     const tokenInput = document.getElementById("token");
     const rowsEl = document.getElementById("subscriberRows");
     const listStatus = document.getElementById("listStatus");
     const addStatus = document.getElementById("addStatus");
     const importStatus = document.getElementById("importStatus");
+    const tabButtons = document.querySelectorAll(".tabBtn");
+    const tabPanels = {
+      subscribers: document.getElementById("tab_subscribers"),
+      test: document.getElementById("tab_test"),
+    };
+    const testRecipients = document.getElementById("testRecipients");
+    const testMessage = document.getElementById("testMessage");
+    const testStatus = document.getElementById("testStatus");
+    const testModeInputs = document.querySelectorAll("input[name=\"testMode\"]");
 
     function getToken() {
       return sessionStorage.getItem("adminToken") || tokenInput.value.trim();
@@ -201,6 +286,25 @@
       if (!iso) return "—";
       const d = new Date(iso);
       return isNaN(d) ? "—" : d.toLocaleString();
+    }
+
+    function setActiveTab(key) {
+      tabButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === key));
+      Object.keys(tabPanels).forEach((name) => {
+        tabPanels[name].classList.toggle("active", name === key);
+      });
+    }
+
+    function getTestMode() {
+      const selected = document.querySelector("input[name=\"testMode\"]:checked");
+      return selected ? selected.value : "latest";
+    }
+
+    function updateTestMode() {
+      const mode = getTestMode();
+      const isCustom = mode === "custom";
+      testMessage.disabled = !isCustom;
+      if (!isCustom) testMessage.value = "";
     }
 
     async function fetchList() {
@@ -306,6 +410,38 @@
       }
     }
 
+    async function sendTestSms() {
+      const recipients = parseLines(testRecipients.value || "");
+      if (!recipients.length) {
+        setStatus(testStatus, "Add at least one recipient.");
+        return;
+      }
+
+      const mode = getTestMode();
+      const payload = { mode, recipients };
+      if (mode === "custom") {
+        payload.message = String(testMessage.value || "").trim();
+        if (!payload.message) {
+          setStatus(testStatus, "Custom message is required.");
+          return;
+        }
+      }
+
+      setStatus(testStatus, "Sending...");
+      try {
+        const res = await fetch(TEST_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        setStatus(testStatus, `Sent ${data.sent} of ${data.recipients}.`);
+      } catch (err) {
+        setStatus(testStatus, "Error: " + (err?.message || err));
+      }
+    }
+
     function escapeHtml(str) {
       return String(str || "").replace(/[&<>"']/g, (m) => ({
         "&": "&amp;",
@@ -322,8 +458,15 @@
       setStatus(listStatus, token ? "Token saved for this session." : "Token cleared.");
     });
 
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+    });
+
+    testModeInputs.forEach((input) => input.addEventListener("change", updateTestMode));
+
     document.getElementById("addSubscriber").addEventListener("click", addSubscriber);
     document.getElementById("refreshList").addEventListener("click", fetchList);
+    document.getElementById("sendTest").addEventListener("click", sendTestSms);
 
     document.getElementById("subscriberRows").addEventListener("click", (ev) => {
       const btn = ev.target.closest("button[data-phone]");
@@ -348,6 +491,8 @@
       ev.target.value = "";
     });
 
+    setActiveTab("subscribers");
+    updateTestMode();
     fetchList();
   </script>
 </body>

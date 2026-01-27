@@ -27,3 +27,12 @@ Call it on a schedule (cron, uptime monitor, etc). The endpoint:
 The first run only stores a snapshot to avoid spamming. Use either:
 - `Authorization: Bearer <ADMIN_TOKEN>`
 - or `?token=<ADMIN_TOKEN>`
+
+## Test SMS endpoint
+Endpoint: `/api/test-sms`
+
+Send a one-off test message to specific numbers:
+- `mode: "latest"` uses the newest active call data
+- `mode: "custom"` uses a custom message body
+
+Authentication is the same as above (ADMIN_TOKEN).
