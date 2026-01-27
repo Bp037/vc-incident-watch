@@ -190,9 +190,14 @@ function isAuthorized(request, env) {
   const token = env.ADMIN_TOKEN;
   if (!token) return true;
   const header = request.headers.get("authorization") || "";
-  if (header.toLowerCase().startsWith("bearer ")) {
+  const lower = header.toLowerCase();
+  if (lower.startsWith("bearer ")) {
     const provided = header.slice(7).trim();
     return provided === token;
+  }
+  if (lower.startsWith("basic ")) {
+    const creds = decodeBasic(header);
+    if (creds && creds.user === "admin" && creds.pass === token) return true;
   }
   const url = new URL(request.url);
   const queryToken = url.searchParams.get("token") || "";
@@ -211,4 +216,16 @@ function json(payload, status = 200) {
       ...CORS_HEADERS,
     },
   });
+}
+
+function decodeBasic(header) {
+  try {
+    const encoded = header.slice(6).trim();
+    const decoded = atob(encoded);
+    const idx = decoded.indexOf(":");
+    if (idx === -1) return null;
+    return { user: decoded.slice(0, idx), pass: decoded.slice(idx + 1) };
+  } catch {
+    return null;
+  }
 }

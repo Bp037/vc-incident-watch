@@ -3,7 +3,8 @@ Live Ventura County incident dashboard
 
 ## Admin (SMS subscribers)
 - Admin page: `/admin.html`
-- Uses `ADMIN_TOKEN` (bearer token) to manage subscriber list.
+- Page is protected with Basic Auth. Use username `admin` and password = `ADMIN_TOKEN`.
+- API calls also accept Bearer or `?token=` with `ADMIN_TOKEN`.
 - Store phone numbers in E.164 format (example: `+18055551234`).
 
 ### Required bindings / env vars

@@ -135,24 +135,10 @@
 <body>
   <header>
     <h1>VC Incident Watch Admin</h1>
-    <p>Manage SMS subscribers. Use E.164 numbers (example: +18055551234).</p>
+    <p>Private admin portal. Use E.164 numbers (example: +18055551234).</p>
   </header>
 
   <main>
-    <section class="card">
-      <h2 style="margin:0 0 12px;font-size:16px;">Admin Token</h2>
-      <div class="row">
-        <div>
-          <label for="token">Admin token</label>
-          <input id="token" type="password" placeholder="Enter ADMIN_TOKEN" />
-        </div>
-        <div style="display:flex;align-items:flex-end;">
-          <button class="btn" id="saveToken">Save token</button>
-        </div>
-      </div>
-      <div class="hint">Token is stored in session storage in this browser.</div>
-    </section>
-
     <div class="tabs">
       <button class="tabBtn active" data-tab="subscribers">Subscribers</button>
       <button class="tabBtn" data-tab="test">Test SMS</button>
@@ -224,15 +210,47 @@
     <div class="tabPanel" id="tab_test">
       <section class="card">
         <h2 style="margin:0 0 12px;font-size:16px;">Send test SMS</h2>
+
         <div class="row">
           <div>
-            <label for="testRecipients">Recipients (one per line: name,phone)</label>
-            <textarea id="testRecipients" placeholder="Jane Doe,+18055551234"></textarea>
-            <div class="hint">You can also enter just a phone number per line.</div>
+            <label for="testName">Name</label>
+            <input id="testName" type="text" placeholder="Optional name" />
+          </div>
+          <div>
+            <label for="testPhone">Phone (+E.164)</label>
+            <input id="testPhone" type="text" placeholder="+18055551234" />
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn" id="addTestRecipient">Add to list</button>
           </div>
         </div>
 
-        <div class="optionRow">
+        <div class="status" id="testListStatus"></div>
+
+        <div style="margin-top:10px; overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="testRecipientRows"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label for="testImport">Paste list (one per line: name,phone)</label>
+          <textarea id="testImport" placeholder="Jane Doe,+18055551234"></textarea>
+          <div class="hint">You can also enter just a phone number per line.</div>
+          <div style="margin-top:8px;">
+            <button class="btn secondary" id="importTestRecipients">Add list</button>
+            <button class="btn secondary" id="clearTestRecipients">Clear list</button>
+          </div>
+        </div>
+
+        <div class="optionRow" style="margin-top:14px;">
           <label><input type="radio" name="testMode" value="latest" checked /> Use latest fire call</label>
           <label><input type="radio" name="testMode" value="custom" /> Custom message</label>
         </div>
@@ -254,7 +272,6 @@
   <script>
     const API_URL = "/api/subscribers";
     const TEST_API_URL = "/api/test-sms";
-    const tokenInput = document.getElementById("token");
     const rowsEl = document.getElementById("subscriberRows");
     const listStatus = document.getElementById("listStatus");
     const addStatus = document.getElementById("addStatus");
@@ -264,19 +281,15 @@
       subscribers: document.getElementById("tab_subscribers"),
       test: document.getElementById("tab_test"),
     };
-    const testRecipients = document.getElementById("testRecipients");
+    const testName = document.getElementById("testName");
+    const testPhone = document.getElementById("testPhone");
+    const testImport = document.getElementById("testImport");
+    const testRecipientRows = document.getElementById("testRecipientRows");
     const testMessage = document.getElementById("testMessage");
     const testStatus = document.getElementById("testStatus");
+    const testListStatus = document.getElementById("testListStatus");
     const testModeInputs = document.querySelectorAll("input[name=\"testMode\"]");
-
-    function getToken() {
-      return sessionStorage.getItem("adminToken") || tokenInput.value.trim();
-    }
-
-    function authHeaders() {
-      const token = getToken();
-      return token ? { Authorization: "Bearer " + token } : {};
-    }
+    const testRecipients = [];
 
     function setStatus(el, text) {
       el.textContent = text || "";
@@ -311,7 +324,7 @@
       setStatus(listStatus, "Loading...");
       rowsEl.innerHTML = "";
       try {
-        const res = await fetch(API_URL, { headers: authHeaders() });
+        const res = await fetch(API_URL, { credentials: "same-origin" });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
         if (!data.subscribers.length) {
@@ -344,7 +357,8 @@
       try {
         const res = await fetch(API_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders() },
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
           body: JSON.stringify({ name, phone }),
         });
         const data = await res.json();
@@ -363,7 +377,8 @@
       try {
         const res = await fetch(API_URL, {
           method: "DELETE",
-          headers: { "Content-Type": "application/json", ...authHeaders() },
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
           body: JSON.stringify({ phone }),
         });
         const data = await res.json();
@@ -385,6 +400,86 @@
       });
     }
 
+    function normalizePhone(input) {
+      if (input == null) return "";
+      let raw = String(input).trim();
+      if (!raw) return "";
+      raw = raw.replace(/[()\-.\s]/g, "");
+      if (raw.startsWith("00")) raw = "+" + raw.slice(2);
+      if (!raw.startsWith("+")) return "";
+      const cleaned = "+" + raw.slice(1).replace(/\D/g, "");
+      if (cleaned.length < 8) return "";
+      return cleaned;
+    }
+
+    function renderTestList() {
+      if (!testRecipients.length) {
+        testRecipientRows.innerHTML = "<tr><td colspan=\"3\">No recipients added.</td></tr>";
+        return;
+      }
+      testRecipientRows.innerHTML = testRecipients.map((r) => `
+        <tr>
+          <td>${escapeHtml(r.name || "") || "<span class=\"pill\">(none)</span>"}</td>
+          <td>${escapeHtml(r.phone)}</td>
+          <td><button class="btn danger" data-test-phone="${escapeHtml(r.phone)}">Remove</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function addTestRecipient() {
+      const name = testName.value.trim();
+      const phone = normalizePhone(testPhone.value);
+      if (!phone) {
+        setStatus(testListStatus, "Enter a valid E.164 phone number.");
+        return;
+      }
+      if (testRecipients.some((r) => r.phone === phone)) {
+        setStatus(testListStatus, "Recipient already in the list.");
+        return;
+      }
+      testRecipients.push({ name, phone });
+      testName.value = "";
+      testPhone.value = "";
+      setStatus(testListStatus, "");
+      renderTestList();
+    }
+
+    function removeTestRecipient(phone) {
+      const idx = testRecipients.findIndex((r) => r.phone === phone);
+      if (idx === -1) return;
+      testRecipients.splice(idx, 1);
+      renderTestList();
+    }
+
+    function importTestList() {
+      const items = parseLines(testImport.value || "");
+      if (!items.length) {
+        setStatus(testListStatus, "Paste at least one recipient.");
+        return;
+      }
+      let added = 0;
+      let invalid = 0;
+      items.forEach((item) => {
+        const phone = normalizePhone(item.phone);
+        if (!phone) {
+          invalid += 1;
+          return;
+        }
+        if (testRecipients.some((r) => r.phone === phone)) return;
+        testRecipients.push({ name: item.name || "", phone });
+        added += 1;
+      });
+      testImport.value = "";
+      setStatus(testListStatus, `Added ${added} recipients${invalid ? ` (${invalid} invalid)` : ""}.`);
+      renderTestList();
+    }
+
+    function clearTestList() {
+      testRecipients.length = 0;
+      setStatus(testListStatus, "List cleared.");
+      renderTestList();
+    }
+
     async function importList(items, replace) {
       if (!items.length) {
         setStatus(importStatus, "Nothing to import.");
@@ -394,7 +489,8 @@
       try {
         const res = await fetch(API_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders() },
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
           body: JSON.stringify({
             mode: replace ? "replace" : "merge",
             subscribers: items,
@@ -411,14 +507,13 @@
     }
 
     async function sendTestSms() {
-      const recipients = parseLines(testRecipients.value || "");
-      if (!recipients.length) {
+      if (!testRecipients.length) {
         setStatus(testStatus, "Add at least one recipient.");
         return;
       }
 
       const mode = getTestMode();
-      const payload = { mode, recipients };
+      const payload = { mode, recipients: testRecipients };
       if (mode === "custom") {
         payload.message = String(testMessage.value || "").trim();
         if (!payload.message) {
@@ -431,7 +526,8 @@
       try {
         const res = await fetch(TEST_API_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders() },
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -452,12 +548,6 @@
       }[m]));
     }
 
-    document.getElementById("saveToken").addEventListener("click", () => {
-      const token = tokenInput.value.trim();
-      if (token) sessionStorage.setItem("adminToken", token);
-      setStatus(listStatus, token ? "Token saved for this session." : "Token cleared.");
-    });
-
     tabButtons.forEach((btn) => {
       btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
     });
@@ -467,6 +557,9 @@
     document.getElementById("addSubscriber").addEventListener("click", addSubscriber);
     document.getElementById("refreshList").addEventListener("click", fetchList);
     document.getElementById("sendTest").addEventListener("click", sendTestSms);
+    document.getElementById("addTestRecipient").addEventListener("click", addTestRecipient);
+    document.getElementById("importTestRecipients").addEventListener("click", importTestList);
+    document.getElementById("clearTestRecipients").addEventListener("click", clearTestList);
 
     document.getElementById("subscriberRows").addEventListener("click", (ev) => {
       const btn = ev.target.closest("button[data-phone]");
@@ -491,8 +584,16 @@
       ev.target.value = "";
     });
 
+    testRecipientRows.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("button[data-test-phone]");
+      if (!btn) return;
+      const phone = btn.getAttribute("data-test-phone");
+      removeTestRecipient(phone);
+    });
+
     setActiveTab("subscribers");
     updateTestMode();
+    renderTestList();
     fetchList();
   </script>
 </body>
