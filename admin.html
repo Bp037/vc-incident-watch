@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VC Incident Watch Admin</title>
+  <style>
+    :root{
+      --bg:#0b0b0d;
+      --card:#14141a;
+      --ink:#f4f4f5;
+      --muted:rgba(255,255,255,.7);
+      --link:#60a5fa;
+      --border:rgba(255,255,255,.12);
+      --accent:#ef4444;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:var(--bg);
+      color:var(--ink);
+    }
+    header{
+      padding:18px 20px;
+      border-bottom:1px solid var(--border);
+      background:#111118;
+    }
+    h1{ margin:0 0 6px; font-size:20px; }
+    p{ margin:0; color:var(--muted); font-size:13px; }
+    a{ color:var(--link); }
+    main{ max-width:920px; margin:0 auto; padding:20px; }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:16px;
+      margin-bottom:16px;
+    }
+    label{ display:block; margin-bottom:6px; font-size:12px; color:var(--muted); }
+    input, textarea{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#0e0e14;
+      color:var(--ink);
+      font-size:14px;
+    }
+    textarea{ min-height:120px; }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; }
+    .row > div{ flex:1 1 260px; }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#1a1a24;
+      color:var(--ink);
+      font-weight:700;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .btn.secondary{ background:transparent; }
+    .btn.danger{ border-color:rgba(239,68,68,.5); color:#fecaca; }
+    .status{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      min-height:16px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+    th, td{
+      text-align:left;
+      padding:10px 8px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    th{ font-size:11px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
+    .pill{
+      display:inline-flex;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      font-size:11px;
+      color:var(--muted);
+    }
+    .hint{ font-size:11px; color:var(--muted); margin-top:6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>VC Incident Watch Admin</h1>
+    <p>Manage SMS subscribers. Use E.164 numbers (example: +18055551234).</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2 style="margin:0 0 12px;font-size:16px;">Admin Token</h2>
+      <div class="row">
+        <div>
+          <label for="token">Admin token</label>
+          <input id="token" type="password" placeholder="Enter ADMIN_TOKEN" />
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn" id="saveToken">Save token</button>
+        </div>
+      </div>
+      <div class="hint">Token is stored in session storage in this browser.</div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin:0 0 12px;font-size:16px;">Add subscriber</h2>
+      <div class="row">
+        <div>
+          <label for="name">Name</label>
+          <input id="name" type="text" placeholder="Optional name" />
+        </div>
+        <div>
+          <label for="phone">Phone (+E.164)</label>
+          <input id="phone" type="text" placeholder="+18055551234" />
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn" id="addSubscriber">Add</button>
+        </div>
+      </div>
+      <div class="status" id="addStatus"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin:0 0 12px;font-size:16px;">Bulk import</h2>
+      <div class="row">
+        <div>
+          <label for="csvFile">Upload CSV (name,phone)</label>
+          <input id="csvFile" type="file" accept=".csv,text/csv" />
+        </div>
+        <div>
+          <label for="bulkText">Paste list (one per line: name,phone)</label>
+          <textarea id="bulkText" placeholder="Jane Doe,+18055551234"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;">
+          <input type="checkbox" id="replaceList" />
+          Replace existing list
+        </label>
+        <button class="btn" id="importList">Import list</button>
+      </div>
+      <div class="status" id="importStatus"></div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <h2 style="margin:0;font-size:16px;">Current subscribers</h2>
+        <button class="btn secondary" id="refreshList">Refresh</button>
+      </div>
+      <div class="status" id="listStatus"></div>
+      <div style="margin-top:10px; overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Added</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="subscriberRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "/api/subscribers";
+    const tokenInput = document.getElementById("token");
+    const rowsEl = document.getElementById("subscriberRows");
+    const listStatus = document.getElementById("listStatus");
+    const addStatus = document.getElementById("addStatus");
+    const importStatus = document.getElementById("importStatus");
+
+    function getToken() {
+      return sessionStorage.getItem("adminToken") || tokenInput.value.trim();
+    }
+
+    function authHeaders() {
+      const token = getToken();
+      return token ? { Authorization: "Bearer " + token } : {};
+    }
+
+    function setStatus(el, text) {
+      el.textContent = text || "";
+    }
+
+    function formatDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return isNaN(d) ? "—" : d.toLocaleString();
+    }
+
+    async function fetchList() {
+      setStatus(listStatus, "Loading...");
+      rowsEl.innerHTML = "";
+      try {
+        const res = await fetch(API_URL, { headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        if (!data.subscribers.length) {
+          rowsEl.innerHTML = "<tr><td colspan=\"4\">No subscribers.</td></tr>";
+          setStatus(listStatus, "Loaded 0 subscribers.");
+          return;
+        }
+        rowsEl.innerHTML = data.subscribers.map((s) => `
+          <tr>
+            <td>${escapeHtml(s.name || "") || "<span class=\"pill\">(none)</span>"}</td>
+            <td>${escapeHtml(s.phone)}</td>
+            <td>${escapeHtml(formatDate(s.createdAt))}</td>
+            <td><button class="btn danger" data-phone="${escapeHtml(s.phone)}">Remove</button></td>
+          </tr>
+        `).join("");
+        setStatus(listStatus, "Loaded " + data.subscribers.length + " subscribers.");
+      } catch (err) {
+        setStatus(listStatus, "Error: " + (err?.message || err));
+      }
+    }
+
+    async function addSubscriber() {
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      if (!phone) {
+        setStatus(addStatus, "Phone is required.");
+        return;
+      }
+      setStatus(addStatus, "Saving...");
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ name, phone }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        setStatus(addStatus, "Subscriber added.");
+        document.getElementById("phone").value = "";
+        document.getElementById("name").value = "";
+        await fetchList();
+      } catch (err) {
+        setStatus(addStatus, "Error: " + (err?.message || err));
+      }
+    }
+
+    async function removeSubscriber(phone) {
+      setStatus(listStatus, "Removing...");
+      try {
+        const res = await fetch(API_URL, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ phone }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        setStatus(listStatus, "Removed " + phone);
+        await fetchList();
+      } catch (err) {
+        setStatus(listStatus, "Error: " + (err?.message || err));
+      }
+    }
+
+    function parseLines(text) {
+      return text.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
+        const parts = line.split(",");
+        if (parts.length === 1) return { name: "", phone: parts[0].trim() };
+        const phone = parts.pop().trim();
+        const name = parts.join(",").trim();
+        return { name, phone };
+      });
+    }
+
+    async function importList(items, replace) {
+      if (!items.length) {
+        setStatus(importStatus, "Nothing to import.");
+        return;
+      }
+      setStatus(importStatus, "Importing...");
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({
+            mode: replace ? "replace" : "merge",
+            subscribers: items,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        setStatus(importStatus, "Imported " + items.length + " entries.");
+        document.getElementById("bulkText").value = "";
+        await fetchList();
+      } catch (err) {
+        setStatus(importStatus, "Error: " + (err?.message || err));
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || "").replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[m]));
+    }
+
+    document.getElementById("saveToken").addEventListener("click", () => {
+      const token = tokenInput.value.trim();
+      if (token) sessionStorage.setItem("adminToken", token);
+      setStatus(listStatus, token ? "Token saved for this session." : "Token cleared.");
+    });
+
+    document.getElementById("addSubscriber").addEventListener("click", addSubscriber);
+    document.getElementById("refreshList").addEventListener("click", fetchList);
+
+    document.getElementById("subscriberRows").addEventListener("click", (ev) => {
+      const btn = ev.target.closest("button[data-phone]");
+      if (!btn) return;
+      const phone = btn.getAttribute("data-phone");
+      if (phone) removeSubscriber(phone);
+    });
+
+    document.getElementById("importList").addEventListener("click", async () => {
+      const replace = document.getElementById("replaceList").checked;
+      const text = document.getElementById("bulkText").value;
+      const items = parseLines(text);
+      await importList(items, replace);
+    });
+
+    document.getElementById("csvFile").addEventListener("change", async (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const items = parseLines(text);
+      await importList(items, document.getElementById("replaceList").checked);
+      ev.target.value = "";
+    });
+
+    fetchList();
+  </script>
+</body>
+</html>

@@ -61,6 +61,14 @@
     .dot.ok{ background:#34d399; }
     .dot.wait{ background:#fbbf24; }
     .dot.err{ background:#fb7185; }
+    .adminLink{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.2);
+      color:var(--link);
+      background:rgba(0,0,0,.25);
+    }
 
     .tabsWrap{
       max-width:1120px;
@@ -559,6 +567,7 @@
         <div class="statusBox">
           <span class="dot" id="dot"></span>
           <span id="statusText">Idle</span>
+          <a class="adminLink" href="/admin.html">Admin</a>
         </div>
       </div>
 
