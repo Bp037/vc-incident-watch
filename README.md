@@ -37,3 +37,8 @@ Send a one-off test message to specific numbers:
 - `mode: "custom"` uses a custom message body
 
 Authentication is the same as above (ADMIN_TOKEN).
+
+## Test recipients list
+Endpoint: `/api/test-recipients`
+
+The Test SMS tab stores a permanent recipient list in KV until you delete entries.

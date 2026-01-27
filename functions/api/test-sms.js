@@ -16,6 +16,7 @@ export async function onRequestPost({ env, request }) {
   const twilioSid = env.TWILIO_ACCOUNT_SID;
   const twilioToken = env.TWILIO_AUTH_TOKEN;
   const twilioFrom = env.TWILIO_FROM;
+  const kv = env.VCWATCH_KV;
   if (!twilioSid || !twilioToken || !twilioFrom) {
     return json({ ok: false, error: "Missing Twilio env vars." }, 500);
   }
@@ -42,7 +43,13 @@ export async function onRequestPost({ env, request }) {
   }
 
   if (!recipients.length) {
-    return json({ ok: false, error: "No valid recipients." }, 400);
+    if (!kv) return json({ ok: false, error: "Missing KV binding VCWATCH_KV." }, 500);
+    const stored = await loadTestRecipients(kv);
+    recipients.push(...stored);
+  }
+
+  if (!recipients.length) {
+    return json({ ok: false, error: "No recipients configured." }, 400);
   }
 
   let message = "";
@@ -210,6 +217,17 @@ function isAuthorized(request, env) {
   const url = new URL(request.url);
   const queryToken = url.searchParams.get("token") || "";
   return queryToken === token;
+}
+
+async function loadTestRecipients(kv) {
+  const raw = await kv.get("test_recipients");
+  if (!raw) return [];
+  try {
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list.filter((s) => s?.phone) : [];
+  } catch {
+    return [];
+  }
 }
 
 function unauthorized() {

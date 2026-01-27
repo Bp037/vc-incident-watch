@@ -1,4 +1,4 @@
-const KV_KEY = "subscribers";
+const KV_KEY = "test_recipients";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -15,9 +15,9 @@ export async function onRequestGet({ env, request }) {
   const kv = env.VCWATCH_KV;
   if (!kv) return json({ ok: false, error: "Missing KV binding VCWATCH_KV." }, 500);
 
-  const subscribers = await loadSubscribers(kv);
-  subscribers.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  return json({ ok: true, count: subscribers.length, subscribers });
+  const recipients = await loadRecipients(kv);
+  recipients.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  return json({ ok: true, count: recipients.length, recipients });
 }
 
 export async function onRequestPost({ env, request }) {
@@ -32,8 +32,8 @@ export async function onRequestPost({ env, request }) {
   const replacing = mode === "replace";
   const now = new Date().toISOString();
 
-  const incoming = Array.isArray(body.subscribers)
-    ? body.subscribers
+  const incoming = Array.isArray(body.recipients)
+    ? body.recipients
     : [{ name: body.name, phone: body.phone }];
 
   const invalid = [];
@@ -49,7 +49,7 @@ export async function onRequestPost({ env, request }) {
     normalized.push({ name, phone });
   }
 
-  const existing = replacing ? [] : await loadSubscribers(kv);
+  const existing = replacing ? [] : await loadRecipients(kv);
   const byPhone = new Map(existing.map((s) => [s.phone, s]));
 
   for (const sub of normalized) {
@@ -79,7 +79,7 @@ export async function onRequestPost({ env, request }) {
     added: normalized.length,
     invalid,
     count: out.length,
-    subscribers: out,
+    recipients: out,
   });
 }
 
@@ -100,11 +100,11 @@ export async function onRequestDelete({ env, request }) {
   const normalizedPhone = normalizePhone(phone);
   if (!normalizedPhone) return json({ ok: false, error: "Phone is required." }, 400);
 
-  const existing = await loadSubscribers(kv);
+  const existing = await loadRecipients(kv);
   const remaining = existing.filter((s) => s.phone !== normalizedPhone);
 
   await kv.put(KV_KEY, JSON.stringify(remaining));
-  return json({ ok: true, count: remaining.length, removed: normalizedPhone });
+  return json({ ok: true, count: remaining.length, removed: normalizedPhone, recipients: remaining });
 }
 
 function normalizePhone(input) {
@@ -119,7 +119,7 @@ function normalizePhone(input) {
   return cleaned;
 }
 
-async function loadSubscribers(kv) {
+async function loadRecipients(kv) {
   const raw = await kv.get(KV_KEY);
   if (!raw) return [];
   try {

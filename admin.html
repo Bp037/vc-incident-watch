@@ -240,14 +240,9 @@
           </table>
         </div>
 
-        <div style="margin-top:12px;">
-          <label for="testImport">Paste list (one per line: name,phone)</label>
-          <textarea id="testImport" placeholder="Jane Doe,+18055551234"></textarea>
-          <div class="hint">You can also enter just a phone number per line.</div>
-          <div style="margin-top:8px;">
-            <button class="btn secondary" id="importTestRecipients">Add list</button>
-            <button class="btn secondary" id="clearTestRecipients">Clear list</button>
-          </div>
+        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn secondary" id="refreshTestRecipients">Refresh list</button>
+          <button class="btn secondary" id="clearTestRecipients">Clear list</button>
         </div>
 
         <div class="optionRow" style="margin-top:14px;">
@@ -272,6 +267,7 @@
   <script>
     const API_URL = "/api/subscribers";
     const TEST_API_URL = "/api/test-sms";
+    const TEST_RECIPIENTS_URL = "/api/test-recipients";
     const rowsEl = document.getElementById("subscriberRows");
     const listStatus = document.getElementById("listStatus");
     const addStatus = document.getElementById("addStatus");
@@ -283,13 +279,12 @@
     };
     const testName = document.getElementById("testName");
     const testPhone = document.getElementById("testPhone");
-    const testImport = document.getElementById("testImport");
     const testRecipientRows = document.getElementById("testRecipientRows");
     const testMessage = document.getElementById("testMessage");
     const testStatus = document.getElementById("testStatus");
     const testListStatus = document.getElementById("testListStatus");
     const testModeInputs = document.querySelectorAll("input[name=\"testMode\"]");
-    const testRecipients = [];
+    let testRecipients = [];
 
     function setStatus(el, text) {
       el.textContent = text || "";
@@ -426,58 +421,83 @@
       `).join("");
     }
 
-    function addTestRecipient() {
+    async function fetchTestList() {
+      setStatus(testListStatus, "Loading...");
+      try {
+        const res = await fetch(TEST_RECIPIENTS_URL, { credentials: "same-origin" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        testRecipients = Array.isArray(data.recipients) ? data.recipients : [];
+        renderTestList();
+        setStatus(testListStatus, `Loaded ${testRecipients.length} recipients.`);
+      } catch (err) {
+        setStatus(testListStatus, "Error: " + (err?.message || err));
+      }
+    }
+
+    async function addTestRecipient() {
       const name = testName.value.trim();
       const phone = normalizePhone(testPhone.value);
       if (!phone) {
         setStatus(testListStatus, "Enter a valid E.164 phone number.");
         return;
       }
-      if (testRecipients.some((r) => r.phone === phone)) {
-        setStatus(testListStatus, "Recipient already in the list.");
-        return;
+      setStatus(testListStatus, "Saving...");
+      try {
+        const res = await fetch(TEST_RECIPIENTS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ name, phone }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        testName.value = "";
+        testPhone.value = "";
+        testRecipients = Array.isArray(data.recipients) ? data.recipients : testRecipients;
+        renderTestList();
+        setStatus(testListStatus, "Recipient added.");
+      } catch (err) {
+        setStatus(testListStatus, "Error: " + (err?.message || err));
       }
-      testRecipients.push({ name, phone });
-      testName.value = "";
-      testPhone.value = "";
-      setStatus(testListStatus, "");
-      renderTestList();
     }
 
-    function removeTestRecipient(phone) {
-      const idx = testRecipients.findIndex((r) => r.phone === phone);
-      if (idx === -1) return;
-      testRecipients.splice(idx, 1);
-      renderTestList();
-    }
-
-    function importTestList() {
-      const items = parseLines(testImport.value || "");
-      if (!items.length) {
-        setStatus(testListStatus, "Paste at least one recipient.");
-        return;
+    async function removeTestRecipient(phone) {
+      setStatus(testListStatus, "Removing...");
+      try {
+        const res = await fetch(TEST_RECIPIENTS_URL, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ phone }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        testRecipients = Array.isArray(data.recipients) ? data.recipients : [];
+        renderTestList();
+        setStatus(testListStatus, "Recipient removed.");
+      } catch (err) {
+        setStatus(testListStatus, "Error: " + (err?.message || err));
       }
-      let added = 0;
-      let invalid = 0;
-      items.forEach((item) => {
-        const phone = normalizePhone(item.phone);
-        if (!phone) {
-          invalid += 1;
-          return;
-        }
-        if (testRecipients.some((r) => r.phone === phone)) return;
-        testRecipients.push({ name: item.name || "", phone });
-        added += 1;
-      });
-      testImport.value = "";
-      setStatus(testListStatus, `Added ${added} recipients${invalid ? ` (${invalid} invalid)` : ""}.`);
-      renderTestList();
     }
 
-    function clearTestList() {
-      testRecipients.length = 0;
-      setStatus(testListStatus, "List cleared.");
-      renderTestList();
+    async function clearTestList() {
+      setStatus(testListStatus, "Clearing...");
+      try {
+        const res = await fetch(TEST_RECIPIENTS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ mode: "replace", recipients: [] }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+        testRecipients = [];
+        renderTestList();
+        setStatus(testListStatus, "List cleared.");
+      } catch (err) {
+        setStatus(testListStatus, "Error: " + (err?.message || err));
+      }
     }
 
     async function importList(items, replace) {
@@ -513,7 +533,7 @@
       }
 
       const mode = getTestMode();
-      const payload = { mode, recipients: testRecipients };
+      const payload = { mode };
       if (mode === "custom") {
         payload.message = String(testMessage.value || "").trim();
         if (!payload.message) {
@@ -558,8 +578,8 @@
     document.getElementById("refreshList").addEventListener("click", fetchList);
     document.getElementById("sendTest").addEventListener("click", sendTestSms);
     document.getElementById("addTestRecipient").addEventListener("click", addTestRecipient);
-    document.getElementById("importTestRecipients").addEventListener("click", importTestList);
     document.getElementById("clearTestRecipients").addEventListener("click", clearTestList);
+    document.getElementById("refreshTestRecipients").addEventListener("click", fetchTestList);
 
     document.getElementById("subscriberRows").addEventListener("click", (ev) => {
       const btn = ev.target.closest("button[data-phone]");
@@ -594,6 +614,7 @@
     setActiveTab("subscribers");
     updateTestMode();
     renderTestList();
+    fetchTestList();
     fetchList();
   </script>
 </body>
