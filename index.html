@@ -1110,7 +1110,7 @@
   // =========================
   function emojiFor(typeText){
     const t = (typeText || "").toLowerCase().trim();
-    if (t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
+    if (t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "⚠️";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "🚑";
     if(t.includes("rescue")) return "🛟";
     if(t.includes("water")) return "🌊";
@@ -1127,7 +1127,7 @@
 
   function colorForFireMedical(typeText){
     const t = (typeText || "").toLowerCase();
-    if(t === "1e" || t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "#f59e0b";
+    if(t.includes("gas leak") || (t.includes("gas") && t.includes("leak"))) return "#f59e0b";
     if(t.includes("medical") || t.includes("ems") || t.includes("ambul")) return "#2563eb";
     if(t.includes("traffic") || t.includes("tc") || t.includes("collision")) return "#f97316";
     if(t.includes("fire") || t.includes("structure") || t.includes("vegetation") || t.includes("brush")) return "#ef4444";
@@ -1237,9 +1237,7 @@
   }
 
   function normalizeTypeLabel(typeText){
-    const t = String(typeText || "").trim();
-    if (t.toLowerCase() === "1e") return "Gas Leak";
-    return t;
+    return String(typeText || "").trim();
   }
 
   function normalizeFire(raw){
