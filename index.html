@@ -945,7 +945,10 @@
 
   async function getPushConfig() {
     const res = await fetch("/api/push/config", { cache: "no-store" });
-    if (!res.ok) throw new Error("Config fetch failed");
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Config HTTP ${res.status}: ${text.slice(0, 120)}`);
+    }
     return await res.json();
   }
 
@@ -1008,17 +1011,18 @@
     try {
       const config = await getPushConfig();
       const reg = await registerPushServiceWorker();
-      if (!config?.vapidPublicKey || !reg) throw new Error("Missing config");
+      const publicKey = String(config?.vapidPublicKey || "").trim();
+      if (!publicKey || !reg) throw new Error("Missing VAPID public key.");
 
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(config.vapidPublicKey),
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
         });
       }
 
-      await fetch("/api/push/subscribe", {
+      const resp = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1027,12 +1031,16 @@
           deviceId: getDeviceId(),
         }),
       });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Subscribe HTTP ${resp.status}: ${text.slice(0, 120)}`);
+      }
 
       setPushStatus("Notifications enabled.", "ok");
       pushToggle.checked = true;
     } catch (err) {
       console.error(err);
-      setPushStatus("Failed to enable notifications.", "err");
+      setPushStatus(`Failed to enable: ${err?.message || err}`, "err");
       pushToggle.checked = false;
     }
   }
