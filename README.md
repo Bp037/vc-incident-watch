@@ -11,7 +11,6 @@ Live Ventura County incident dashboard
 Create a KV namespace and bind it to Pages Functions as:
 - `VCWATCH_KV` (stores subscribers + last fire snapshot)
 
-`wrangler.toml` includes placeholder bindings/vars for local dev (replace values).
 
 Set these environment variables:
 - `ADMIN_TOKEN`
