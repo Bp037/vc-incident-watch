@@ -71,8 +71,15 @@ Optional control:
 - `GET /api/push/config`
 - `POST /api/push/subscribe`
 - `POST /api/push/unsubscribe`
+- `GET /api/push/status`
 - `POST /api/push/test`
 - `POST /api/push/notify`
+
+Supported categories for notify/test filters:
+- `FIRE`
+- `TRAFFIC_COLLISION`
+- `MEDICAL`
+- `HAZMAT` (or `HAZARDOUS_MATERIALS`)
 
 ### Test flow
 1. Install to Home Screen → open from icon

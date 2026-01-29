@@ -13,8 +13,10 @@ export function json(payload, status = 200) {
 
 export function normalizePrefs(prefs) {
   return {
-    fire: prefs?.fire !== false,
-    traffic: prefs?.traffic !== false,
+    fire: prefs?.fire === true,
+    traffic: prefs?.traffic === true,
+    medical: prefs?.medical === true,
+    hazmat: prefs?.hazmat === true,
   };
 }
 
@@ -24,13 +26,15 @@ export function normalizeCategory(category) {
 
 export function isSupportedCategory(category) {
   const cat = normalizeCategory(category);
-  return cat === "FIRE" || cat === "TRAFFIC_COLLISION";
+  return cat === "FIRE" || cat === "TRAFFIC_COLLISION" || cat === "MEDICAL" || cat === "HAZMAT" || cat === "HAZARDOUS_MATERIALS";
 }
 
 export function shouldNotifyForCategory(category, prefs) {
   const cat = normalizeCategory(category);
   if (cat === "FIRE") return !!prefs?.fire;
   if (cat === "TRAFFIC_COLLISION") return !!prefs?.traffic;
+  if (cat === "MEDICAL") return !!prefs?.medical;
+  if (cat === "HAZMAT" || cat === "HAZARDOUS_MATERIALS") return !!prefs?.hazmat;
   return false;
 }
 
