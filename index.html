@@ -190,6 +190,7 @@
     .sectionBar .label{ font-weight:800; font-size:16px; }
     .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
     .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .refreshBtn{ padding:7px 10px; font-size:11px; }
 
     .tblHead{
       background:#060607;
@@ -663,9 +664,12 @@
         <div class="sectionBar">
           <div class="left">
             <div class="label">Active Calls</div>
-            <div class="sub" id="updatedAt_fire">Updated —</div>
+            <div class="sub" id="updatedAt_fire">Last updated —</div>
           </div>
-          <div class="right" id="activeCount_fire">— active</div>
+          <div class="right">
+            <span id="activeCount_fire">— active</span>
+            <button class="btn refreshBtn" id="refreshFireBtn" type="button">Refresh now</button>
+          </div>
         </div>
 
         <div class="notifyBar" id="pushToggleWrap">
@@ -1171,6 +1175,9 @@
       const res = await fetch(`/api/push/status?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) return { fire: false, traffic: false, medical: false, hazmat: false };
       const data = await res.json();
+      if (data?.ok === false) {
+        throw new Error(data.error || "Server error");
+      }
       const prefs = data?.prefs || {};
       return {
         fire: !!prefs.fire,
@@ -1315,14 +1322,48 @@
   // =========================
   // FIRE / MEDICAL
   // =========================
-  const FIRE_API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
+  const FIRE_API_URL = "/api/incidents/latest";
 
   let map_fire, layer_fire;
   let fireIncidents = [];
+  let fireFetchInProgress = false;
+  let fireCooldownSeconds = 0;
+  let fireCooldownTimer = null;
 
   const rows_fire = document.getElementById("rows_fire");
   const updatedAt_fire = document.getElementById("updatedAt_fire");
   const activeCount_fire = document.getElementById("activeCount_fire");
+  const refreshFireBtn = document.getElementById("refreshFireBtn");
+
+  function updateRefreshButton() {
+    if (!refreshFireBtn) return;
+    if (fireFetchInProgress) {
+      refreshFireBtn.disabled = true;
+      refreshFireBtn.textContent = "Refreshing…";
+      return;
+    }
+    if (fireCooldownSeconds > 0) {
+      refreshFireBtn.disabled = true;
+      refreshFireBtn.textContent = `Refresh (${fireCooldownSeconds}s)`;
+      return;
+    }
+    refreshFireBtn.disabled = false;
+    refreshFireBtn.textContent = "Refresh now";
+  }
+
+  function startFireCooldown(seconds = 20) {
+    fireCooldownSeconds = seconds;
+    updateRefreshButton();
+    if (fireCooldownTimer) clearInterval(fireCooldownTimer);
+    fireCooldownTimer = setInterval(() => {
+      fireCooldownSeconds = Math.max(0, fireCooldownSeconds - 1);
+      updateRefreshButton();
+      if (fireCooldownSeconds === 0) {
+        clearInterval(fireCooldownTimer);
+        fireCooldownTimer = null;
+      }
+    }, 1000);
+  }
 
   function chipFor(statusText){
     const s = (statusText || "").toLowerCase();
@@ -1460,25 +1501,36 @@
   }
 
   async function fetchFire(){
+    if (fireFetchInProgress) return;
+    fireFetchInProgress = true;
+    updateRefreshButton();
     setStatus("wait","Refreshing…");
     try{
       const res = await fetch(FIRE_API_URL, { cache:"no-store" });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      fireIncidents = (Array.isArray(data) ? data : [])
+      const list = Array.isArray(data?.incidents) ? data.incidents : (Array.isArray(data) ? data : []);
+      fireIncidents = list
         .map(normalizeFire)
         .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
-      updatedAt_fire.textContent = `Updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
+      const lastUpdated = data?.lastUpdated || null;
+      updatedAt_fire.textContent = lastUpdated
+        ? `Last updated ${formatUpdatedLikeVCFD(lastUpdated)}`
+        : "Last updated —";
+
       renderFire();
       updateFireMarkers();
       setStatus("ok","Updated");
     }catch(e){
       console.error(e);
       setStatus("err","Error");
-      updatedAt_fire.textContent = "Updated —";
+      updatedAt_fire.textContent = "Last updated —";
       rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
+    } finally {
+      fireFetchInProgress = false;
+      updateRefreshButton();
     }
   }
 
@@ -2309,6 +2361,15 @@
     toggle.addEventListener("change", handlePrefsChange);
   });
 
+  if (refreshFireBtn) {
+    refreshFireBtn.addEventListener("click", () => {
+      if (fireFetchInProgress || fireCooldownSeconds > 0) return;
+      fetchFire();
+      startFireCooldown(20);
+    });
+    updateRefreshButton();
+  }
+
   // =========================
   // INIT + FIRST LOAD + REFRESH
   // =========================
@@ -2329,7 +2390,7 @@
 
   registerPushServiceWorker().then(refreshPushState).catch(() => {});
 
-  setInterval(fetchFire, 60000);
+  setInterval(fetchFire, 180000);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
