@@ -1,4 +1,4 @@
-import { sendPushNotification } from "@mmmike/web-push/send";
+import { sendPushNotification } from "./web-push.js";
 import {
   json,
   listSubscriptions,
