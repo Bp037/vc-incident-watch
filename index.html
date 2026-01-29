@@ -191,6 +191,22 @@
     .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
     .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .refreshBtn{ padding:7px 10px; font-size:11px; }
+    .dataBadge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      font-size:10px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.75);
+    }
+    .dataBadge.cache{ border-color:rgba(34,197,94,.4); color:#86efac; background:rgba(34,197,94,.12); }
+    .dataBadge.direct{ border-color:rgba(59,130,246,.4); color:#93c5fd; background:rgba(59,130,246,.12); }
+    .dataBadge.error{ border-color:rgba(248,113,113,.4); color:#fecaca; background:rgba(248,113,113,.12); }
 
     .tblHead{
       background:#060607;
@@ -668,6 +684,7 @@
           </div>
           <div class="right">
             <span id="activeCount_fire">— active</span>
+            <span class="dataBadge" id="fireDataSource">Data: —</span>
             <button class="btn refreshBtn" id="refreshFireBtn" type="button">Refresh now</button>
           </div>
         </div>
@@ -972,6 +989,13 @@
     return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   }
 
+  function isIOSDevice() {
+    const ua = navigator.userAgent || "";
+    const iOS = /iPad|iPhone|iPod/.test(ua);
+    const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    return iOS || iPadOS;
+  }
+
   function getPrefsFromUI() {
     return {
       fire: !!pushFire?.checked,
@@ -1046,6 +1070,11 @@
 
   async function refreshPushState() {
     if (!pushStatus || !pushToggleWrap) return;
+    if (!isIOSDevice() || !isStandaloneMode()) {
+      pushToggleWrap.classList.add("notifyHidden");
+      pushStatus.classList.add("notifyHidden");
+      return;
+    }
     const supported = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
     if (!supported) {
       pushToggleWrap.classList.add("notifyHidden");
@@ -1322,7 +1351,8 @@
   // =========================
   // FIRE / MEDICAL
   // =========================
-  const FIRE_API_URL = "/api/incidents/latest";
+  const FIRE_CACHE_URL = "/api/incidents/latest";
+  const FIRE_DIRECT_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 
   let map_fire, layer_fire;
   let fireIncidents = [];
@@ -1334,6 +1364,7 @@
   const updatedAt_fire = document.getElementById("updatedAt_fire");
   const activeCount_fire = document.getElementById("activeCount_fire");
   const refreshFireBtn = document.getElementById("refreshFireBtn");
+  const fireDataSource = document.getElementById("fireDataSource");
 
   function updateRefreshButton() {
     if (!refreshFireBtn) return;
@@ -1363,6 +1394,23 @@
         fireCooldownTimer = null;
       }
     }, 1000);
+  }
+
+  function setFireDataSource(source) {
+    if (!fireDataSource) return;
+    fireDataSource.classList.remove("cache", "direct", "error");
+    if (source === "Cache") {
+      fireDataSource.classList.add("cache");
+      fireDataSource.textContent = "Data: Cache";
+    } else if (source === "Direct") {
+      fireDataSource.classList.add("direct");
+      fireDataSource.textContent = "Data: Direct";
+    } else if (source === "Error") {
+      fireDataSource.classList.add("error");
+      fireDataSource.textContent = "Data: Error";
+    } else {
+      fireDataSource.textContent = "Data: —";
+    }
   }
 
   function chipFor(statusText){
@@ -1500,37 +1548,67 @@
     });
   }
 
-  async function fetchFire(){
+  async function fetchFireFromCache(){
+    const res = await fetch(FIRE_CACHE_URL, { cache:"no-store" });
+    if(!res.ok) throw new Error(`Cache HTTP ${res.status}`);
+    const data = await res.json();
+    if (data?.ok === false) throw new Error(data.error || "Cache error");
+    const list = Array.isArray(data?.incidents) ? data.incidents : [];
+    const lastUpdated = data?.lastUpdated || null;
+    if (!lastUpdated || !Array.isArray(list) || list.length === 0) {
+      throw new Error("Cache empty");
+    }
+    return { list, lastUpdated };
+  }
+
+  async function fetchFireDirect(){
+    const res = await fetch(FIRE_DIRECT_URL, { cache:"no-store" });
+    if(!res.ok) throw new Error(`Direct HTTP ${res.status}`);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (Array.isArray(data?.incidents) ? data.incidents : []);
+    return { list, lastUpdated: new Date().toISOString() };
+  }
+
+  async function loadCalls(){
     if (fireFetchInProgress) return;
     fireFetchInProgress = true;
     updateRefreshButton();
+    console.log("[VCWATCH] loadCalls start");
     setStatus("wait","Refreshing…");
+    let source = "Error";
     try{
-      const res = await fetch(FIRE_API_URL, { cache:"no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      let result;
+      try {
+        result = await fetchFireFromCache();
+        source = "Cache";
+      } catch (cacheErr) {
+        console.warn("[VCWATCH] cache failed, falling back", cacheErr);
+        result = await fetchFireDirect();
+        source = "Direct";
+      }
 
-      const list = Array.isArray(data?.incidents) ? data.incidents : (Array.isArray(data) ? data : []);
-      fireIncidents = list
+      fireIncidents = result.list
         .map(normalizeFire)
         .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
-      const lastUpdated = data?.lastUpdated || null;
-      updatedAt_fire.textContent = lastUpdated
-        ? `Last updated ${formatUpdatedLikeVCFD(lastUpdated)}`
+      updatedAt_fire.textContent = result.lastUpdated
+        ? `Last updated ${formatUpdatedLikeVCFD(result.lastUpdated)}`
         : "Last updated —";
 
+      setFireDataSource(source);
       renderFire();
       updateFireMarkers();
       setStatus("ok","Updated");
-    }catch(e){
-      console.error(e);
+    }catch(err){
+      console.error(err);
+      setFireDataSource("Error");
       setStatus("err","Error");
       updatedAt_fire.textContent = "Last updated —";
-      rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
+      rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents from cache or direct source.</div>`;
     } finally {
       fireFetchInProgress = false;
       updateRefreshButton();
+      console.log(`[VCWATCH] loadCalls end (${source})`);
     }
   }
 
@@ -2364,7 +2442,7 @@
   if (refreshFireBtn) {
     refreshFireBtn.addEventListener("click", () => {
       if (fireFetchInProgress || fireCooldownSeconds > 0) return;
-      fetchFire();
+      loadCalls();
       startFireCooldown(20);
     });
     updateRefreshButton();
@@ -2382,7 +2460,8 @@
 
   renderHeli();
 
-  fetchFire();
+  console.log("[VCWATCH] boot");
+  loadCalls();
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
@@ -2390,7 +2469,7 @@
 
   registerPushServiceWorker().then(refreshPushState).catch(() => {});
 
-  setInterval(fetchFire, 180000);
+  setInterval(loadCalls, 180000);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);
