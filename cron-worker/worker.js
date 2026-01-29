@@ -16,8 +16,16 @@ async function runRefresh(env) {
     headers: { "x-refresh-secret": secret },
   });
 
+  const text = await res.text();
   if (!res.ok) {
-    const text = await res.text();
     throw new Error(`Refresh failed: ${res.status} ${text.slice(0, 120)}`);
+  }
+  try {
+    const data = JSON.parse(text);
+    if (data?.ok === false) {
+      console.warn("Refresh completed with upstream error:", data?.error || "Unknown error");
+    }
+  } catch {
+    // ignore non-JSON
   }
 }
