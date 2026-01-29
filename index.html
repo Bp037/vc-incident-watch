@@ -1382,7 +1382,7 @@
     refreshFireBtn.textContent = "Refresh now";
   }
 
-  function startFireCooldown(seconds = 20) {
+  function startFireCooldown(seconds = 10) {
     fireCooldownSeconds = seconds;
     updateRefreshButton();
     if (fireCooldownTimer) clearInterval(fireCooldownTimer);
@@ -2443,7 +2443,7 @@
     refreshFireBtn.addEventListener("click", () => {
       if (fireFetchInProgress || fireCooldownSeconds > 0) return;
       loadCalls();
-      startFireCooldown(20);
+      startFireCooldown(10);
     });
     updateRefreshButton();
   }
