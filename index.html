@@ -207,6 +207,15 @@
     .dataBadge.cache{ border-color:rgba(34,197,94,.4); color:#86efac; background:rgba(34,197,94,.12); }
     .dataBadge.direct{ border-color:rgba(59,130,246,.4); color:#93c5fd; background:rgba(59,130,246,.12); }
     .dataBadge.error{ border-color:rgba(248,113,113,.4); color:#fecaca; background:rgba(248,113,113,.12); }
+    .errorBanner{
+      display:none;
+      padding:10px 16px;
+      font-size:12px;
+      color:#fecaca;
+      background:rgba(248,113,113,.12);
+      border-bottom:1px solid rgba(248,113,113,.2);
+    }
+    .errorBanner.show{ display:block; }
 
     .tblHead{
       background:#060607;
@@ -714,6 +723,7 @@
           </div>
         </div>
         <div class="notifyStatus" id="pushStatus">Notifications are off.</div>
+        <div class="errorBanner" id="fireErrorBanner">Upstream delayed—showing last known calls.</div>
 
         <div class="tblHead">
           <div class="tbl fmTbl" style="padding:0;">
@@ -1353,6 +1363,9 @@
   // =========================
   const FIRE_CACHE_URL = "/api/incidents/latest";
   const FIRE_DIRECT_URL = "https://firefeeds.venturacounty.gov/api/incidents";
+  const FIRE_CACHE_POLL_MS = 20000;
+  const FIRE_STALE_MS = 180000;
+  const FIRE_DIRECT_COOLDOWN_MS = 60000;
 
   let map_fire, layer_fire;
   let fireIncidents = [];
@@ -1365,6 +1378,9 @@
   const activeCount_fire = document.getElementById("activeCount_fire");
   const refreshFireBtn = document.getElementById("refreshFireBtn");
   const fireDataSource = document.getElementById("fireDataSource");
+  const fireErrorBanner = document.getElementById("fireErrorBanner");
+  let lastDirectAt = 0;
+  let lastDirectPayload = null;
 
   function updateRefreshButton() {
     if (!refreshFireBtn) return;
@@ -1399,18 +1415,37 @@
   function setFireDataSource(source) {
     if (!fireDataSource) return;
     fireDataSource.classList.remove("cache", "direct", "error");
-    if (source === "Cache") {
+    if (String(source).startsWith("Cache")) {
       fireDataSource.classList.add("cache");
-      fireDataSource.textContent = "Data: Cache";
-    } else if (source === "Direct") {
+      fireDataSource.textContent = `Data: ${source}`;
+    } else if (String(source).startsWith("Direct")) {
       fireDataSource.classList.add("direct");
-      fireDataSource.textContent = "Data: Direct";
+      fireDataSource.textContent = `Data: ${source}`;
     } else if (source === "Error") {
       fireDataSource.classList.add("error");
       fireDataSource.textContent = "Data: Error";
     } else {
       fireDataSource.textContent = "Data: —";
     }
+  }
+
+  function setFireError(message) {
+    if (!fireErrorBanner) return;
+    if (message) {
+      fireErrorBanner.textContent = message;
+      fireErrorBanner.classList.add("show");
+    } else {
+      fireErrorBanner.textContent = "";
+      fireErrorBanner.classList.remove("show");
+    }
+  }
+
+  function isCacheStale(lastUpdated, staleFlag) {
+    if (staleFlag === true) return true;
+    if (!lastUpdated) return true;
+    const ts = Date.parse(lastUpdated);
+    if (!ts) return true;
+    return (Date.now() - ts) > FIRE_STALE_MS;
   }
 
   function chipFor(statusText){
@@ -1555,10 +1590,8 @@
     if (data?.ok === false) throw new Error(data.error || "Cache error");
     const list = Array.isArray(data?.incidents) ? data.incidents : [];
     const lastUpdated = data?.lastUpdated || null;
-    if (!lastUpdated || !Array.isArray(list) || list.length === 0) {
-      throw new Error("Cache empty");
-    }
-    return { list, lastUpdated };
+    const stale = isCacheStale(lastUpdated, data?.stale === true);
+    return { list, lastUpdated, stale };
   }
 
   async function fetchFireDirect(){
@@ -1569,42 +1602,79 @@
     return { list, lastUpdated: new Date().toISOString() };
   }
 
-  async function loadCalls(){
+  async function loadCallsUI(){
     if (fireFetchInProgress) return;
     fireFetchInProgress = true;
     updateRefreshButton();
     console.log("[VCWATCH] loadCalls start");
     setStatus("wait","Refreshing…");
     let source = "Error";
-    try{
-      let result;
+    let usedResult = null;
+
+    try {
+      let cacheResult = null;
       try {
-        result = await fetchFireFromCache();
-        source = "Cache";
+        cacheResult = await fetchFireFromCache();
       } catch (cacheErr) {
-        console.warn("[VCWATCH] cache failed, falling back", cacheErr);
-        result = await fetchFireDirect();
-        source = "Direct";
+        console.warn("[VCWATCH] cache fetch failed", cacheErr);
       }
 
-      fireIncidents = result.list
+      const cacheStale = !cacheResult || cacheResult.stale;
+      const canDirect = (Date.now() - lastDirectAt) > FIRE_DIRECT_COOLDOWN_MS;
+
+      if (cacheResult && !cacheStale) {
+        usedResult = cacheResult;
+        source = "Cache";
+        setFireError("");
+      } else if (canDirect) {
+        try {
+          const directResult = await fetchFireDirect();
+          lastDirectAt = Date.now();
+          lastDirectPayload = directResult;
+          usedResult = directResult;
+          source = "Direct (stale cache)";
+          setFireError("");
+        } catch (directErr) {
+          console.warn("[VCWATCH] direct fallback failed", directErr);
+        }
+      }
+
+      if (!usedResult) {
+        if (lastDirectPayload) {
+          usedResult = lastDirectPayload;
+          source = "Direct (stale cache)";
+        } else if (cacheResult) {
+          usedResult = cacheResult;
+          source = "Cache (stale)";
+        }
+        setFireError("Upstream delayed—showing last known calls.");
+      }
+
+      if (!usedResult) {
+        throw new Error("Cache and direct unavailable");
+      }
+
+      fireIncidents = usedResult.list
         .map(normalizeFire)
         .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
-      updatedAt_fire.textContent = result.lastUpdated
-        ? `Last updated ${formatUpdatedLikeVCFD(result.lastUpdated)}`
+      updatedAt_fire.textContent = usedResult.lastUpdated
+        ? `Last updated ${formatUpdatedLikeVCFD(usedResult.lastUpdated)}`
         : "Last updated —";
 
       setFireDataSource(source);
       renderFire();
       updateFireMarkers();
       setStatus("ok","Updated");
-    }catch(err){
+    } catch (err) {
       console.error(err);
       setFireDataSource("Error");
+      setFireError("Upstream delayed—showing last known calls.");
       setStatus("err","Error");
       updatedAt_fire.textContent = "Last updated —";
-      rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents from cache or direct source.</div>`;
+      if (!fireIncidents.length) {
+        rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents from cache or direct source.</div>`;
+      }
     } finally {
       fireFetchInProgress = false;
       updateRefreshButton();
@@ -2442,7 +2512,7 @@
   if (refreshFireBtn) {
     refreshFireBtn.addEventListener("click", () => {
       if (fireFetchInProgress || fireCooldownSeconds > 0) return;
-      loadCalls();
+      loadCallsUI();
       startFireCooldown(10);
     });
     updateRefreshButton();
@@ -2461,7 +2531,7 @@
   renderHeli();
 
   console.log("[VCWATCH] boot");
-  loadCalls();
+  loadCallsUI();
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
@@ -2469,7 +2539,7 @@
 
   registerPushServiceWorker().then(refreshPushState).catch(() => {});
 
-  setInterval(loadCalls, 180000);
+  setInterval(loadCallsUI, FIRE_CACHE_POLL_MS);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);

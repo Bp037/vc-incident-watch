@@ -96,9 +96,14 @@ Pages does not run scheduled functions directly. Use a Worker cron:
 2. Set Worker env vars:
    - `REFRESH_URL=https://vcwatch.org/api/incidents/refresh`
    - `REFRESH_SECRET` (same as Pages)
-3. Schedule: `*/3 * * * *`
+3. Schedule: `*/2 * * * *` (Cloudflare cron is minute-based; 90s is not supported)
 
 The cron calls `/api/incidents/refresh`, which updates KV and immediately sends pushes for new incidents.
+
+## Hybrid live feed
+- UI polls `/api/incidents/latest` every 20s
+- Stale cache threshold: 3 minutes
+- Direct VCFD fallback cooldown: 60s per tab
 
 ### Test flow
 1. Install to Home Screen → open from icon

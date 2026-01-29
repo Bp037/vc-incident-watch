@@ -4,6 +4,7 @@ import { sendPushNotification } from "../push/web-push.js";
 const VCFD_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 const VCFD_LATEST_KEY = "vcfd:latest";
 const VCFD_UPDATED_KEY = "vcfd:lastUpdated";
+const VCFD_STALE_KEY = "vcfd:stale";
 const SENT_PREFIX = "sent:";
 
 export function json(payload, status = 200) {
@@ -95,17 +96,28 @@ export async function readVcfdCache(env) {
   if (!kv) return { incidents: [], lastUpdated: null };
   const incidents = (await kv.get(VCFD_LATEST_KEY, "json")) || [];
   const lastUpdated = await kv.get(VCFD_UPDATED_KEY);
-  return { incidents, lastUpdated };
+  const stale = (await kv.get(VCFD_STALE_KEY)) === "1";
+  return { incidents, lastUpdated, stale };
 }
 
 export async function refreshVcfdCache(env) {
   const kv = env.INCIDENTS_KV;
   if (!kv) throw new Error("Missing KV binding INCIDENTS_KV.");
   const incidents = await fetchVcfdIncidents();
+  if (!incidents.length) {
+    throw new Error("VCFD returned empty list");
+  }
   const lastUpdated = new Date().toISOString();
   await kv.put(VCFD_LATEST_KEY, JSON.stringify(incidents));
   await kv.put(VCFD_UPDATED_KEY, lastUpdated);
+  await kv.put(VCFD_STALE_KEY, "0");
   return { incidents, lastUpdated };
+}
+
+export async function setVcfdStale(env, isStale) {
+  const kv = env.INCIDENTS_KV;
+  if (!kv) return;
+  await kv.put(VCFD_STALE_KEY, isStale ? "1" : "0");
 }
 
 export async function notifyNewIncidents(env, incidents) {

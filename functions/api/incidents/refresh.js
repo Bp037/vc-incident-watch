@@ -1,4 +1,4 @@
-import { json, refreshVcfdCache, notifyNewIncidents, readVcfdCache } from "./_shared.js";
+import { json, refreshVcfdCache, notifyNewIncidents, readVcfdCache, setVcfdStale } from "./_shared.js";
 
 export async function onRequestPost({ env, request }) {
   const secret = env.REFRESH_SECRET;
@@ -18,12 +18,14 @@ export async function onRequestPost({ env, request }) {
       notify: notifyResult,
     });
   } catch (err) {
+    await setVcfdStale(env, true);
     const fallback = await readVcfdCache(env);
     return json({
       ok: false,
       error: String(err?.message || err),
       lastUpdated: fallback.lastUpdated || null,
       cached: Array.isArray(fallback.incidents) ? fallback.incidents.length : 0,
+      stale: true,
     });
   }
 }
