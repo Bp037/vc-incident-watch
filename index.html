@@ -694,7 +694,6 @@
           <div class="right">
             <span id="activeCount_fire">— active</span>
             <span class="dataBadge" id="fireDataSource">Data: —</span>
-            <button class="btn refreshBtn" id="refreshFireBtn" type="button">Refresh now</button>
           </div>
         </div>
 
@@ -1370,47 +1369,15 @@
   let map_fire, layer_fire;
   let fireIncidents = [];
   let fireFetchInProgress = false;
-  let fireCooldownSeconds = 0;
-  let fireCooldownTimer = null;
 
   const rows_fire = document.getElementById("rows_fire");
   const updatedAt_fire = document.getElementById("updatedAt_fire");
   const activeCount_fire = document.getElementById("activeCount_fire");
-  const refreshFireBtn = document.getElementById("refreshFireBtn");
   const fireDataSource = document.getElementById("fireDataSource");
   const fireErrorBanner = document.getElementById("fireErrorBanner");
   let lastDirectAt = 0;
   let lastDirectPayload = null;
 
-  function updateRefreshButton() {
-    if (!refreshFireBtn) return;
-    if (fireFetchInProgress) {
-      refreshFireBtn.disabled = true;
-      refreshFireBtn.textContent = "Refreshing…";
-      return;
-    }
-    if (fireCooldownSeconds > 0) {
-      refreshFireBtn.disabled = true;
-      refreshFireBtn.textContent = `Refresh (${fireCooldownSeconds}s)`;
-      return;
-    }
-    refreshFireBtn.disabled = false;
-    refreshFireBtn.textContent = "Refresh now";
-  }
-
-  function startFireCooldown(seconds = 10) {
-    fireCooldownSeconds = seconds;
-    updateRefreshButton();
-    if (fireCooldownTimer) clearInterval(fireCooldownTimer);
-    fireCooldownTimer = setInterval(() => {
-      fireCooldownSeconds = Math.max(0, fireCooldownSeconds - 1);
-      updateRefreshButton();
-      if (fireCooldownSeconds === 0) {
-        clearInterval(fireCooldownTimer);
-        fireCooldownTimer = null;
-      }
-    }, 1000);
-  }
 
   function setFireDataSource(source) {
     if (!fireDataSource) return;
@@ -1605,7 +1572,6 @@
   async function loadCallsUI(){
     if (fireFetchInProgress) return;
     fireFetchInProgress = true;
-    updateRefreshButton();
     console.log("[VCWATCH] loadCalls start");
     setStatus("wait","Refreshing…");
     let source = "Error";
@@ -1677,7 +1643,6 @@
       }
     } finally {
       fireFetchInProgress = false;
-      updateRefreshButton();
       console.log(`[VCWATCH] loadCalls end (${source})`);
     }
   }
@@ -2508,15 +2473,6 @@
     if (!toggle) return;
     toggle.addEventListener("change", handlePrefsChange);
   });
-
-  if (refreshFireBtn) {
-    refreshFireBtn.addEventListener("click", () => {
-      if (fireFetchInProgress || fireCooldownSeconds > 0) return;
-      loadCallsUI();
-      startFireCooldown(10);
-    });
-    updateRefreshButton();
-  }
 
   // =========================
   // INIT + FIRST LOAD + REFRESH
