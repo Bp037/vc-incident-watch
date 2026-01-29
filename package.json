@@ -1,0 +1,8 @@
+{
+  "name": "vc-incident-watch",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mmmike/web-push": "^0.1.0"
+  }
+}
