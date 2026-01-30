@@ -996,6 +996,17 @@
     return String(typeText || "").trim();
   }
 
+  function normalizeTypeCode(typeText){
+    return String(typeText || "").trim();
+  }
+
+  function classifyCall(typeLabel, typeCode){
+    const label = String(typeLabel || "").toLowerCase();
+    if (label.includes("gas leak") || label.includes("odor of gas")) return "GAS_LEAK";
+    if (label.includes("investigation")) return "INVESTIGATION";
+    return normalizeTypeCode(typeCode) || normalizeTypeLabel(typeLabel) || "";
+  }
+
   function normalizeFire(raw){
     const id = raw?.incidentNumber || raw?.IncidentNumber || raw?.id || crypto.randomUUID();
     const dateStr = raw?.responseDate || raw?.ResponseDate || raw?.date || raw?.Date || "—";
@@ -1006,7 +1017,28 @@
     const street = [block, addr].filter(Boolean).join(" ").trim();
     const fullAddress = [street, city].filter(Boolean).join(", ").trim();
 
-    const type = normalizeTypeLabel(raw?.incidentType || raw?.IncidentType || "");
+    const rawType = raw?.incidentType || raw?.IncidentType || "";
+    const typeCode = normalizeTypeCode(
+      raw?.incidentTypeCode ||
+      raw?.IncidentTypeCode ||
+      raw?.typeCode ||
+      raw?.TypeCode ||
+      rawType
+    );
+    const typeLabel = normalizeTypeLabel(
+      raw?.incidentTypeLabel ||
+      raw?.IncidentTypeLabel ||
+      raw?.incidentTypeDescription ||
+      raw?.IncidentTypeDescription ||
+      raw?.incidentTypeName ||
+      raw?.IncidentTypeName ||
+      raw?.incidentTypeText ||
+      raw?.IncidentTypeText ||
+      raw?.typeLabel ||
+      raw?.TypeLabel ||
+      rawType
+    );
+    const category = classifyCall(typeLabel, typeCode);
     const status = raw?.status || raw?.Status || "";
     const units = raw?.units || raw?.Units || "";
 
@@ -1014,7 +1046,7 @@
     const lon = raw?.longitude ?? raw?.Longitude ?? null;
 
     return {
-      id, dateStr, type, status, units, fullAddress,
+      id, dateStr, type: typeLabel || typeCode, typeCode, typeLabel, category, status, units, fullAddress,
       lat: lat != null ? Number(lat) : null,
       lon: lon != null ? Number(lon) : null
     };
@@ -1040,12 +1072,12 @@
 
       const marker = L.marker([x.lat, x.lon], {
         incidentId: x.id,
-        icon: markerIcon(emojiFor(x.type), colorForFireMedical(x.type))
+        icon: markerIcon(emojiFor(x.typeLabel || x.typeCode), colorForFireMedical(x.typeLabel || x.typeCode))
       });
 
       marker.bindPopup(`
         <div style="font-family:system-ui;font-size:13px;line-height:1.25">
-          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.type || "Incident")}</div>
+          <div style="font-weight:900;margin-bottom:6px">${escapeHtml(x.typeLabel || x.typeCode || "Incident")}</div>
           <div style="color:rgba(0,0,0,.75)">${escapeHtml(x.fullAddress || "")}</div>
           <div style="margin-top:8px;font-size:12px;color:rgba(0,0,0,.75)">
             <div><b>Time:</b> ${escapeHtml(x.dateStr || "—")}</div>
@@ -1075,13 +1107,13 @@
           <div class="date">
             <div class="callLeft">
               <div class="callWhen">${escapeHtml(x.dateStr)}</div>
-              <div class="callEmoji" title="${escapeHtml(x.type)}">${emojiFor(x.type)}</div>
+              <div class="callEmoji" title="${escapeHtml(x.typeLabel || x.typeCode)}">${emojiFor(x.typeLabel || x.typeCode)}</div>
             </div>
           </div>
 
           <div class="addr">
             <a href="${mapsHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.fullAddress || "—")}</a>
-            <div class="typeText">${escapeHtml(x.type || "")}</div>
+            <div class="typeText">${escapeHtml(x.typeLabel || x.typeCode || "")}</div>
             <div class="mobileMeta">
               <div class="mobileUnits">${unitsText}</div>
               <div>${statusChip}</div>

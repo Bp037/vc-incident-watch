@@ -36,20 +36,41 @@ async function getVCFD() {
   const json = await res.json();
   const incidents = Array.isArray(json) ? json : (json?.incidents || json?.data || []);
 
-  const normalized = incidents.slice(0, 300).map((x) => ({
-    incidentNumber: x.incidentNumber ?? x.IncidentNumber ?? x.id ?? x.IncidentID ?? null,
-    responseDate: x.responseDate ?? x.ResponseDate ?? x.dateTime ?? x.datetime ?? x.time ?? "",
-    block: x.block ?? x.Block ?? "",
-    address: x.address ?? x.Address ?? x.location ?? x.Location ?? "",
-    city: x.city ?? x.City ?? "",
-    incidentType: x.incidentType ?? x.IncidentType ?? x.type ?? x.Type ?? "",
-    status: x.status ?? x.Status ?? "",
-    units: x.units ?? x.Units ?? "",
-    latitude:
-      x.latitude ?? x.Latitude ?? (Number.isFinite(x.lat) ? x.lat : null) ?? null,
-    longitude:
-      x.longitude ?? x.Longitude ?? (Number.isFinite(x.lon) ? x.lon : null) ?? null,
-  }));
+  const normalized = incidents.slice(0, 300).map((x) => {
+    const rawType = x.incidentType ?? x.IncidentType ?? x.type ?? x.Type ?? "";
+    const typeCode =
+      x.incidentTypeCode ?? x.IncidentTypeCode ?? x.typeCode ?? x.TypeCode ?? rawType ?? "";
+    const typeLabel =
+      x.incidentTypeLabel ??
+      x.IncidentTypeLabel ??
+      x.incidentTypeDescription ??
+      x.IncidentTypeDescription ??
+      x.incidentTypeName ??
+      x.IncidentTypeName ??
+      x.incidentTypeText ??
+      x.IncidentTypeText ??
+      x.typeLabel ??
+      x.TypeLabel ??
+      rawType ??
+      "";
+
+    return {
+      incidentNumber: x.incidentNumber ?? x.IncidentNumber ?? x.id ?? x.IncidentID ?? null,
+      responseDate: x.responseDate ?? x.ResponseDate ?? x.dateTime ?? x.datetime ?? x.time ?? "",
+      block: x.block ?? x.Block ?? "",
+      address: x.address ?? x.Address ?? x.location ?? x.Location ?? "",
+      city: x.city ?? x.City ?? "",
+      incidentType: typeLabel || typeCode || "",
+      typeCode: String(typeCode || "").trim(),
+      typeLabel: String(typeLabel || "").trim(),
+      status: x.status ?? x.Status ?? "",
+      units: x.units ?? x.Units ?? "",
+      latitude:
+        x.latitude ?? x.Latitude ?? (Number.isFinite(x.lat) ? x.lat : null) ?? null,
+      longitude:
+        x.longitude ?? x.Longitude ?? (Number.isFinite(x.lon) ? x.lon : null) ?? null,
+    };
+  });
 
   return { count: normalized.length, incidents: normalized };
 }
