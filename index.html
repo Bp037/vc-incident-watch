@@ -1214,9 +1214,10 @@
   // Leaflet basemap toggle
   // =========================
   function addBasemapToggle(map){
-    const street = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    const dark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+      subdomains: "abcd",
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     });
 
     const satellite = L.tileLayer(
@@ -1224,8 +1225,8 @@
       { maxZoom: 19, attribution: "Tiles &copy; Esri" }
     );
 
-    street.addTo(map);
-    L.control.layers({ "Street": street, "Satellite": satellite }, {}, { position:"topright" }).addTo(map);
+    dark.addTo(map);
+    L.control.layers({ "Dark": dark, "Satellite": satellite }, {}, { position:"topright" }).addTo(map);
   }
 
   // =========================
