@@ -191,31 +191,6 @@
     .sectionBar .sub{ color:rgba(255,255,255,.7); font-size:12px; }
     .sectionBar .right{ color:rgba(255,255,255,.8); font-size:12px; white-space:nowrap; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .refreshBtn{ padding:7px 10px; font-size:11px; }
-    .dataBadge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      font-size:10px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      background:rgba(255,255,255,.04);
-      color:rgba(255,255,255,.75);
-    }
-    .dataBadge.cache{ border-color:rgba(34,197,94,.4); color:#86efac; background:rgba(34,197,94,.12); }
-    .dataBadge.direct{ border-color:rgba(59,130,246,.4); color:#93c5fd; background:rgba(59,130,246,.12); }
-    .dataBadge.error{ border-color:rgba(248,113,113,.4); color:#fecaca; background:rgba(248,113,113,.12); }
-    .errorBanner{
-      display:none;
-      padding:10px 16px;
-      font-size:12px;
-      color:#fecaca;
-      background:rgba(248,113,113,.12);
-      border-bottom:1px solid rgba(248,113,113,.2);
-    }
-    .errorBanner.show{ display:block; }
 
     .tblHead{
       background:#060607;
@@ -693,7 +668,6 @@
           </div>
           <div class="right">
             <span id="activeCount_fire">— active</span>
-            <span class="dataBadge" id="fireDataSource">Data: —</span>
           </div>
         </div>
 
@@ -722,7 +696,6 @@
           </div>
         </div>
         <div class="notifyStatus" id="pushStatus">Notifications are off.</div>
-        <div class="errorBanner" id="fireErrorBanner">Upstream delayed—showing last known calls.</div>
 
         <div class="tblHead">
           <div class="tbl fmTbl" style="padding:0;">
@@ -1360,11 +1333,7 @@
   // =========================
   // FIRE / MEDICAL
   // =========================
-  const FIRE_CACHE_URL = "/api/incidents/latest";
-  const FIRE_DIRECT_URL = "https://firefeeds.venturacounty.gov/api/incidents";
-  const FIRE_CACHE_POLL_MS = 20000;
-  const FIRE_STALE_MS = 180000;
-  const FIRE_DIRECT_COOLDOWN_MS = 60000;
+  const FIRE_API_URL = "https://firefeeds.venturacounty.gov/api/incidents";
 
   let map_fire, layer_fire;
   let fireIncidents = [];
@@ -1373,47 +1342,6 @@
   const rows_fire = document.getElementById("rows_fire");
   const updatedAt_fire = document.getElementById("updatedAt_fire");
   const activeCount_fire = document.getElementById("activeCount_fire");
-  const fireDataSource = document.getElementById("fireDataSource");
-  const fireErrorBanner = document.getElementById("fireErrorBanner");
-  let lastDirectAt = 0;
-  let lastDirectPayload = null;
-
-
-  function setFireDataSource(source) {
-    if (!fireDataSource) return;
-    fireDataSource.classList.remove("cache", "direct", "error");
-    if (String(source).startsWith("Cache")) {
-      fireDataSource.classList.add("cache");
-      fireDataSource.textContent = `Data: ${source}`;
-    } else if (String(source).startsWith("Direct")) {
-      fireDataSource.classList.add("direct");
-      fireDataSource.textContent = `Data: ${source}`;
-    } else if (source === "Error") {
-      fireDataSource.classList.add("error");
-      fireDataSource.textContent = "Data: Error";
-    } else {
-      fireDataSource.textContent = "Data: —";
-    }
-  }
-
-  function setFireError(message) {
-    if (!fireErrorBanner) return;
-    if (message) {
-      fireErrorBanner.textContent = message;
-      fireErrorBanner.classList.add("show");
-    } else {
-      fireErrorBanner.textContent = "";
-      fireErrorBanner.classList.remove("show");
-    }
-  }
-
-  function isCacheStale(lastUpdated, staleFlag) {
-    if (staleFlag === true) return true;
-    if (!lastUpdated) return true;
-    const ts = Date.parse(lastUpdated);
-    if (!ts) return true;
-    return (Date.now() - ts) > FIRE_STALE_MS;
-  }
 
   function chipFor(statusText){
     const s = (statusText || "").toLowerCase();
@@ -1550,100 +1478,31 @@
     });
   }
 
-  async function fetchFireFromCache(){
-    const res = await fetch(FIRE_CACHE_URL, { cache:"no-store" });
-    if(!res.ok) throw new Error(`Cache HTTP ${res.status}`);
-    const data = await res.json();
-    if (data?.ok === false) throw new Error(data.error || "Cache error");
-    const list = Array.isArray(data?.incidents) ? data.incidents : [];
-    const lastUpdated = data?.lastUpdated || null;
-    const stale = isCacheStale(lastUpdated, data?.stale === true);
-    return { list, lastUpdated, stale };
-  }
-
-  async function fetchFireDirect(){
-    const res = await fetch(FIRE_DIRECT_URL, { cache:"no-store" });
-    if(!res.ok) throw new Error(`Direct HTTP ${res.status}`);
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : (Array.isArray(data?.incidents) ? data.incidents : []);
-    return { list, lastUpdated: new Date().toISOString() };
-  }
-
-  async function loadCallsUI(){
+  async function fetchFire(){
     if (fireFetchInProgress) return;
     fireFetchInProgress = true;
-    console.log("[VCWATCH] loadCalls start");
     setStatus("wait","Refreshing…");
-    let source = "Error";
-    let usedResult = null;
+    try{
+      const res = await fetch(FIRE_API_URL, { cache:"no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
 
-    try {
-      let cacheResult = null;
-      try {
-        cacheResult = await fetchFireFromCache();
-      } catch (cacheErr) {
-        console.warn("[VCWATCH] cache fetch failed", cacheErr);
-      }
-
-      const cacheStale = !cacheResult || cacheResult.stale;
-      const canDirect = (Date.now() - lastDirectAt) > FIRE_DIRECT_COOLDOWN_MS;
-
-      if (cacheResult && !cacheStale) {
-        usedResult = cacheResult;
-        source = "Cache";
-        setFireError("");
-      } else if (canDirect) {
-        try {
-          const directResult = await fetchFireDirect();
-          lastDirectAt = Date.now();
-          lastDirectPayload = directResult;
-          usedResult = directResult;
-          source = "Direct (stale cache)";
-          setFireError("");
-        } catch (directErr) {
-          console.warn("[VCWATCH] direct fallback failed", directErr);
-        }
-      }
-
-      if (!usedResult) {
-        if (lastDirectPayload) {
-          usedResult = lastDirectPayload;
-          source = "Direct (stale cache)";
-        } else if (cacheResult) {
-          usedResult = cacheResult;
-          source = "Cache (stale)";
-        }
-        setFireError("Upstream delayed—showing last known calls.");
-      }
-
-      if (!usedResult) {
-        throw new Error("Cache and direct unavailable");
-      }
-
-      fireIncidents = usedResult.list
+      const list = Array.isArray(data) ? data : (Array.isArray(data?.incidents) ? data.incidents : []);
+      fireIncidents = list
         .map(normalizeFire)
         .sort((a,b) => parseResponseDate(b.dateStr) - parseResponseDate(a.dateStr));
 
-      updatedAt_fire.textContent = usedResult.lastUpdated
-        ? `Last updated ${formatUpdatedLikeVCFD(usedResult.lastUpdated)}`
-        : "Last updated —";
-
-      setFireDataSource(source);
+      updatedAt_fire.textContent = `Last updated ${formatUpdatedLikeVCFD(new Date().toISOString())}`;
       renderFire();
       updateFireMarkers();
       setStatus("ok","Updated");
-    } catch (err) {
+    }catch(err){
       console.error(err);
-      setFireDataSource("Error");
-      setFireError("Upstream delayed—showing last known calls.");
       setStatus("err","Error");
       updatedAt_fire.textContent = "Last updated —";
-      if (!fireIncidents.length) {
-        rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents from cache or direct source.</div>`;
-      }
+      rows_fire.innerHTML = `<div style="padding:16px;color:rgba(255,255,255,.7)">Could not load incidents right now.</div>`;
     } finally {
       fireFetchInProgress = false;
-      console.log(`[VCWATCH] loadCalls end (${source})`);
     }
   }
 
@@ -2486,8 +2345,7 @@
 
   renderHeli();
 
-  console.log("[VCWATCH] boot");
-  loadCallsUI();
+  fetchFire();
   fetchChp();
   fetchEarthquakes();
   fetchWeather();
@@ -2495,7 +2353,7 @@
 
   registerPushServiceWorker().then(refreshPushState).catch(() => {});
 
-  setInterval(loadCallsUI, FIRE_CACHE_POLL_MS);
+  setInterval(fetchFire, 60000);
   setInterval(fetchChp, 60000);
   setInterval(fetchEarthquakes, 300000);
   setInterval(fetchWeather, 300000);

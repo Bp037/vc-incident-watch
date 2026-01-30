@@ -1,4 +1,4 @@
-export async function onRequestGet({ env }) {
+export async function onRequestGet() {
   const headers = {
     "content-type": "application/json; charset=utf-8",
     "access-control-allow-origin": "*",
@@ -6,7 +6,7 @@ export async function onRequestGet({ env }) {
   };
 
   try {
-    const [vcfd, chp] = await Promise.all([getVCFD(env), getCHP()]);
+    const [vcfd, chp] = await Promise.all([getVCFD(), getCHP()]);
     return new Response(
       JSON.stringify({
         ok: true,
@@ -28,16 +28,7 @@ export async function onRequestGet({ env }) {
 }
 
 // ---------------- VCFD ----------------
-async function getVCFD(env) {
-  const kv = env?.INCIDENTS_KV;
-  if (kv) {
-    const cached = await kv.get("vcfd:latest", "json");
-    const lastUpdated = await kv.get("vcfd:lastUpdated");
-    if (Array.isArray(cached)) {
-      return { count: cached.length, incidents: cached, lastUpdated: lastUpdated || null };
-    }
-  }
-
+async function getVCFD() {
   const url = "https://firefeeds.venturacounty.gov/api/incidents";
   const res = await fetch(url, { cf: { cacheTtl: 30, cacheEverything: true } });
   if (!res.ok) throw new Error(`VCFD fetch failed: ${res.status}`);
@@ -60,7 +51,7 @@ async function getVCFD(env) {
       x.longitude ?? x.Longitude ?? (Number.isFinite(x.lon) ? x.lon : null) ?? null,
   }));
 
-  return { count: normalized.length, incidents: normalized, lastUpdated: new Date().toISOString() };
+  return { count: normalized.length, incidents: normalized };
 }
 
 // ---------------- CHP ----------------

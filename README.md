@@ -10,7 +10,6 @@ Live Ventura County incident dashboard
 ### Required bindings / env vars
 Create a KV namespace and bind it to Pages Functions as:
 - `VCWATCH_KV` (stores subscribers + push subscriptions)
-- `INCIDENTS_KV` (stores cached VCFD incidents + sent dedupe keys)
 
 
 Set these environment variables:
@@ -18,7 +17,6 @@ Set these environment variables:
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_FROM` (a Twilio phone number in E.164 format)
-- `REFRESH_SECRET` (for `/api/incidents/refresh`)
 
 ## Fire notification endpoint
 Endpoint: `/api/fire-notify`
@@ -32,10 +30,6 @@ The first run only stores a snapshot to avoid spamming. Use either:
 - `Authorization: Bearer <ADMIN_TOKEN>`
 - or `?token=<ADMIN_TOKEN>`
 
-## VCFD cache endpoints
-These endpoints are used by the UI and the cron job:
-- `GET /api/incidents/latest` (reads from KV only)
-- `POST /api/incidents/refresh` (calls VCFD, updates KV; requires `x-refresh-secret`)
 
 ## Test SMS endpoint
 Endpoint: `/api/test-sms`
@@ -81,29 +75,12 @@ Optional control:
 - `GET /api/push/status`
 - `POST /api/push/test`
 - `POST /api/push/notify`
-- `POST /api/push/poll`
 
 Supported categories for notify/test filters:
 - `FIRE`
 - `TRAFFIC_COLLISION`
 - `MEDICAL`
 - `HAZMAT` (or `HAZARDOUS_MATERIALS`)
-
-## Cron (refresh + notify)
-Pages does not run scheduled functions directly. Use a Worker cron:
-
-1. Deploy the Worker in `cron-worker/` (example config included).
-2. Set Worker env vars:
-   - `REFRESH_URL=https://vcwatch.org/api/incidents/refresh`
-   - `REFRESH_SECRET` (same as Pages)
-3. Schedule: `*/2 * * * *` (Cloudflare cron is minute-based; 90s is not supported)
-
-The cron calls `/api/incidents/refresh`, which updates KV and immediately sends pushes for new incidents.
-
-## Hybrid live feed
-- UI polls `/api/incidents/latest` every 20s
-- Stale cache threshold: 3 minutes
-- Direct VCFD fallback cooldown: 60s per tab
 
 ### Test flow
 1. Install to Home Screen → open from icon
